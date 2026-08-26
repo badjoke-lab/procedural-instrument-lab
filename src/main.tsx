@@ -171,7 +171,7 @@ function App() {
   return (
     <main>
       <header>
-        <div><strong>PIL</strong><span>{t.subtitle}</span></div>
+        <div><strong>PIL</strong><span>{t.appSubtitle}</span></div>
         <div className="controls">
           <button onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
           <label>
