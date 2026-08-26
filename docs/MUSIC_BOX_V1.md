@@ -12,13 +12,16 @@ This is not a music-box-themed player. The cylinder layout, contact events, tine
 - base, crank, cylinder, pins and comb/tines are generated in code,
 - tune events generate physical pin positions,
 - cylinder phase is the authoritative playback state,
+- pin contact is derived from explicit 3D pin-tip and tine-contact geometry rather than a detached playback timer,
 - pin contact triggers the corresponding tine,
-- the same contact event triggers audible output,
+- the same contact-entry event triggers audible output,
 - each tine visibly decays after being plucked,
+- one full revolution produces one contact entry per configured pin across materially different sampling rates,
 - camera orbit/zoom works,
 - speed can be changed without separating animation from sound,
 - the default UI language is English,
-- user-facing UI strings are routed through a localization-ready message layer rather than duplicated as hard-coded component text.
+- user-facing UI strings are routed through a localization-ready message layer rather than duplicated as hard-coded component text,
+- repository verification runs typecheck, mechanism tests and production build.
 
 ## Language scope
 
@@ -28,7 +31,7 @@ When Japanese is added, locale switching should use a compact control such as `E
 
 ## Next mechanism milestones
 
-1. Replace the simplified angular contact window with explicit cylinder/comb contact geometry.
+1. Complete and verify explicit cylinder-pin / tine contact geometry. The implementation exists on the active vertical-slice branch; CI must be green before this milestone is considered complete.
 2. Add a visible gear train derived from a single crank/cylinder state.
 3. Expand from the demonstration note set to a configurable comb.
 4. Regenerate the cylinder when tune or mechanical dimensions change.
