@@ -25,7 +25,7 @@ function countContacts(framesPerRevolution: number) {
   const touching = new Set<number>()
   let count = 0
 
-  for (let frame = 0; frame <= framesPerRevolution; frame += 1) {
+  for (let frame = 0; frame < framesPerRevolution; frame += 1) {
     const phase = (frame / framesPerRevolution) * Math.PI * 2
 
     pins.forEach((pin, index) => {
