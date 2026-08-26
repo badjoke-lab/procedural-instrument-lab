@@ -81,12 +81,19 @@ Implementation note: automated verification confirms the code and mechanical pat
 
 ## Phase 5 — Instrument quality
 
-Status: next
+Status: in progress
 
-Work:
+Implemented in the current audio-quality branch:
 
-- improve tine synthesis,
-- add restrained mechanical noises,
+- music-box-specific Web Audio synthesis is isolated in `src/instruments/music-box/audio.ts` rather than prematurely promoted to a shared audio engine,
+- each mechanical pluck event excites a fundamental plus restrained inharmonic upper partials with different decay times,
+- the same pluck event also emits a short filtered mechanical contact click,
+- audio remains downstream of the mechanical contact event; no independent sequencer or timer decides note timing,
+- pure audio-model tests verify concert-A tuning and the intended partial/decay structure.
+
+Remaining work:
+
+- pass repository typecheck, audio/mechanism tests and production build for the new audio model,
 - improve materials, lighting and enclosure detail,
 - verify and tune crank/Orbit gesture ergonomics on browser/device,
 - improve performance and accessibility,
