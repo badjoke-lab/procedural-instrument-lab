@@ -5,6 +5,7 @@ import { OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import './styles.css'
 import { messages } from './i18n/messages'
+import { MusicBoxAudio } from './instruments/music-box/audio'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
@@ -22,36 +23,6 @@ const TUNE: NoteEvent[] = [
   { note: 65, start: 0.375 }, { note: 67, start: 0.5 }, { note: 69, start: 0.625 },
   { note: 71, start: 0.75 }, { note: 72, start: 0.875 }
 ]
-
-function midiToHz(note: number) {
-  return 440 * Math.pow(2, (note - 69) / 12)
-}
-
-class MusicBoxAudio {
-  ctx: AudioContext | null = null
-
-  async pluck(note: number) {
-    if (!this.ctx) this.ctx = new AudioContext()
-    if (this.ctx.state === 'suspended') await this.ctx.resume()
-
-    const t = this.ctx.currentTime
-    const osc = this.ctx.createOscillator()
-    const gain = this.ctx.createGain()
-    const filter = this.ctx.createBiquadFilter()
-
-    osc.type = 'sine'
-    osc.frequency.value = midiToHz(note)
-    filter.type = 'highpass'
-    filter.frequency.value = 180
-    gain.gain.setValueAtTime(0.0001, t)
-    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.005)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.5)
-
-    osc.connect(filter).connect(gain).connect(this.ctx.destination)
-    osc.start(t)
-    osc.stop(t + 1.6)
-  }
-}
 
 const audio = new MusicBoxAudio()
 
