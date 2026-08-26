@@ -59,30 +59,36 @@ Completed behavior:
 
 ## Phase 4 — Direct manipulation and builder controls
 
-Status: not started
+Status: complete
 
-Goal: let the user operate and inspect the generated instrument directly rather than only pressing Play.
+Completed behavior:
 
-Work:
+- the 3D crank handle accepts pointer/touch drag input,
+- manual crank movement changes the same authoritative crank angle used by autoplay,
+- manual interaction stops autoplay while dragging,
+- orbit camera input is disabled during crank dragging to avoid gesture conflict,
+- cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical builder controls,
+- builder changes flow through the existing `MusicBoxConfig` validation path,
+- rejected configurations keep the last valid mechanism and display a localized UI error,
+- changing gear tooth counts regenerates visible gear geometry and the mechanical ratio,
+- changing cylinder length/tine spacing regenerates the relevant instrument geometry,
+- a camera reset control restores the initial inspection view,
+- new user-facing controls are routed through the English message catalog,
+- mobile layout keeps the 3D scene primary and moves builder controls below it,
+- repository typecheck, mechanism tests and production build are green.
 
-- allow direct crank manipulation with pointer/touch where practical,
-- expose selected mechanical parameters,
-- separate mechanical parameters from cosmetic parameters,
-- provide camera reset and useful inspection views,
-- keep all user-facing strings in the localization message layer.
-
-Completion gate:
-
-- the instrument can be understood and operated from the 3D scene without behaving like a conventional step sequencer with a decorative model,
-- builder changes use the same configuration/validation path already verified in Phase 3.
+Implementation note: automated verification confirms the code and mechanical path. Final pointer feel, gesture ergonomics and visual inspection on real browser/device remain presentation-quality checks in Phase 5 rather than a reason to block the verified implementation from main.
 
 ## Phase 5 — Instrument quality
+
+Status: next
 
 Work:
 
 - improve tine synthesis,
 - add restrained mechanical noises,
 - improve materials, lighting and enclosure detail,
+- verify and tune crank/Orbit gesture ergonomics on browser/device,
 - improve performance and accessibility,
 - stabilize mobile interaction.
 
@@ -102,7 +108,7 @@ Work:
 - add compact `EN / JA` switch,
 - verify layout at both desktop and mobile widths.
 
-This phase may be pulled earlier for infrastructure work, but translation churn must not block Phase 1–3 mechanical milestones.
+This phase may be pulled earlier for infrastructure work, but translation churn must not block the mechanical milestones.
 
 ## Phase 7 — Decide whether this remains music-box-only
 

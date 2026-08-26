@@ -1,10 +1,18 @@
 export const messages = {
   en: {
-    appSubtitle: 'music box / first vertical slice',
+    appSubtitle: 'music box / procedural builder',
     play: 'Play',
     stop: 'Stop',
     speed: 'Speed',
-    footer: 'Tune data generates cylinder pins. Pin contact plucks the matching tine and triggers the same note event.',
+    resetView: 'Reset view',
+    builder: 'Builder',
+    cylinderLength: 'Cylinder length',
+    tineSpacing: 'Tine spacing',
+    driverTeeth: 'Driver teeth',
+    cylinderTeeth: 'Cylinder teeth',
+    crankHint: 'Drag the crank handle to rotate the mechanism.',
+    invalidConfig: 'That configuration is not physically valid for the current parts.',
+    footer: 'The crank, gears, cylinder, pin contact, tine motion and sound share one mechanical state.',
   },
 } as const
 
