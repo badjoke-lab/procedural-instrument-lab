@@ -14,15 +14,6 @@ This document controls development order for Procedural Instrument Lab. It must 
 
 Status: complete
 
-Completion gate:
-
-- architecture document exists,
-- music-box v1 specification exists,
-- this roadmap exists,
-- `AGENTS.md` establishes source-of-truth and update rules,
-- UI language policy is documented,
-- initial app skeleton is present.
-
 ## Phase 1 — Causal one-note mechanism
 
 Status: complete
@@ -51,45 +42,39 @@ Completed behavior:
 - ratio/angle relationships are covered by mechanism tests,
 - GitHub Actions verification is green with the drive train present.
 
-Completion gate:
-
-- changing gear ratio visibly changes the mechanical relationship,
-- crank, gear and cylinder cannot drift apart,
-- contact timing continues to derive from the resulting cylinder phase.
-
 ## Phase 3 — Configurable comb and tune cylinder
 
-Status: in progress
+Status: complete
 
-Goal: make the current music box a parameterized instrument rather than one hard-coded geometry snapshot.
+Completed behavior:
 
-Work:
-
-- keep note set/tine count in instrument configuration,
-- map pitch index to tine geometry,
-- compile tune events into pins,
-- regenerate pins when tune or cylinder dimensions change,
-- validate unsupported cylinder/tine/pin spacing configurations,
-- keep configuration changes deterministic and testable without requiring UI controls yet.
-
-Completion gate:
-
-- a short multi-note tune plays through one cylinder revolution,
-- changing a mechanically meaningful parameter rebuilds the relevant geometry and mapping,
-- invalid spacing/range configurations are rejected or reported rather than silently overlapping geometry.
+- note set/tine count live in instrument configuration,
+- tune events compile into axial pin lanes and cylinder angles,
+- changing tine spacing changes generated pin mapping deterministically,
+- configuration validation rejects note lanes that do not fit the cylinder and pin/tine spacing that would overlap,
+- invalid configuration does not silently generate geometry,
+- a short multi-note tune remains driven through one cylinder revolution,
+- tests cover parameter-driven remapping and invalid configuration rejection,
+- GitHub Actions verification is green.
 
 ## Phase 4 — Direct manipulation and builder controls
+
+Status: not started
+
+Goal: let the user operate and inspect the generated instrument directly rather than only pressing Play.
 
 Work:
 
 - allow direct crank manipulation with pointer/touch where practical,
 - expose selected mechanical parameters,
 - separate mechanical parameters from cosmetic parameters,
-- provide camera reset and useful inspection views.
+- provide camera reset and useful inspection views,
+- keep all user-facing strings in the localization message layer.
 
 Completion gate:
 
-- the instrument can be understood and operated from the 3D scene without behaving like a conventional step sequencer with a decorative model.
+- the instrument can be understood and operated from the 3D scene without behaving like a conventional step sequencer with a decorative model,
+- builder changes use the same configuration/validation path already verified in Phase 3.
 
 ## Phase 5 — Instrument quality
 
