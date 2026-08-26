@@ -12,7 +12,7 @@ This document controls development order for Procedural Instrument Lab. It must 
 
 ## Phase 0 — Repository foundation
 
-Status: in progress
+Status: complete
 
 Completion gate:
 
@@ -24,6 +24,24 @@ Completion gate:
 - initial app skeleton is present.
 
 ## Phase 1 — Causal one-note mechanism
+
+Status: in progress
+
+Implemented on the current vertical-slice branch:
+
+- cylinder axis and pin geometry use one explicit instrument coordinate system,
+- pin tip world position is derived from pin geometry and cylinder phase,
+- each tine has a contact point derived from the same instrument configuration,
+- contact is resolved by 3D distance between the moving pin tip and corresponding tine contact point,
+- a contact-entry event drives both tine vibration and Web Audio output,
+- pure mechanism tests sample a full revolution at multiple rates to verify one entry per pin,
+- CI runs typecheck, mechanism tests and production build.
+
+Remaining before this phase is complete:
+
+- CI must be green on the current implementation,
+- any build/type/test defects must be corrected,
+- confirm the completed contact path still satisfies the active `MUSIC_BOX_V1` acceptance criteria.
 
 Goal: prove that the visible mechanism, not a detached sequencer, drives a note.
 
@@ -42,6 +60,8 @@ Completion gate:
 - repeated frame rates do not materially change the sequence of contact events.
 
 ## Phase 2 — Drive train
+
+Status: not started
 
 Work:
 
