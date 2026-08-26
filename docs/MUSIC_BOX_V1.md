@@ -16,7 +16,15 @@ This is not a music-box-themed player. The cylinder layout, contact events, tine
 - the same contact event triggers audible output,
 - each tine visibly decays after being plucked,
 - camera orbit/zoom works,
-- speed can be changed without separating animation from sound.
+- speed can be changed without separating animation from sound,
+- the default UI language is English,
+- user-facing UI strings are routed through a localization-ready message layer rather than duplicated as hard-coded component text.
+
+## Language scope
+
+English is the required v1 UI locale. Japanese is planned as the first additional locale, but Japanese translation is not a mechanical-v1 completion blocker.
+
+When Japanese is added, locale switching should use a compact control such as `EN / JA`; bilingual labels are not the default UI style.
 
 ## Next mechanism milestones
 
@@ -26,6 +34,7 @@ This is not a music-box-themed player. The cylinder layout, contact events, tine
 4. Regenerate the cylinder when tune or mechanical dimensions change.
 5. Add direct crank interaction.
 6. Improve synthesis and mechanical noise only after causal mechanism correctness is stable.
+7. Add the Japanese message catalog and locale switch after the core interaction surface is stable enough that translation keys will not churn unnecessarily.
 
 ## Scope rule
 
