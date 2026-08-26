@@ -8,7 +8,7 @@ This document controls development order for Procedural Instrument Lab. It must 
 - Current committed product: one procedural mechanical cylinder music box.
 - Additional instruments: optional future work, not a v1 requirement.
 - Default UI language: English.
-- Localization architecture: required from v1; Japanese is the first planned additional locale.
+- Localization architecture: required from v1; Japanese is the first additional locale.
 
 ## Phase 0 — Repository foundation
 
@@ -73,7 +73,7 @@ Completed behavior:
 - changing gear tooth counts regenerates visible gear geometry and the mechanical ratio,
 - changing cylinder length/tine spacing regenerates the relevant instrument geometry,
 - a camera reset control restores the initial inspection view,
-- new user-facing controls are routed through the English message catalog,
+- new user-facing controls are routed through the message catalog,
 - mobile layout keeps the 3D scene primary and moves builder controls below it,
 - repository typecheck, mechanism tests and production build are green.
 
@@ -92,20 +92,21 @@ Completed audio-quality lane:
 - pure audio-model tests verify tuning and partial/decay structure,
 - repository typecheck, audio/mechanism tests and production build are green.
 
-Implemented in the current presentation-quality branch:
+Implemented in the v1 integration branch:
 
 - stronger scene depth through key/fill lighting and restrained contact shadows,
-- materials are adjusted so wood, cylinder, pins, gears and tines remain visually distinct,
+- materials keep wood, cylinder, pins, gears and tines visually distinct,
 - contact markers remain visible without hiding the mechanism,
 - DOM controls have visible keyboard focus states and explicit label/control relationships,
 - Play exposes pressed state to assistive technology,
 - primary touch controls use larger targets,
 - builder layout collapses to one column at narrow mobile widths,
-- rendering DPR is bounded to reduce unnecessary high-density mobile GPU load.
+- rendering DPR is bounded to reduce unnecessary high-density mobile GPU load,
+- runtime presentation checks are fixed in `docs/PRESENTATION_CHECKLIST.md`.
 
 Remaining work:
 
-- pass repository typecheck, all tests and production build for the presentation-quality branch; GitHub Actions must be green before merge,
+- pass repository typecheck, all tests and production build for the integrated presentation/localization branch,
 - verify and tune crank/Orbit gesture ergonomics on real browser/device,
 - perform final visual inspection at desktop and mobile widths,
 - fix any device-specific interaction or readability defects found by that inspection.
@@ -117,16 +118,22 @@ Completion gate:
 
 ## Phase 6 — Localization
 
-English remains the default. Japanese is the first additional locale.
+Status: in progress, integrated with Phase 5 verification
 
-Work:
+Implemented in the v1 integration branch:
 
-- stabilize message keys,
-- add `ja` catalog,
-- add compact `EN / JA` switch,
-- verify layout at both desktop and mobile widths.
+- English remains the default locale,
+- Japanese is implemented as the first additional locale,
+- `EN / JA` provides compact language switching,
+- the document `lang` attribute follows the active locale,
+- mechanism/configuration identifiers remain locale-independent,
+- English and Japanese catalog parity is covered by automated tests.
 
-This phase may be pulled earlier for infrastructure work, but translation churn must not block the mechanical milestones.
+Remaining work:
+
+- verify repository typecheck/tests/build for the integrated branch,
+- verify both locales at desktop and mobile widths,
+- fix any text overflow or layout defects found by runtime inspection.
 
 ## Phase 7 — Decide whether this remains music-box-only
 
