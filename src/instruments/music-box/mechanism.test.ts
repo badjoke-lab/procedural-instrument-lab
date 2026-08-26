@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
+  driveKinematics,
+  gearRatio,
   pinTouchesTine,
   tineContactPoint,
   pinTipWorldPosition,
@@ -62,5 +64,18 @@ describe('music box contact geometry', () => {
   it('emits one contact entry per pin across a full revolution at different sampling rates', () => {
     expect(countContacts(240)).toBe(tune.length)
     expect(countContacts(576)).toBe(tune.length)
+  })
+})
+
+describe('music box drive train', () => {
+  it('derives the ratio from visible gear tooth counts', () => {
+    expect(gearRatio(config)).toBe(2)
+  })
+
+  it('derives crank, gear and cylinder angles from one drive angle', () => {
+    const state = driveKinematics(Math.PI / 3, config)
+    expect(state.driverGearAngle).toBeCloseTo(Math.PI / 3, 10)
+    expect(state.cylinderGearAngle).toBeCloseTo(-2 * Math.PI / 3, 10)
+    expect(state.cylinderPhase).toBe(state.cylinderGearAngle)
   })
 })
