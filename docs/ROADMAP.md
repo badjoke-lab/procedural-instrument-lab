@@ -25,43 +25,29 @@ Completion gate:
 
 ## Phase 1 — Causal one-note mechanism
 
-Status: in progress
+Status: complete
 
-Implemented on the current vertical-slice branch:
+Completed behavior:
 
 - cylinder axis and pin geometry use one explicit instrument coordinate system,
 - pin tip world position is derived from pin geometry and cylinder phase,
 - each tine has a contact point derived from the same instrument configuration,
 - contact is resolved by 3D distance between the moving pin tip and corresponding tine contact point,
 - a contact-entry event drives both tine vibration and Web Audio output,
-- pure mechanism tests sample a full revolution at multiple rates to verify one entry per pin,
-- CI runs typecheck, mechanism tests and production build.
-
-Remaining before this phase is complete:
-
-- CI must be green on the current implementation,
-- any build/type/test defects must be corrected,
-- confirm the completed contact path still satisfies the active `MUSIC_BOX_V1` acceptance criteria.
-
-Goal: prove that the visible mechanism, not a detached sequencer, drives a note.
-
-Work:
-
-- model a real contact zone between one cylinder pin and one tine,
-- derive pin world position from cylinder geometry and phase,
-- derive tine/contact geometry from the same instrument configuration,
-- emit exactly one pluck event when the pin crosses the contact boundary,
-- drive both visible tine vibration and audio from that event.
+- pure mechanism tests sample a full revolution at multiple rates and verify one entry per pin,
+- repository verification typechecks, runs mechanism tests and produces a production build in GitHub Actions.
 
 Completion gate:
 
 - no time-only or decorative animation is required to decide when the note sounds,
 - one full cylinder revolution produces deterministic contact behavior,
-- repeated frame rates do not materially change the sequence of contact events.
+- repeated sampling rates do not materially change the sequence of contact events.
 
 ## Phase 2 — Drive train
 
-Status: not started
+Status: in progress
+
+Goal: make crank, visible gears and cylinder share one authoritative drive state.
 
 Work:
 
@@ -69,12 +55,14 @@ Work:
 - add at least one visible gear stage,
 - define gear ratio as a mechanical parameter,
 - derive gear and cylinder rotation from one authoritative drive state,
-- keep audio/contact timing derived from cylinder state.
+- keep audio/contact timing derived from cylinder state,
+- verify ratio math independently of rendering.
 
 Completion gate:
 
 - changing gear ratio visibly changes the mechanical relationship,
-- crank, gear and cylinder cannot drift apart.
+- crank, gear and cylinder cannot drift apart,
+- contact timing continues to derive from the resulting cylinder phase.
 
 ## Phase 3 — Configurable comb and tune cylinder
 
