@@ -250,6 +250,7 @@ function App() {
   const [speed, setSpeed] = useState(0.85)
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [cameraKey, setCameraKey] = useState(0)
+  const [configError, setConfigError] = useState(false)
   const [config, setConfig] = useState<MusicBoxConfig>(() => ({
     ...DEFAULT_MUSIC_BOX_CONFIG,
     notes: [...DEFAULT_MUSIC_BOX_CONFIG.notes],
@@ -259,7 +260,13 @@ function App() {
   const updateConfig = (patch: Partial<MusicBoxConfig>) => {
     setConfig((current) => {
       const next = { ...current, ...patch }
-      return validateMusicBoxConfig(next).length === 0 ? next : current
+      const issues = validateMusicBoxConfig(next)
+      if (issues.length > 0) {
+        setConfigError(true)
+        return current
+      }
+      setConfigError(false)
+      return next
     })
   }
 
@@ -302,6 +309,7 @@ function App() {
               <option value="20">20</option><option value="25">25</option><option value="30">30</option>
             </select>
           </label>
+          {configError && <p className="builder-error" role="alert">{t.invalidConfig}</p>}
           <p>{t.crankHint}</p>
         </aside>
 
