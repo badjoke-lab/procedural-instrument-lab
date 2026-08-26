@@ -17,6 +17,7 @@ label { font-size: 12px; color: #bbb; display: flex; gap: 8px; align-items: cent
 .builder-panel output { color: #eee; font-variant-numeric: tabular-nums; }
 .builder-panel select { min-width: 72px; }
 .builder-panel p { color: #8f8f96; font-size: 12px; line-height: 1.45; margin: 20px 0 0; }
+.builder-panel .builder-error { color: #f0b2a8; margin-top: 4px; }
 .scene { min-width: 0; min-height: 0; }
 footer { padding: 8px 16px; border-top: 1px solid #242426; background: #111114; }
 canvas { width: 100% !important; height: 100% !important; touch-action: none; }
