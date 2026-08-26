@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
-import { OrbitControls, RoundedBox } from '@react-three/drei'
+import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import './styles.css'
 import { messages } from './i18n/messages'
@@ -30,7 +30,7 @@ function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.13
   return (
     <group>
-      <mesh>
+      <mesh castShadow>
         <cylinderGeometry args={[radius, radius, 0.18, Math.max(24, teeth * 2)]} />
         <meshStandardMaterial color="#c9a45d" metalness={0.78} roughness={0.28} />
       </mesh>
@@ -38,7 +38,7 @@ function Gear({ radius, teeth }: { radius: number; teeth: number }) {
         const angle = (index / teeth) * Math.PI * 2
         const r = radius + toothDepth / 2
         return (
-          <mesh key={index} position={[Math.cos(angle) * r, Math.sin(angle) * r, 0]} rotation={[0, 0, angle]}>
+          <mesh castShadow key={index} position={[Math.cos(angle) * r, Math.sin(angle) * r, 0]} rotation={[0, 0, angle]}>
             <boxGeometry args={[toothDepth, radius * 0.11, 0.2]} />
             <meshStandardMaterial color="#c9a45d" metalness={0.78} roughness={0.28} />
           </mesh>
@@ -135,32 +135,32 @@ function Mechanism({
 
   return (
     <group>
-      <RoundedBox args={[7.6, 0.7, 4.8]} radius={0.12} smoothness={4} position={[0, -1.65, 0]}>
-        <meshStandardMaterial color="#5c311e" roughness={0.65} />
+      <RoundedBox args={[7.6, 0.7, 4.8]} radius={0.12} smoothness={4} position={[0, -1.65, 0]} receiveShadow>
+        <meshStandardMaterial color="#5a301d" roughness={0.72} />
       </RoundedBox>
 
       <group ref={cylinder} position={config.cylinderCenter}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[config.cylinderRadius, config.cylinderRadius, config.cylinderLength, 64]} />
-          <meshStandardMaterial color="#9a7b4f" metalness={0.35} roughness={0.42} />
+          <meshStandardMaterial color="#a18559" metalness={0.38} roughness={0.36} />
         </mesh>
         {pins.map((pin, index) => {
           const radius = config.cylinderRadius + config.pinLength / 2
           const x = Math.cos(pin.angle) * radius
           const y = Math.sin(pin.angle) * radius
           return (
-            <mesh key={index} position={[x, y, pin.axialPosition]} rotation={[0, 0, pin.angle - Math.PI / 2]}>
+            <mesh castShadow key={index} position={[x, y, pin.axialPosition]} rotation={[0, 0, pin.angle - Math.PI / 2]}>
               <cylinderGeometry args={[config.pinRadius, config.pinRadius, config.pinLength, 12]} />
-              <meshStandardMaterial color="#d4c4a0" metalness={0.8} roughness={0.25} />
+              <meshStandardMaterial color="#d8c9a5" metalness={0.82} roughness={0.2} />
             </mesh>
           )
         })}
       </group>
 
       <group>
-        <mesh position={[1.72, 0, 0]}>
+        <mesh castShadow position={[1.72, 0, 0]}>
           <boxGeometry args={[0.28, 0.28, Math.max(3.35, config.cylinderLength + 0.15)]} />
-          <meshStandardMaterial color="#b9aa8a" metalness={0.55} roughness={0.32} />
+          <meshStandardMaterial color="#b9aa8a" metalness={0.58} roughness={0.28} />
         </mesh>
         {config.notes.map((note, index) => {
           const contact = tineContactPoint(index, config)
@@ -169,13 +169,13 @@ function Mechanism({
           const centerX = contact.x + length / 2
           return (
             <group key={note}>
-              <mesh ref={(mesh) => { tineRefs.current[index] = mesh }} position={[centerX, 0, contact.z]}>
+              <mesh castShadow ref={(mesh) => { tineRefs.current[index] = mesh }} position={[centerX, 0, contact.z]}>
                 <boxGeometry args={[length, 0.075, 0.18]} />
-                <meshStandardMaterial color="#d8d2c5" metalness={0.9} roughness={0.18} />
+                <meshStandardMaterial color="#ddd8cd" metalness={0.9} roughness={0.16} />
               </mesh>
               <mesh position={[contact.x, contact.y, contact.z]}>
                 <sphereGeometry args={[config.contactTolerance * 0.32, 12, 12]} />
-                <meshStandardMaterial color="#f0d58a" metalness={0.35} roughness={0.3} />
+                <meshStandardMaterial color="#f0d58a" emissive="#5b4312" emissiveIntensity={0.25} metalness={0.35} roughness={0.3} />
               </mesh>
             </group>
           )
@@ -190,15 +190,16 @@ function Mechanism({
       </group>
 
       <group ref={crank} position={driverCenter}>
-        <mesh position={[0, 0, 0.48]}>
+        <mesh castShadow position={[0, 0, 0.48]}>
           <cylinderGeometry args={[0.07, 0.07, 0.96, 20]} />
-          <meshStandardMaterial color="#9e9e9e" metalness={0.9} roughness={0.22} />
+          <meshStandardMaterial color="#a8a8a8" metalness={0.9} roughness={0.2} />
         </mesh>
-        <mesh position={[0.55, 0, 0.95]}>
+        <mesh castShadow position={[0.55, 0, 0.95]}>
           <boxGeometry args={[1.1, 0.16, 0.16]} />
-          <meshStandardMaterial color="#9e9e9e" metalness={0.9} roughness={0.22} />
+          <meshStandardMaterial color="#a8a8a8" metalness={0.9} roughness={0.2} />
         </mesh>
         <mesh
+          castShadow
           position={[1.08, 0, 1.18]}
           rotation={[Math.PI / 2, 0, 0]}
           onPointerDown={beginManualCrank}
@@ -209,7 +210,7 @@ function Mechanism({
           onPointerOut={() => { if (lastPointerX.current === null) document.body.style.cursor = '' }}
         >
           <cylinderGeometry args={[0.15, 0.15, 0.52, 20]} />
-          <meshStandardMaterial color="#3c2417" roughness={0.7} />
+          <meshStandardMaterial color="#4b2c1b" roughness={0.68} />
         </mesh>
       </group>
     </group>
@@ -246,49 +247,51 @@ function App() {
       <header>
         <div><strong>PIL</strong><span>{t.appSubtitle}</span></div>
         <div className="controls">
-          <button onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
-          <label>
+          <button aria-pressed={running} onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
+          <label htmlFor="speed-control">
             {t.speed}
-            <input type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
+            <input id="speed-control" type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
           </label>
           <button onClick={() => setCameraKey((value) => value + 1)}>{t.resetView}</button>
         </div>
       </header>
 
       <section className="workspace">
-        <aside className="builder-panel">
+        <aside className="builder-panel" aria-label={t.builder}>
           <strong>{t.builder}</strong>
-          <label>
+          <label htmlFor="cylinder-length">
             {t.cylinderLength}
-            <input type="range" min="2.8" max="4.4" step="0.1" value={config.cylinderLength} onChange={(event) => updateConfig({ cylinderLength: Number(event.target.value) })} />
-            <output>{config.cylinderLength.toFixed(1)}</output>
+            <input id="cylinder-length" type="range" min="2.8" max="4.4" step="0.1" value={config.cylinderLength} onChange={(event) => updateConfig({ cylinderLength: Number(event.target.value) })} />
+            <output htmlFor="cylinder-length">{config.cylinderLength.toFixed(1)}</output>
           </label>
-          <label>
+          <label htmlFor="tine-spacing">
             {t.tineSpacing}
-            <input type="range" min="0.26" max="0.46" step="0.01" value={config.tineSpacing} onChange={(event) => updateConfig({ tineSpacing: Number(event.target.value) })} />
-            <output>{config.tineSpacing.toFixed(2)}</output>
+            <input id="tine-spacing" type="range" min="0.26" max="0.46" step="0.01" value={config.tineSpacing} onChange={(event) => updateConfig({ tineSpacing: Number(event.target.value) })} />
+            <output htmlFor="tine-spacing">{config.tineSpacing.toFixed(2)}</output>
           </label>
-          <label>
+          <label htmlFor="driver-teeth">
             {t.driverTeeth}
-            <select value={config.driverGearTeeth} onChange={(event) => updateConfig({ driverGearTeeth: Number(event.target.value) })}>
+            <select id="driver-teeth" value={config.driverGearTeeth} onChange={(event) => updateConfig({ driverGearTeeth: Number(event.target.value) })}>
               <option value="30">30</option><option value="40">40</option><option value="50">50</option>
             </select>
           </label>
-          <label>
+          <label htmlFor="cylinder-teeth">
             {t.cylinderTeeth}
-            <select value={config.cylinderGearTeeth} onChange={(event) => updateConfig({ cylinderGearTeeth: Number(event.target.value) })}>
+            <select id="cylinder-teeth" value={config.cylinderGearTeeth} onChange={(event) => updateConfig({ cylinderGearTeeth: Number(event.target.value) })}>
               <option value="20">20</option><option value="25">25</option><option value="30">30</option>
             </select>
           </label>
           {configError && <p className="builder-error" role="alert">{t.invalidConfig}</p>}
-          <p>{t.crankHint}</p>
+          <p id="crank-hint">{t.crankHint}</p>
         </aside>
 
-        <div className="scene">
-          <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, 7.5], fov: 42 }} shadows>
+        <div className="scene" aria-describedby="crank-hint">
+          <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, 7.5], fov: 42 }} shadows dpr={[1, 1.75]}>
             <color attach="background" args={['#0c0c0d']} />
-            <ambientLight intensity={0.75} />
-            <directionalLight position={[5, 8, 5]} intensity={2.2} castShadow />
+            <ambientLight intensity={0.45} />
+            <hemisphereLight args={['#d8e0ef', '#2a1710', 0.8]} />
+            <directionalLight position={[5, 8, 5]} intensity={2.6} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+            <pointLight position={[-4, 2.5, -3]} intensity={18} distance={12} decay={2} />
             <Mechanism
               running={running}
               speed={speed}
@@ -296,6 +299,7 @@ function App() {
               onManualStart={() => { setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />
+            <ContactShadows position={[0, -1.98, 0]} opacity={0.28} scale={10} blur={2.5} far={4.5} />
             <gridHelper args={[18, 18, '#343434', '#1d1d1d']} position={[0, -2.02, 0]} />
             <OrbitControls makeDefault enabled={orbitEnabled} target={[0, -0.2, 0]} />
           </Canvas>
