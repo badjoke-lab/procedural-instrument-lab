@@ -17,11 +17,29 @@ This is not a music-box-themed player. The cylinder layout, contact events, tine
 - the same contact-entry event triggers audible output,
 - each tine visibly decays after being plucked,
 - one full revolution produces one contact entry per configured pin across materially different sampling rates,
-- camera orbit/zoom works,
+- crank, visible gears and cylinder are derived from one drive state,
+- the user can rotate the 3D crank directly with pointer/touch input,
+- manual crank movement uses the same drive/contact/audio path as automatic playback,
+- selected mechanical parameters can be changed through builder controls and regenerate the relevant geometry,
+- builder controls cannot bypass `MusicBoxConfig` validation,
+- camera orbit/zoom works and a reset view is available,
 - speed can be changed without separating animation from sound,
 - the default UI language is English,
 - user-facing UI strings are routed through a localization-ready message layer rather than duplicated as hard-coded component text,
 - repository verification runs typecheck, mechanism tests and production build.
+
+## Builder scope
+
+The initial builder exposes a bounded set of mechanically meaningful controls:
+
+- cylinder length,
+- tine spacing,
+- driver gear tooth count,
+- cylinder gear tooth count.
+
+These controls are not cosmetic presets. Each value must flow into the same instrument configuration used by geometry, drive kinematics and contact mapping. Invalid configurations must be rejected rather than rendered silently.
+
+Broad appearance customization is deferred until the mechanism and direct interaction are stable.
 
 ## Language scope
 
@@ -31,13 +49,10 @@ When Japanese is added, locale switching should use a compact control such as `E
 
 ## Next mechanism milestones
 
-1. Complete and verify explicit cylinder-pin / tine contact geometry. The implementation exists on the active vertical-slice branch; CI must be green before this milestone is considered complete.
-2. Add a visible gear train derived from a single crank/cylinder state.
-3. Expand from the demonstration note set to a configurable comb.
-4. Regenerate the cylinder when tune or mechanical dimensions change.
-5. Add direct crank interaction.
-6. Improve synthesis and mechanical noise only after causal mechanism correctness is stable.
-7. Add the Japanese message catalog and locale switch after the core interaction surface is stable enough that translation keys will not churn unnecessarily.
+1. Complete direct crank interaction and the bounded mechanical builder controls, then verify them in CI.
+2. Improve synthesis and restrained mechanical noise only after direct mechanical interaction is stable.
+3. Improve enclosure/material detail and mobile interaction without hiding the inspectable mechanism.
+4. Add the Japanese message catalog and locale switch after the core interaction surface is stable enough that translation keys will not churn unnecessarily.
 
 ## Scope rule
 
