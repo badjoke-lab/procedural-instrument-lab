@@ -8,6 +8,8 @@ import { messages } from './i18n/messages'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
+  cylinderGearRadius,
+  driveKinematics,
   pinTouchesTine,
   tineContactPoint,
   type NoteEvent,
@@ -53,24 +55,62 @@ class MusicBoxAudio {
 
 const audio = new MusicBoxAudio()
 
+function Gear({ radius, teeth }: { radius: number; teeth: number }) {
+  const toothDepth = radius * 0.13
+  return (
+    <group>
+      <mesh>
+        <cylinderGeometry args={[radius, radius, 0.18, Math.max(24, teeth * 2)]} />
+        <meshStandardMaterial color="#c9a45d" metalness={0.78} roughness={0.28} />
+      </mesh>
+      {Array.from({ length: teeth }, (_, index) => {
+        const angle = (index / teeth) * Math.PI * 2
+        const r = radius + toothDepth / 2
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angle) * r, Math.sin(angle) * r, 0]}
+            rotation={[0, 0, angle]}
+          >
+            <boxGeometry args={[toothDepth, radius * 0.11, 0.2]} />
+            <meshStandardMaterial color="#c9a45d" metalness={0.78} roughness={0.28} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
 function Mechanism({ running, speed }: { running: boolean; speed: number }) {
   const cylinder = useRef<THREE.Group>(null)
   const crank = useRef<THREE.Group>(null)
+  const driverGear = useRef<THREE.Group>(null)
+  const drivenGear = useRef<THREE.Group>(null)
   const tineRefs = useRef<(THREE.Mesh | null)[]>([])
-  const phase = useRef(0)
+  const driveAngle = useRef(0)
   const touching = useRef(new Set<number>())
   const vibrations = useRef(NOTES.map(() => 0))
   const pins = useMemo(() => compileTune(TUNE, CONFIG), [])
+  const drivenRadius = cylinderGearRadius(CONFIG)
+  const gearZ = -CONFIG.cylinderLength / 2 - 0.22
+  const drivenCenter: [number, number, number] = [CONFIG.cylinderCenter[0], CONFIG.cylinderCenter[1], gearZ]
+  const driverCenter: [number, number, number] = [
+    CONFIG.cylinderCenter[0] - CONFIG.driverGearRadius - drivenRadius,
+    CONFIG.cylinderCenter[1],
+    gearZ,
+  ]
 
   useFrame((_, dt) => {
-    if (running) phase.current = (phase.current + dt * speed) % (Math.PI * 2)
-    const currentPhase = phase.current
+    if (running) driveAngle.current += dt * speed
+    const drive = driveKinematics(driveAngle.current, CONFIG)
 
-    if (cylinder.current) cylinder.current.rotation.z = -currentPhase
-    if (crank.current) crank.current.rotation.z = -currentPhase * 2.5
+    if (crank.current) crank.current.rotation.z = drive.crankAngle
+    if (driverGear.current) driverGear.current.rotation.z = drive.driverGearAngle
+    if (drivenGear.current) drivenGear.current.rotation.z = drive.cylinderGearAngle
+    if (cylinder.current) cylinder.current.rotation.z = drive.cylinderPhase
 
     pins.forEach((pin, index) => {
-      const inContact = pinTouchesTine(pin, currentPhase, CONFIG)
+      const inContact = pinTouchesTine(pin, drive.cylinderPhase, CONFIG)
 
       if (inContact && !touching.current.has(index)) {
         touching.current.add(index)
@@ -145,17 +185,24 @@ function Mechanism({ running, speed }: { running: boolean; speed: number }) {
         })}
       </group>
 
-      <group ref={crank} position={[-2.45, 0, 0]}>
-        <mesh>
-          <cylinderGeometry args={[0.08, 0.08, 1.7, 20]} />
+      <group ref={drivenGear} position={drivenCenter} rotation={[Math.PI / 2, 0, 0]}>
+        <Gear radius={drivenRadius} teeth={CONFIG.cylinderGearTeeth} />
+      </group>
+      <group ref={driverGear} position={driverCenter} rotation={[Math.PI / 2, 0, 0]}>
+        <Gear radius={CONFIG.driverGearRadius} teeth={CONFIG.driverGearTeeth} />
+      </group>
+
+      <group ref={crank} position={driverCenter}>
+        <mesh position={[0, 0, 0.48]}>
+          <cylinderGeometry args={[0.07, 0.07, 0.96, 20]} />
           <meshStandardMaterial color="#9e9e9e" metalness={0.9} roughness={0.22} />
         </mesh>
-        <mesh position={[0.8, 0, 0]}>
-          <boxGeometry args={[1.6, 0.18, 0.18]} />
+        <mesh position={[0.55, 0, 0.95]}>
+          <boxGeometry args={[1.1, 0.16, 0.16]} />
           <meshStandardMaterial color="#9e9e9e" metalness={0.9} roughness={0.22} />
         </mesh>
-        <mesh position={[1.58, 0, 0.28]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.12, 0.12, 0.5, 20]} />
+        <mesh position={[1.08, 0, 1.18]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.48, 20]} />
           <meshStandardMaterial color="#3c2417" roughness={0.7} />
         </mesh>
       </group>
