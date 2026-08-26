@@ -11,6 +11,7 @@ export const messages = {
     driverTeeth: 'Driver teeth',
     cylinderTeeth: 'Cylinder teeth',
     crankHint: 'Drag the crank handle to rotate the mechanism.',
+    invalidConfig: 'That configuration is not physically valid for the current parts.',
     footer: 'The crank, gears, cylinder, pin contact, tine motion and sound share one mechanical state.',
   },
 } as const
