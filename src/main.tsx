@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
+import { t } from './i18n/messages'
 import './styles.css'
 
 type NoteEvent = { note: number; start: number }
@@ -37,22 +38,22 @@ class MusicBoxAudio {
     if (!this.ctx) this.ctx = new AudioContext()
     if (this.ctx.state === 'suspended') await this.ctx.resume()
 
-    const t = this.ctx.currentTime
-    const osc = this.ctx.createOscillator()
+    const time = this.ctx.currentTime
+    const oscillator = this.ctx.createOscillator()
     const gain = this.ctx.createGain()
     const filter = this.ctx.createBiquadFilter()
 
-    osc.type = 'sine'
-    osc.frequency.value = midiToHz(note)
+    oscillator.type = 'sine'
+    oscillator.frequency.value = midiToHz(note)
     filter.type = 'highpass'
     filter.frequency.value = 180
-    gain.gain.setValueAtTime(0.0001, t)
-    gain.gain.exponentialRampToValueAtTime(0.18, t + 0.005)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.5)
+    gain.gain.setValueAtTime(0.0001, time)
+    gain.gain.exponentialRampToValueAtTime(0.18, time + 0.005)
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 1.5)
 
-    osc.connect(filter).connect(gain).connect(this.ctx.destination)
-    osc.start(t)
-    osc.stop(t + 1.6)
+    oscillator.connect(filter).connect(gain).connect(this.ctx.destination)
+    oscillator.start(time)
+    oscillator.stop(time + 1.6)
   }
 }
 
@@ -67,8 +68,8 @@ function Mechanism({ running, speed }: { running: boolean; speed: number }) {
   const vibrations = useRef(NOTES.map(() => 0))
   const pins = useMemo(() => tuneToPins(TUNE), [])
 
-  useFrame((_, dt) => {
-    if (running) phase.current = (phase.current + dt * speed) % (Math.PI * 2)
+  useFrame((_, deltaTime) => {
+    if (running) phase.current = (phase.current + deltaTime * speed) % (Math.PI * 2)
     const currentPhase = phase.current
 
     if (cylinder.current) cylinder.current.rotation.x = currentPhase
@@ -88,7 +89,7 @@ function Mechanism({ running, speed }: { running: boolean; speed: number }) {
     })
 
     vibrations.current = vibrations.current.map((value, index) => {
-      const next = Math.max(0, value - dt * 2.3)
+      const next = Math.max(0, value - deltaTime * 2.3)
       const mesh = tineRefs.current[index]
       if (mesh) mesh.rotation.z = Math.sin((1 - next) * 55) * next * 0.09
       return next
@@ -170,11 +171,11 @@ function App() {
   return (
     <main>
       <header>
-        <div><strong>PIL</strong><span>music box / first vertical slice</span></div>
+        <div><strong>PIL</strong><span>{t('appSubtitle')}</span></div>
         <div className="controls">
-          <button onClick={() => setRunning((value) => !value)}>{running ? 'Stop' : 'Play'}</button>
+          <button onClick={() => setRunning((value) => !value)}>{running ? t('stop') : t('play')}</button>
           <label>
-            Speed
+            {t('speed')}
             <input
               type="range"
               min="0.25"
@@ -196,9 +197,7 @@ function App() {
         <OrbitControls makeDefault target={[0, -0.2, 0]} />
       </Canvas>
 
-      <footer>
-        Tune data generates cylinder pins. Pin contact plucks the matching tine and triggers the same note event.
-      </footer>
+      <footer>{t('footer')}</footer>
     </main>
   )
 }
