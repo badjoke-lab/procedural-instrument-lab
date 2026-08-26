@@ -41,6 +41,17 @@ These controls are not cosmetic presets. Each value must flow into the same inst
 
 Broad appearance customization is deferred until the mechanism and direct interaction are stable.
 
+## Audio quality scope
+
+Phase 5 may improve timbre, but it must not change the source of playback timing.
+
+- every audible tine sound remains triggered by the same mechanical contact-entry event used for visible tine vibration,
+- restrained mechanical click/noise may be emitted by that same pluck event,
+- no independent audio sequencer, look-ahead note scheduler or decorative timer may decide when notes occur,
+- v1 synthesis may use a compact procedural model rather than sampled recordings,
+- the initial quality model uses a fundamental plus quieter upper partials with shorter decays and a short filtered contact transient,
+- music-box-specific synthesis remains under `src/instruments/music-box/` until another instrument proves a shared audio abstraction is useful.
+
 ## Language scope
 
 English is the required v1 UI locale. Japanese is planned as the first additional locale, but Japanese translation is not a mechanical-v1 completion blocker.
@@ -49,9 +60,9 @@ When Japanese is added, locale switching should use a compact control such as `E
 
 ## Next mechanism milestones
 
-1. Complete direct crank interaction and the bounded mechanical builder controls, then verify them in CI.
-2. Improve synthesis and restrained mechanical noise only after direct mechanical interaction is stable.
-3. Improve enclosure/material detail and mobile interaction without hiding the inspectable mechanism.
+1. Verify the improved procedural tine synthesis and restrained contact noise without changing mechanical event timing.
+2. Improve enclosure/material detail and mobile interaction without hiding the inspectable mechanism.
+3. Verify direct-crank gesture ergonomics on real browser/device and tune interaction if necessary.
 4. Add the Japanese message catalog and locale switch after the core interaction surface is stable enough that translation keys will not churn unnecessarily.
 
 ## Scope rule
