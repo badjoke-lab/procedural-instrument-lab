@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Canvas, OrbitControls as OrbitControlsImpl, type ThreeEvent, useFrame } from '@react-three/fiber'
+import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import './styles.css'
