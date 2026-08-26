@@ -9,6 +9,9 @@ export type MusicBoxConfig = {
   pinRadius: number
   tineSpacing: number
   contactTolerance: number
+  driverGearTeeth: number
+  cylinderGearTeeth: number
+  driverGearRadius: number
 }
 
 export type Pin = {
@@ -19,6 +22,14 @@ export type Pin = {
 
 export type Point3 = { x: number; y: number; z: number }
 
+export type DriveKinematics = {
+  crankAngle: number
+  driverGearAngle: number
+  cylinderGearAngle: number
+  cylinderPhase: number
+  ratio: number
+}
+
 export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   notes: [60, 62, 64, 65, 67, 69, 71, 72],
   cylinderCenter: [-0.7, 0, 0],
@@ -28,6 +39,29 @@ export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   pinRadius: 0.045,
   tineSpacing: 0.34,
   contactTolerance: 0.065,
+  driverGearTeeth: 40,
+  cylinderGearTeeth: 20,
+  driverGearRadius: 0.62,
+}
+
+export function gearRatio(config: MusicBoxConfig) {
+  return config.driverGearTeeth / config.cylinderGearTeeth
+}
+
+export function cylinderGearRadius(config: MusicBoxConfig) {
+  return config.driverGearRadius / gearRatio(config)
+}
+
+export function driveKinematics(crankAngle: number, config: MusicBoxConfig): DriveKinematics {
+  const ratio = gearRatio(config)
+  const cylinderGearAngle = -crankAngle * ratio
+  return {
+    crankAngle,
+    driverGearAngle: crankAngle,
+    cylinderGearAngle,
+    cylinderPhase: cylinderGearAngle,
+    ratio,
+  }
 }
 
 export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] {
