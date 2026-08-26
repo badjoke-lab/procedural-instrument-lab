@@ -105,7 +105,7 @@ Implemented in the current presentation-quality branch:
 
 Remaining work:
 
-- pass repository typecheck, all tests and production build for the presentation-quality branch,
+- pass repository typecheck, all tests and production build for the presentation-quality branch; GitHub Actions must be green before merge,
 - verify and tune crank/Orbit gesture ergonomics on real browser/device,
 - perform final visual inspection at desktop and mobile widths,
 - fix any device-specific interaction or readability defects found by that inspection.
