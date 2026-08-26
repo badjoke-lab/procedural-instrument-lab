@@ -6,6 +6,9 @@ header div:first-child { display: flex; align-items: baseline; gap: 10px; }
 header strong { font-size: 18px; letter-spacing: .12em; }
 header span, footer { color: #aaaab2; font-size: 12px; }
 .controls { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.locale-switch { display: inline-flex; gap: 4px; }
+.locale-switch button { min-width: 44px; }
+.locale-switch button[aria-pressed="true"] { border-color: #d6bb72; background: #3a3324; }
 button, select { min-height: 40px; border: 1px solid #606068; background: #202024; color: #fff; padding: 8px 10px; border-radius: 8px; }
 button { cursor: pointer; }
 button:hover, select:hover { border-color: #85858e; background: #29292e; }
