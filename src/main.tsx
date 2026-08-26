@@ -1,10 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, type ThreeEvent, useFrame } from '@react-three/fiber'
 import { OrbitControls, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import './styles.css'
-import { messages } from './i18n/messages'
+import { defaultLocale, messages, type Locale } from './i18n/messages'
 import { MusicBoxAudio } from './instruments/music-box/audio'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
@@ -222,11 +222,16 @@ function App() {
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [cameraKey, setCameraKey] = useState(0)
   const [configError, setConfigError] = useState(false)
+  const [locale, setLocale] = useState<Locale>(defaultLocale)
   const [config, setConfig] = useState<MusicBoxConfig>(() => ({
     ...DEFAULT_MUSIC_BOX_CONFIG,
     notes: [...DEFAULT_MUSIC_BOX_CONFIG.notes],
   }))
-  const t = messages.en
+  const t = messages[locale]
+
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
 
   const updateConfig = (patch: Partial<MusicBoxConfig>) => {
     setConfig((current) => {
@@ -252,6 +257,10 @@ function App() {
             <input type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
           </label>
           <button onClick={() => setCameraKey((value) => value + 1)}>{t.resetView}</button>
+          <div className="locale-switch" role="group" aria-label={t.language}>
+            <button aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>EN</button>
+            <button aria-pressed={locale === 'ja'} onClick={() => setLocale('ja')}>JA</button>
+          </div>
         </div>
       </header>
 
