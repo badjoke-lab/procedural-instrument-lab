@@ -7,6 +7,8 @@ import {
   pinTouchesTine,
   tineContactPoint,
   pinTipWorldPosition,
+  validateMusicBoxConfig,
+  type MusicBoxConfig,
   type NoteEvent,
 } from './mechanism'
 
@@ -77,5 +79,22 @@ describe('music box drive train', () => {
     expect(state.driverGearAngle).toBeCloseTo(Math.PI / 3, 10)
     expect(state.cylinderGearAngle).toBeCloseTo(-2 * Math.PI / 3, 10)
     expect(state.cylinderPhase).toBe(state.cylinderGearAngle)
+  })
+})
+
+describe('music box configuration', () => {
+  it('rebuilds axial pin mapping when tine spacing changes', () => {
+    const wider: MusicBoxConfig = { ...config, tineSpacing: 0.4, cylinderLength: 3.5 }
+    const normalPins = compileTune(tune, config)
+    const widerPins = compileTune(tune, wider)
+
+    expect(widerPins[0].axialPosition).not.toBe(normalPins[0].axialPosition)
+    expect(widerPins.at(-1)?.axialPosition).not.toBe(normalPins.at(-1)?.axialPosition)
+  })
+
+  it('reports note lanes that do not fit the cylinder', () => {
+    const invalid: MusicBoxConfig = { ...config, cylinderLength: 1 }
+    expect(validateMusicBoxConfig(invalid)).toContain('note lanes do not fit within cylinderLength')
+    expect(() => compileTune(tune, invalid)).toThrow(/Invalid music box configuration/)
   })
 })
