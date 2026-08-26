@@ -23,10 +23,11 @@ const tune: NoteEvent[] = [
 function countContacts(framesPerRevolution: number) {
   const pins = compileTune(tune, config)
   const touching = new Set<number>()
+  const startPhase = 0.2
   let count = 0
 
   for (let frame = 0; frame < framesPerRevolution; frame += 1) {
-    const phase = (frame / framesPerRevolution) * Math.PI * 2
+    const phase = startPhase + (frame / framesPerRevolution) * Math.PI * 2
 
     pins.forEach((pin, index) => {
       const contact = pinTouchesTine(pin, phase, config)
