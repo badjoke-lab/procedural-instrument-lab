@@ -44,6 +44,37 @@ export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   driverGearRadius: 0.62,
 }
 
+export function validateMusicBoxConfig(config: MusicBoxConfig): string[] {
+  const issues: string[] = []
+  const uniqueNotes = new Set(config.notes)
+
+  if (config.notes.length === 0) issues.push('notes must contain at least one pitch')
+  if (uniqueNotes.size !== config.notes.length) issues.push('notes must be unique')
+  if (config.cylinderRadius <= 0) issues.push('cylinderRadius must be positive')
+  if (config.cylinderLength <= 0) issues.push('cylinderLength must be positive')
+  if (config.pinLength <= 0 || config.pinRadius <= 0) issues.push('pin dimensions must be positive')
+  if (config.tineSpacing <= 0) issues.push('tineSpacing must be positive')
+  if (config.contactTolerance <= 0) issues.push('contactTolerance must be positive')
+  if (config.driverGearTeeth <= 0 || config.cylinderGearTeeth <= 0) issues.push('gear tooth counts must be positive')
+  if (config.driverGearRadius <= 0) issues.push('driverGearRadius must be positive')
+
+  const requiredAxialSpan = Math.max(0, config.notes.length - 1) * config.tineSpacing + config.pinRadius * 2
+  if (requiredAxialSpan > config.cylinderLength) {
+    issues.push('note lanes do not fit within cylinderLength')
+  }
+
+  if (config.tineSpacing < config.pinRadius * 2.5) {
+    issues.push('tineSpacing is too small for the configured pinRadius')
+  }
+
+  return issues
+}
+
+export function assertMusicBoxConfig(config: MusicBoxConfig) {
+  const issues = validateMusicBoxConfig(config)
+  if (issues.length > 0) throw new Error(`Invalid music box configuration: ${issues.join('; ')}`)
+}
+
 export function gearRatio(config: MusicBoxConfig) {
   return config.driverGearTeeth / config.cylinderGearTeeth
 }
@@ -53,6 +84,7 @@ export function cylinderGearRadius(config: MusicBoxConfig) {
 }
 
 export function driveKinematics(crankAngle: number, config: MusicBoxConfig): DriveKinematics {
+  assertMusicBoxConfig(config)
   const ratio = gearRatio(config)
   const cylinderGearAngle = -crankAngle * ratio
   return {
@@ -65,6 +97,8 @@ export function driveKinematics(crankAngle: number, config: MusicBoxConfig): Dri
 }
 
 export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] {
+  assertMusicBoxConfig(config)
+
   return events
     .map((event) => {
       const noteIndex = config.notes.indexOf(event.note)
