@@ -83,21 +83,7 @@ Implementation note: automated verification confirms the code and mechanical pat
 
 Status: in progress
 
-Implemented in the current audio-quality branch:
-
-- music-box-specific Web Audio synthesis is isolated in `src/instruments/music-box/audio.ts` rather than prematurely promoted to a shared audio engine,
-- each mechanical pluck event excites a fundamental plus restrained inharmonic upper partials with different decay times,
-- the same pluck event also emits a short filtered mechanical contact click,
-- audio remains downstream of the mechanical contact event; no independent sequencer or timer decides note timing,
-- pure audio-model tests verify concert-A tuning and the intended partial/decay structure.
-
-Remaining work:
-
-- pass repository typecheck, audio/mechanism tests and production build for the new audio model,
-- improve materials, lighting and enclosure detail,
-- verify and tune crank/Orbit gesture ergonomics on browser/device,
-- improve performance and accessibility,
-- stabilize mobile interaction.
+Implemented audio-quality work is already on main. Presentation-quality work remains in PR #5 pending repository CI and real-browser/device inspection.
 
 Completion gate:
 
@@ -106,14 +92,23 @@ Completion gate:
 
 ## Phase 6 — Localization
 
+Status: in progress (infrastructure pulled forward while Phase 5 CI is blocked externally)
+
 English remains the default. Japanese is the first additional locale.
 
-Work:
+Implemented in the current localization branch:
 
-- stabilize message keys,
-- add `ja` catalog,
-- add compact `EN / JA` switch,
-- verify layout at both desktop and mobile widths.
+- English message keys remain canonical,
+- a complete Japanese `ja` catalog exists for the current UI surface,
+- a compact `EN / JA` switch changes the active catalog without changing mechanical state,
+- the document `lang` attribute follows the selected locale,
+- bilingual labels are not shown by default.
+
+Remaining work:
+
+- pass repository typecheck, all tests and production build,
+- verify both locales at desktop and mobile widths,
+- reconcile the localization branch with Phase 5 presentation changes before final merge if PR #5 lands first.
 
 This phase may be pulled earlier for infrastructure work, but translation churn must not block the mechanical milestones.
 
