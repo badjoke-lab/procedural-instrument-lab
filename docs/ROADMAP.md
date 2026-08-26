@@ -83,21 +83,32 @@ Implementation note: automated verification confirms the code and mechanical pat
 
 Status: in progress
 
-Implemented in the current audio-quality branch:
+Completed audio-quality lane:
 
-- music-box-specific Web Audio synthesis is isolated in `src/instruments/music-box/audio.ts` rather than prematurely promoted to a shared audio engine,
+- music-box-specific Web Audio synthesis is isolated in `src/instruments/music-box/audio.ts`,
 - each mechanical pluck event excites a fundamental plus restrained inharmonic upper partials with different decay times,
-- the same pluck event also emits a short filtered mechanical contact click,
-- audio remains downstream of the mechanical contact event; no independent sequencer or timer decides note timing,
-- pure audio-model tests verify concert-A tuning and the intended partial/decay structure.
+- the same pluck event emits a short filtered mechanical contact click,
+- audio remains downstream of the mechanical contact event,
+- pure audio-model tests verify tuning and partial/decay structure,
+- repository typecheck, audio/mechanism tests and production build are green.
+
+Implemented in the current presentation-quality branch:
+
+- stronger scene depth through key/fill lighting and restrained contact shadows,
+- materials are adjusted so wood, cylinder, pins, gears and tines remain visually distinct,
+- contact markers remain visible without hiding the mechanism,
+- DOM controls have visible keyboard focus states and explicit label/control relationships,
+- Play exposes pressed state to assistive technology,
+- primary touch controls use larger targets,
+- builder layout collapses to one column at narrow mobile widths,
+- rendering DPR is bounded to reduce unnecessary high-density mobile GPU load.
 
 Remaining work:
 
-- pass repository typecheck, audio/mechanism tests and production build for the new audio model,
-- improve materials, lighting and enclosure detail,
-- verify and tune crank/Orbit gesture ergonomics on browser/device,
-- improve performance and accessibility,
-- stabilize mobile interaction.
+- pass repository typecheck, all tests and production build for the presentation-quality branch,
+- verify and tune crank/Orbit gesture ergonomics on real browser/device,
+- perform final visual inspection at desktop and mobile widths,
+- fix any device-specific interaction or readability defects found by that inspection.
 
 Completion gate:
 
