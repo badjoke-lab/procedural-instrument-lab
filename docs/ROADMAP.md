@@ -59,17 +59,30 @@ Completed behavior:
 
 ## Phase 4 — Direct manipulation and builder controls
 
-Status: not started
+Status: in progress
 
 Goal: let the user operate and inspect the generated instrument directly rather than only pressing Play.
 
-Work:
+Implemented on the active Phase 4 branch:
 
-- allow direct crank manipulation with pointer/touch where practical,
-- expose selected mechanical parameters,
-- separate mechanical parameters from cosmetic parameters,
-- provide camera reset and useful inspection views,
-- keep all user-facing strings in the localization message layer.
+- the 3D crank handle accepts pointer/touch drag input,
+- manual crank movement changes the same authoritative crank angle used by autoplay,
+- manual interaction stops autoplay while dragging,
+- orbit camera input is disabled during crank dragging to avoid gesture conflict,
+- cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical builder controls,
+- builder changes flow through the existing `MusicBoxConfig` validation path,
+- changing gear tooth counts regenerates visible gear geometry and the mechanical ratio,
+- changing cylinder length/tine spacing regenerates the relevant instrument geometry,
+- a camera reset control restores the initial inspection view,
+- new user-facing controls are routed through the English message catalog,
+- mobile layout keeps the 3D scene primary and moves builder controls below it.
+
+Remaining before completion:
+
+- pass repository typecheck/tests/production build in CI,
+- fix any direct-pointer type/runtime integration defects exposed by verification,
+- confirm builder controls cannot bypass configuration validation,
+- confirm manual crank motion still drives contact/audio through cylinder phase.
 
 Completion gate:
 
