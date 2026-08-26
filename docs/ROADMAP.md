@@ -37,26 +37,19 @@ Completed behavior:
 - pure mechanism tests sample a full revolution at multiple rates and verify one entry per pin,
 - repository verification typechecks, runs mechanism tests and produces a production build in GitHub Actions.
 
-Completion gate:
-
-- no time-only or decorative animation is required to decide when the note sounds,
-- one full cylinder revolution produces deterministic contact behavior,
-- repeated sampling rates do not materially change the sequence of contact events.
-
 ## Phase 2 — Drive train
 
-Status: in progress
+Status: complete
 
-Goal: make crank, visible gears and cylinder share one authoritative drive state.
+Completed behavior:
 
-Work:
-
-- add crank shaft,
-- add at least one visible gear stage,
-- define gear ratio as a mechanical parameter,
-- derive gear and cylinder rotation from one authoritative drive state,
-- keep audio/contact timing derived from cylinder state,
-- verify ratio math independently of rendering.
+- crank angle is the single authoritative drive input,
+- a visible 40-tooth driver gear drives a visible 20-tooth cylinder gear,
+- the 2:1 ratio is derived from tooth counts rather than duplicated animation constants,
+- crank, both gears and cylinder angles are returned by one deterministic kinematics function,
+- contact timing uses the resulting cylinder phase,
+- ratio/angle relationships are covered by mechanism tests,
+- GitHub Actions verification is green with the drive train present.
 
 Completion gate:
 
@@ -66,18 +59,24 @@ Completion gate:
 
 ## Phase 3 — Configurable comb and tune cylinder
 
+Status: in progress
+
+Goal: make the current music box a parameterized instrument rather than one hard-coded geometry snapshot.
+
 Work:
 
-- move note set/tine count into instrument configuration,
-- map pitch to tine geometry,
+- keep note set/tine count in instrument configuration,
+- map pitch index to tine geometry,
 - compile tune events into pins,
 - regenerate pins when tune or cylinder dimensions change,
-- validate collisions/spacing for unsupported configurations.
+- validate unsupported cylinder/tine/pin spacing configurations,
+- keep configuration changes deterministic and testable without requiring UI controls yet.
 
 Completion gate:
 
 - a short multi-note tune plays through one cylinder revolution,
-- changing a mechanically meaningful parameter rebuilds the relevant geometry and mapping.
+- changing a mechanically meaningful parameter rebuilds the relevant geometry and mapping,
+- invalid spacing/range configurations are rejected or reported rather than silently overlapping geometry.
 
 ## Phase 4 — Direct manipulation and builder controls
 
