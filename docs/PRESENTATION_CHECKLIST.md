@@ -1,11 +1,27 @@
 # Presentation Quality Checklist
 
-Use this checklist before declaring Roadmap Phase 5 complete. It is a manual/runtime verification companion to automated typecheck, tests and production build.
+Use this checklist before declaring Roadmap Phase 5 complete. It combines automated real-browser checks with a smaller manual real-device verification gate.
 
-## Desktop browser
+## Automated browser gate
 
-- Load the current production build at a desktop viewport around 1280x800 or larger.
-- Confirm the full instrument, builder panel and primary controls are visible without overlap.
+`tests/runtime.spec.ts` runs in Chromium at both desktop and mobile-emulated viewports through Playwright.
+
+It must verify at minimum:
+
+- the WebGL canvas renders,
+- primary controls and the builder are visible,
+- Play/Stop state changes through the live application,
+- representative builder changes do not produce a validation error or runtime exception,
+- desktop layout keeps the builder beside the scene,
+- mobile layout keeps the scene above the builder,
+- neither English nor Japanese UI introduces horizontal page overflow,
+- `EN / JA` switching changes the visible UI and document `lang`,
+- browser console/page errors are absent during the covered flow.
+
+Successful runs retain browser evidence through the CI artifact `browser-runtime-evidence`.
+
+## Desktop browser manual checks
+
 - Orbit and zoom around the mechanism and confirm the cylinder, pins, gears, comb and contact markers remain readable.
 - Use Reset view and confirm the initial inspection angle is restored.
 - Start automatic playback and confirm crank, gears, cylinder, tine motion and audio remain causally synchronized.
@@ -16,16 +32,15 @@ Use this checklist before declaring Roadmap Phase 5 complete. It is a manual/run
 - Change each builder parameter and confirm the relevant geometry/ratio regenerates.
 - Try a configuration that validation rejects and confirm the previous valid mechanism remains visible with an understandable error.
 
-## Mobile / touch
+## Mobile / touch manual checks
 
-- Verify at approximately 390x844 and at one narrower viewport.
-- Confirm the 3D scene remains the primary viewport and the builder does not cover the mechanism.
-- Confirm controls remain reachable without horizontal scrolling.
+- Verify on at least one real touch device.
+- Confirm controls remain reachable and readable in portrait orientation.
 - Confirm primary buttons/selects have practical touch targets.
 - Drag the crank with touch and confirm the page/camera does not steal the gesture while dragging.
 - Release the crank and confirm normal camera interaction resumes.
-- Confirm the builder falls to one column at narrow width without clipped labels or values.
 - Confirm audio begins correctly after a user gesture in browsers that suspend Web Audio initially.
+- Confirm no obvious frame-rate collapse occurs during playback, orbiting or builder changes.
 
 ## Accessibility/readability
 
@@ -39,15 +54,15 @@ Use this checklist before declaring Roadmap Phase 5 complete. It is a manual/run
 
 - Confirm shadows and lighting improve mechanical depth without obscuring contact geometry.
 - Confirm wood, gears, cylinder, pins and tines are visually distinguishable.
-- Confirm no obvious frame-rate collapse occurs during playback, orbiting or builder changes on a typical mobile device.
 - Confirm high-density screens do not trigger obviously excessive render cost; Canvas DPR is intentionally bounded.
 
 ## Phase 5 gate
 
 Phase 5 may be marked complete only when:
 
-1. repository verification is green for the presentation branch,
-2. the desktop checks above pass,
-3. the mobile/touch checks above pass on at least one real touch device,
-4. any material defects found by those checks are fixed or explicitly documented as deferred outside v1,
-5. mechanical causality remains visible and inspectable after presentation polish.
+1. repository typecheck, unit tests and production build are green on main,
+2. the automated desktop/mobile Chromium runtime gate is green,
+3. the remaining manual desktop interaction checks pass,
+4. the mobile/touch checks pass on at least one real touch device,
+5. any material defects found by those checks are fixed or explicitly documented as deferred outside v1,
+6. mechanical causality remains visible and inspectable after presentation polish.
