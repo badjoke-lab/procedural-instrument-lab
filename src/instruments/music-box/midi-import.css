@@ -1,0 +1,12 @@
+.midi-import {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid #303036;
+  border-radius: 8px;
+  background: #141418;
+}
+.midi-import > div { min-width: 0; }
+.midi-import strong { display: block; font-size: 14px; }
+.midi-import span { display: block; margin-top: 4px; color: #9999a2; font-size: 12px; line-height: 1.45; }
+.midi-import button { margin-top: 10px; min-height: 36px; }
+.midi-import [role="status"] { margin: 8px 0 0; color: #d8d8df; font-size: 11px; line-height: 1.45; }
