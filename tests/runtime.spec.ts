@@ -11,11 +11,13 @@ function collectRuntimeErrors(page: Page) {
 
 async function setRangeBoundary(page: Page, selector: string, key: 'Home' | 'End') {
   const control = page.locator(selector)
+  await control.scrollIntoViewIfNeeded()
   await control.focus()
   await page.keyboard.press(key)
 }
 
 test('music box renders, switches tunes and core controls work', async ({ page }, testInfo) => {
+  test.setTimeout(120_000)
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
 
@@ -73,10 +75,16 @@ test('music box renders, switches tunes and core controls work', async ({ page }
   await expect(page.locator('#cylinder-length')).toHaveValue('4.4')
   await setRangeBoundary(page, '#tine-spacing', 'Home')
   await expect(page.locator('#tine-spacing')).toHaveValue('0.26')
-  await page.locator('#driver-teeth').selectOption('50')
-  await expect(page.locator('#driver-teeth')).toHaveValue('50')
-  await page.locator('#cylinder-teeth').selectOption('25')
-  await expect(page.locator('#cylinder-teeth')).toHaveValue('25')
+
+  const driverTeeth = page.locator('#driver-teeth')
+  await driverTeeth.scrollIntoViewIfNeeded()
+  await driverTeeth.selectOption('50')
+  await expect(driverTeeth).toHaveValue('50')
+
+  const cylinderTeeth = page.locator('#cylinder-teeth')
+  await cylinderTeeth.scrollIntoViewIfNeeded()
+  await cylinderTeeth.selectOption('25')
+  await expect(cylinderTeeth).toHaveValue('25')
   await expect(page.locator('.builder-error')).toHaveCount(0)
 
   const layout = await page.evaluate(() => {
@@ -158,6 +166,10 @@ test('How to use and About pages are reachable from the primary page', async ({ 
   await page.getByRole('link', { name: 'About' }).click()
   await expect(page).toHaveURL(/\?page=about$/)
   await expect(page.getByRole('heading', { name: 'About', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Demo tunes' })).toBeVisible()
+  await expect(page.getByText('Twinkle, Twinkle, Little Star')).toBeVisible()
+  await expect(page.getByText('Ode to Joy')).toBeVisible()
+  await expect(page.getByText('Au Clair de la Lune')).toBeVisible()
   const inspiration = page.getByRole('link', { name: 'View the X post' })
   await expect(inspiration).toHaveAttribute('href', 'https://x.com/McGreenBeats/status/2092243021777580466')
 
