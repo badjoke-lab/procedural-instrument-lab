@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { recordScreenKeyboardNote } from './screen-keyboard-model'
 import type { PianoRollDraft } from './piano-roll-model'
 
@@ -36,6 +36,11 @@ export function ScreenKeyboard({
   const [activePitches, setActivePitches] = useState<number[]>([])
   const sessionStartedAt = useRef<number | null>(null)
   const activePresses = useRef(new Map<number, { pitch: number; startedAt: number }>())
+  const latestDocument = useRef(document)
+
+  useEffect(() => {
+    latestDocument.current = document
+  }, [document])
 
   const toggleRecording = () => {
     if (recording) {
@@ -47,6 +52,7 @@ export function ScreenKeyboard({
     }
     sessionStartedAt.current = performance.now() / 1000
     activePresses.current.clear()
+    latestDocument.current = document
     setRecording(true)
   }
 
@@ -67,12 +73,14 @@ export function ScreenKeyboard({
 
     if (!recording || sessionStartedAt.current === null) return
     const endedAt = performance.now() / 1000
-    onChange(recordScreenKeyboardNote(document, {
+    const next = recordScreenKeyboardNote(latestDocument.current, {
       pitch: pressed.pitch,
       sessionStartedAtSeconds: sessionStartedAt.current,
       keyStartedAtSeconds: pressed.startedAt,
       keyEndedAtSeconds: endedAt,
-    }))
+    })
+    latestDocument.current = next
+    onChange(next)
   }
 
   return (
@@ -90,6 +98,7 @@ export function ScreenKeyboard({
             type="button"
             key={pitch}
             className="screen-key"
+            aria-label={label}
             aria-pressed={activePitches.includes(pitch)}
             onPointerDown={(event) => pressKey(pitch, event.pointerId, event.currentTarget)}
             onPointerUp={(event) => releaseKey(event.pointerId, event.currentTarget)}
