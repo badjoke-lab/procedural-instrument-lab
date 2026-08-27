@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import {
   addPianoRollNote,
   deletePianoRollNote,
@@ -35,6 +35,17 @@ export function PianoRollEditor({
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
+
+  useEffect(() => {
+    const revealFromHash = () => {
+      if (window.location.hash !== '#compose') return
+      const drawer = documentRef('compose')
+      if (drawer) drawer.open = true
+    }
+    revealFromHash()
+    window.addEventListener('hashchange', revealFromHash)
+    return () => window.removeEventListener('hashchange', revealFromHash)
+  }, [])
 
   const addNote = () => {
     const durationBeats = Math.min(0.5, document.lengthBeats)
@@ -116,4 +127,9 @@ export function PianoRollEditor({
       ) : <p className="piano-roll-empty">{copy.empty}</p>}
     </section>
   )
+}
+
+function documentRef(id: string): HTMLDetailsElement | null {
+  const element = window.document.getElementById(id)
+  return element instanceof HTMLDetailsElement ? element : null
 }
