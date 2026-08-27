@@ -18,17 +18,17 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ### Preset foundation
 
-1. **ROADMAP/spec synchronization** — keep repository documents aligned with this benchmark-first order. Completion means development no longer assumes that advanced customization or real-user volume must precede composition/import work. **In progress in PR #17.**
-2. **Music-box domain cleanup** — separate tune/cylinder/comb/drive responsibilities only as current features require. Completion means later composition/import can feed the existing mechanical compiler without replacing it.
-3. **TunePreset completion** — remove the hard-coded scale from the runtime and use stable preset data. Completion means multiple tunes use the same mechanism code. **Implemented in PR #17.**
-4. **Public-domain demo tunes** — ship 2-3 recognizable public-domain melodies using project-authored NoteEvent data only. Completion means the demo plays recognizable music without copied modern MIDI/audio. **Three presets implemented in PR #17.**
-5. **Tune selector** — localized Tune selection beside playback controls. Completion means users can select the melody directly. **Implemented in PR #17.**
-6. **Tune -> pin geometry** — compile the selected tune into visible cylinder pins. Completion means changing tunes changes the physical cylinder rather than an independent audio track. **Implemented in PR #17.**
-7. **Tune-switch runtime** — stop/reset stale engagement and vibration state when tunes change. Completion means switching tunes cannot leave detached mechanical/audio state. **Implemented in PR #17.**
-8. **Preset mechanical validation** — validate note range, normalized starts and compilation for every shipped preset. Completion means every selectable tune fits the current mechanism. **Implemented in PR #17.**
-9. **Preset browser gate** — protect selector, playback state, EN/JA, Customize and responsive behavior in desktop/mobile Chromium. Completion means tune functionality has automated runtime coverage. **In progress in PR #17.**
-10. **How to use / About / attribution** — explain Tune -> pin behavior and disclose demo-tune provenance/public-domain status. Completion means user guidance and rights provenance match the shipped presets.
-11. **Preset Pages publication** — merge and publish the tune-enabled build, then perform only the minimum real-device checks that automation cannot replace.
+1. **ROADMAP/spec synchronization** — keep repository documents aligned with this benchmark-first order. Completion means development no longer assumes that advanced customization or real-user volume must precede composition/import work. **Complete in PR #17.**
+2. **Music-box domain cleanup** — separate tune/cylinder/comb/drive responsibilities only as current features require. Completion means later composition/import can feed the existing mechanical compiler without replacing it. **Complete for the current TunePreset boundary in PR #17.**
+3. **TunePreset completion** — remove the hard-coded scale from the runtime and use stable preset data. Completion means multiple tunes use the same mechanism code. **Complete in PR #17.**
+4. **Public-domain demo tunes** — ship 2-3 recognizable public-domain melodies using project-authored NoteEvent data only. Completion means the demo plays recognizable music without copied modern MIDI/audio. **Three presets complete in PR #17.**
+5. **Tune selector** — localized Tune selection beside playback controls. Completion means users can select the melody directly. **Complete in PR #17.**
+6. **Tune -> pin geometry** — compile the selected tune into visible cylinder pins. Completion means changing tunes changes the physical cylinder rather than an independent audio track. **Complete in PR #17.**
+7. **Tune-switch runtime** — stop/reset stale engagement and vibration state when tunes change. Completion means switching tunes cannot leave detached mechanical/audio state. **Complete in PR #17.**
+8. **Preset mechanical validation** — validate note range, normalized starts and compilation for every shipped preset. Completion means every selectable tune fits the current mechanism. **Complete in PR #17.**
+9. **Preset browser gate** — protect selector, playback state, EN/JA, Customize and responsive behavior in desktop/mobile Chromium. Completion means tune functionality has automated runtime coverage. **Green in PR #17 run #80.**
+10. **How to use / About / attribution** — explain Tune -> pin behavior and disclose demo-tune provenance/public-domain status. Completion means user guidance and rights provenance match the shipped presets. **Complete in PR #17.**
+11. **Preset Pages publication** — merge and publish the tune-enabled build, then perform only the minimum real-device checks that automation cannot replace. **Pending PR #17 merge and Pages deployment.**
 
 ### Editable composition foundation
 
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-PR #17 is the active lane. Steps 3-8 are implemented; step 9 is being stabilized after a Playwright timeout; step 10 remains to finish before merge. After #17 is green, publish it under step 11 and proceed to TuneDocument rather than advanced customization.
+PR #17 has completed steps 1-10 on its current implementation: benchmark-first specification synchronization, TunePreset/domain extraction, three public-domain presets, selector, Tune -> pin regeneration, safe switching, preset validation, EN/JA/browser coverage and How to use/About rights provenance. Run #80 is green for typecheck, unit tests, production build and desktop/mobile Chromium runtime gates. Step 11 is the only remaining preset-foundation action: merge #17, verify main CI, and publish/verify GitHub Pages. After step 11, the next development lane is step 12 TuneDocument, not advanced customization.
 
 ## Mechanical causality gate
 
