@@ -94,7 +94,7 @@ test('invalid builder configuration keeps last valid mechanism and exposes an al
 
   await changeControl(page, '#tine-spacing', '0.46')
 
-  await expect(page.locator('#tine-spacing')).toHaveValue('0.34')
+  await expect(page.locator('label[for="tine-spacing"] output')).toHaveText('0.34')
   const alert = page.getByRole('alert')
   await expect(alert).toBeVisible()
   await expect(alert).toContainText('configuration')
