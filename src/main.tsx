@@ -25,6 +25,7 @@ const TUNE: NoteEvent[] = [
 ]
 
 const audio = new MusicBoxAudio()
+const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
 
 function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.13
@@ -217,6 +218,59 @@ function Mechanism({
   )
 }
 
+function LocaleSwitch({ locale, setLocale }: { locale: Locale; setLocale: (locale: Locale) => void }) {
+  const t = messages[locale]
+  return (
+    <div className="locale-switch" role="group" aria-label={t.language}>
+      <button aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>EN</button>
+      <button aria-pressed={locale === 'ja'} onClick={() => setLocale('ja')}>JA</button>
+    </div>
+  )
+}
+
+function InfoPage({ page, locale, setLocale }: { page: 'how-to-use' | 'about'; locale: Locale; setLocale: (locale: Locale) => void }) {
+  const t = messages[locale]
+  const homeHref = window.location.pathname
+
+  return (
+    <main className="info-shell">
+      <header className="info-header">
+        <div className="brand"><strong>{t.productName}</strong></div>
+        <LocaleSwitch locale={locale} setLocale={setLocale} />
+      </header>
+      <nav className="page-nav" aria-label="Page navigation">
+        <a href={homeHref}>{t.backToMusicBox}</a>
+        <a aria-current={page === 'how-to-use' ? 'page' : undefined} href="?page=how-to-use">{t.howToUse}</a>
+        <a aria-current={page === 'about' ? 'page' : undefined} href="?page=about">{t.about}</a>
+      </nav>
+      <article className="info-page">
+        {page === 'how-to-use' ? (
+          <>
+            <h1>{t.howToUse}</h1>
+            <p className="lede">{t.howToUseIntro}</p>
+            <section><h2>{t.howPlayTitle}</h2><p>{t.howPlayBody}</p></section>
+            <section><h2>{t.howViewTitle}</h2><p>{t.howViewBody}</p></section>
+            <section><h2>{t.howCrankTitle}</h2><p>{t.howCrankBody}</p></section>
+            <section><h2>{t.howCustomizeTitle}</h2><p>{t.howCustomizeBody}</p></section>
+            <section><h2>{t.howMechanismTitle}</h2><p>{t.howMechanismBody}</p></section>
+          </>
+        ) : (
+          <>
+            <h1>{t.about}</h1>
+            <p className="lede">{t.aboutIntro}</p>
+            <section><h2>{t.aboutCausalityTitle}</h2><p>{t.aboutCausalityBody}</p></section>
+            <section>
+              <h2>{t.inspirationTitle}</h2>
+              <p>{t.inspirationBody}</p>
+              <p><a href={inspirationUrl} target="_blank" rel="noreferrer">{t.inspirationLink}</a></p>
+            </section>
+          </>
+        )}
+      </article>
+    </main>
+  )
+}
+
 function App() {
   const [running, setRunning] = useState(false)
   const [speed, setSpeed] = useState(0.85)
@@ -229,6 +283,8 @@ function App() {
     notes: [...DEFAULT_MUSIC_BOX_CONFIG.notes],
   }))
   const t = messages[locale]
+  const pageParam = new URLSearchParams(window.location.search).get('page')
+  const page = pageParam === 'how-to-use' || pageParam === 'about' ? pageParam : null
 
   useEffect(() => {
     document.documentElement.lang = locale
@@ -247,10 +303,12 @@ function App() {
     })
   }
 
+  if (page) return <InfoPage page={page} locale={locale} setLocale={setLocale} />
+
   return (
-    <main>
+    <main className="app-shell">
       <header>
-        <div><strong>PIL</strong><span>{t.appSubtitle}</span></div>
+        <div className="brand"><strong>{t.productName}</strong><span>{t.productSummary}</span></div>
         <div className="controls">
           <button aria-pressed={running} onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
           <label htmlFor="speed-control">
@@ -258,16 +316,19 @@ function App() {
             <input id="speed-control" type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
           </label>
           <button onClick={() => setCameraKey((value) => value + 1)}>{t.resetView}</button>
-          <div className="locale-switch" role="group" aria-label={t.language}>
-            <button aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>EN</button>
-            <button aria-pressed={locale === 'ja'} onClick={() => setLocale('ja')}>JA</button>
-          </div>
+          <LocaleSwitch locale={locale} setLocale={setLocale} />
         </div>
       </header>
 
+      <nav className="page-nav primary-actions" aria-label="Page navigation">
+        <a className="primary-link" href="#customize">{t.customize}</a>
+        <a href="?page=how-to-use">{t.howToUse}</a>
+        <a href="?page=about">{t.about}</a>
+      </nav>
+
       <section className="workspace">
-        <aside className="builder-panel" aria-label={t.builder}>
-          <strong>{t.builder}</strong>
+        <aside id="customize" className="builder-panel" aria-label={t.customize}>
+          <div className="customize-heading"><strong>{t.customize}</strong><span>{t.customizeIntro}</span></div>
           <label htmlFor="cylinder-length">
             {t.cylinderLength}
             <input id="cylinder-length" type="range" min="2.8" max="4.4" step="0.1" value={config.cylinderLength} onChange={(event) => updateConfig({ cylinderLength: Number(event.target.value) })} />
@@ -291,10 +352,9 @@ function App() {
             </select>
           </label>
           {configError && <p className="builder-error" role="alert">{t.invalidConfig}</p>}
-          <p id="crank-hint">{t.crankHint}</p>
         </aside>
 
-        <div className="scene" aria-describedby="crank-hint">
+        <div className="scene" aria-describedby="scene-hint">
           <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, -7.5], fov: 42 }} shadows dpr={[1, 1.75]}>
             <color attach="background" args={['#0c0c0d']} />
             <ambientLight intensity={0.45} />
@@ -312,10 +372,9 @@ function App() {
             <gridHelper args={[18, 18, '#343434', '#1d1d1d']} position={[0, -2.02, 0]} />
             <OrbitControls makeDefault enabled={orbitEnabled} target={[0, -0.2, 0]} />
           </Canvas>
+          <div id="scene-hint" className="scene-hint">{t.crankHint}</div>
         </div>
       </section>
-
-      <footer>{t.footer}</footer>
     </main>
   )
 }
