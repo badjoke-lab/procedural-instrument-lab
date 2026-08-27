@@ -19,7 +19,8 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
 
-  await expect(page.locator('canvas')).toBeVisible()
+  const canvas = page.locator('canvas')
+  await expect(canvas).toBeVisible()
   await expect(page.getByText('Mechanical Music Box', { exact: true })).toBeVisible()
   await expect(page.getByText('Play and customize a music box.', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
@@ -43,9 +44,15 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await expect(page.locator('#speed-control')).toHaveValue('2')
   await expect(transport).toHaveText('Stop')
   await page.waitForTimeout(700)
+  await expect(canvas).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath('runtime-playing.png'), fullPage: true })
 
   await transport.click()
   await expect(transport).toHaveText('Play')
+
+  const reset = page.getByRole('button', { name: 'Reset view' })
+  await reset.click()
+  await expect(canvas).toBeVisible()
 
   await setRangeBoundary(page, '#cylinder-length', 'End')
   await expect(page.locator('#cylinder-length')).toHaveValue('4.4')
