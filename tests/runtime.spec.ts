@@ -9,12 +9,12 @@ function collectRuntimeErrors(page: Page) {
   return errors
 }
 
-async function changeSelect(page: Page, selector: string, value: string) {
+async function changeControl(page: Page, selector: string, value: string) {
   await page.evaluate(({ selector, value }) => {
-    const select = document.querySelector<HTMLSelectElement>(selector)
-    if (!select) throw new Error(`Missing select: ${selector}`)
-    select.value = value
-    select.dispatchEvent(new Event('change', { bubbles: true }))
+    const control = document.querySelector<HTMLInputElement | HTMLSelectElement>(selector)
+    if (!control) throw new Error(`Missing control: ${selector}`)
+    control.value = value
+    control.dispatchEvent(new Event('change', { bubbles: true }))
   }, { selector, value })
 }
 
@@ -36,14 +36,24 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await transport.click()
   await expect(transport).toHaveText('Stop')
   await expect(transport).toHaveAttribute('aria-pressed', 'true')
+
+  await changeControl(page, '#speed-control', '1.5')
+  await expect(page.locator('#speed-control')).toHaveValue('1.5')
+  await expect(transport).toHaveText('Stop')
+  await expect(transport).toHaveAttribute('aria-pressed', 'true')
   await page.waitForTimeout(700)
+
   await transport.click()
   await expect(transport).toHaveText('Play')
   await expect(transport).toHaveAttribute('aria-pressed', 'false')
 
-  await changeSelect(page, '#driver-teeth', '50')
+  await changeControl(page, '#cylinder-length', '3.8')
+  await expect(page.locator('#cylinder-length')).toHaveValue('3.8')
+  await changeControl(page, '#tine-spacing', '0.38')
+  await expect(page.locator('#tine-spacing')).toHaveValue('0.38')
+  await changeControl(page, '#driver-teeth', '50')
   await expect(page.locator('#driver-teeth')).toHaveValue('50')
-  await changeSelect(page, '#cylinder-teeth', '25')
+  await changeControl(page, '#cylinder-teeth', '25')
   await expect(page.locator('#cylinder-teeth')).toHaveValue('25')
   await expect(page.locator('.builder-error')).toHaveCount(0)
 
@@ -72,6 +82,40 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
 
   await page.screenshot({ path: testInfo.outputPath('runtime.png'), fullPage: true })
   expect(errors).toEqual([])
+})
+
+test('invalid builder configuration keeps last valid mechanism and exposes an alert', async ({ page }) => {
+  const errors = collectRuntimeErrors(page)
+  await page.goto('/')
+
+  await changeControl(page, '#cylinder-length', '2.8')
+  await expect(page.locator('#cylinder-length')).toHaveValue('2.8')
+  await expect(page.locator('.builder-error')).toHaveCount(0)
+
+  await changeControl(page, '#tine-spacing', '0.46')
+
+  await expect(page.locator('#tine-spacing')).toHaveValue('0.34')
+  const alert = page.getByRole('alert')
+  await expect(alert).toBeVisible()
+  await expect(alert).toContainText('configuration')
+  await expect(page.locator('canvas')).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test('builder controls retain label associations and keyboard focusability', async ({ page }) => {
+  await page.goto('/')
+
+  for (const id of ['speed-control', 'cylinder-length', 'tine-spacing', 'driver-teeth', 'cylinder-teeth']) {
+    await expect(page.locator(`label[for="${id}"]`)).toBeVisible()
+    await expect(page.locator(`#${id}`)).toBeVisible()
+  }
+
+  const controls = page.locator('button, input, select')
+  const count = await controls.count()
+  expect(count).toBeGreaterThan(0)
+
+  await page.keyboard.press('Tab')
+  await expect(page.locator(':focus')).toBeVisible()
 })
 
 test('EN JA switching updates document language and visible UI', async ({ page }, testInfo) => {
