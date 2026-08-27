@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import './midi-import.css'
 import { importMidi } from './midi-import'
 import type { TuneDocument } from './tune-document'
 
