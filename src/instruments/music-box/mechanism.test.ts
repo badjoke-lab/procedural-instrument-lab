@@ -4,6 +4,7 @@ import {
   compileTune,
   driveKinematics,
   gearRatio,
+  pinTineEngagement,
   pinTouchesTine,
   tineContactPoint,
   pinTipWorldPosition,
@@ -24,26 +25,26 @@ const tune: NoteEvent[] = [
   { note: 72, start: 0.875 },
 ]
 
-function countContacts(framesPerRevolution: number) {
+function countReleases(framesPerRevolution: number) {
   const pins = compileTune(tune, config)
-  const touching = new Set<number>()
+  const engaged = new Set<number>()
   const startPhase = 0.2
-  let count = 0
+  let releases = 0
 
   for (let frame = 0; frame < framesPerRevolution; frame += 1) {
     const phase = startPhase + (frame / framesPerRevolution) * Math.PI * 2
 
     pins.forEach((pin, index) => {
-      const contact = pinTouchesTine(pin, phase, config)
-      if (contact && !touching.has(index)) {
-        touching.add(index)
-        count += 1
+      const state = pinTineEngagement(pin, phase, config)
+      if (state.engaged) engaged.add(index)
+      if (!state.engaged && engaged.has(index)) {
+        engaged.delete(index)
+        releases += 1
       }
-      if (!contact) touching.delete(index)
     })
   }
 
-  return count
+  return releases
 }
 
 describe('music box contact geometry', () => {
@@ -51,21 +52,36 @@ describe('music box contact geometry', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const tip = pinTipWorldPosition(pin, 0, config)
     const contact = tineContactPoint(pin.noteIndex, config)
+    const state = pinTineEngagement(pin, 0, config)
 
     expect(tip.x).toBeCloseTo(contact.x, 10)
     expect(tip.y).toBeCloseTo(contact.y, 10)
     expect(tip.z).toBeCloseTo(contact.z, 10)
+    expect(state.engaged).toBe(true)
+    expect(state.deflection).toBeCloseTo(1, 10)
     expect(pinTouchesTine(pin, 0, config)).toBe(true)
   })
 
-  it('does not report contact a quarter turn away', () => {
+  it('derives progressively smaller deflection toward the edge of engagement', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    expect(pinTouchesTine(pin, Math.PI / 2, config)).toBe(false)
+    const centered = pinTineEngagement(pin, 0, config)
+    const nearEdge = pinTineEngagement(pin, config.contactTolerance / (config.cylinderRadius + config.pinLength) * 0.75, config)
+
+    expect(nearEdge.engaged).toBe(true)
+    expect(nearEdge.deflection).toBeGreaterThan(0)
+    expect(nearEdge.deflection).toBeLessThan(centered.deflection)
   })
 
-  it('emits one contact entry per pin across a full revolution at different sampling rates', () => {
-    expect(countContacts(240)).toBe(tune.length)
-    expect(countContacts(576)).toBe(tune.length)
+  it('does not report engagement a quarter turn away', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    const state = pinTineEngagement(pin, Math.PI / 2, config)
+    expect(state.engaged).toBe(false)
+    expect(state.deflection).toBe(0)
+  })
+
+  it('produces one release per pin across a full revolution at different sampling rates', () => {
+    expect(countReleases(240)).toBe(tune.length)
+    expect(countReleases(576)).toBe(tune.length)
   })
 })
 
