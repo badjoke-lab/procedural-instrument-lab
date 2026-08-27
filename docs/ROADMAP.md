@@ -45,36 +45,35 @@ Already completed and merged:
 - mobile Customize controls in normal page flow with no nested-scroll trap,
 - verified inspiration credit on About,
 - Android portrait render and touch-orbit verification,
-- steps 1-4: explicit realism gates, mechanically derived pin/tine engagement and deflection, rooted tine loading, release-driven vibration/audio, and rendered/contact phase alignment,
-- steps 5-7: state-derived motion visibility plus connected comb/cylinder/pin/gear/crank/support geometry.
+- steps 1-4: mechanically derived pin/tine engagement and deflection, rooted tine loading, release-driven vibration/audio, and rendered/contact phase alignment,
+- steps 5-7: state-derived motion visibility plus connected comb/cylinder/pin/gear/crank/support geometry,
+- steps 8-10: readable metal/wood material-lighting pass, refined default/inspection camera, and crank-to-release causality regression coverage.
 
 Current implementation progress:
 
-- steps 1-7 are merged on main; the step 5-7 PR browser gate and artifact inspection are green,
-- step 8 now brightens and separates steel/brass/wood response so the comb/tines remain readable rather than visually black,
-- step 9 now refines default/reset camera framing and bounded orbit/zoom for whole-mechanism and close contact inspection,
-- step 10 now adds a crank -> gear -> cylinder phase -> engagement/deflection -> release regression test across different sampling rates,
-- steps 8-10 are under browser/artifact verification in the current change.
+- steps 1-10 are merged on main,
+- step 8/9 desktop/mobile artifacts were inspected and accepted: tines remain readable, supports do not hide contact, and the artificial contact marker is removed,
+- the step 8-10 Pages deployment is green and the updated mechanism is publicly available,
+- step 11 now retains an additional `runtime-playing.png` evidence image while the mechanism is running and verifies Reset view keeps the WebGL scene alive,
+- after the step 11 gate is green on main, the remaining work is real-device verification and bounded defect polish.
 
 ### Current completion schedule — mechanical motion and realism
 
-The functional baseline is not sufficient for v1 completion if a pin can audibly trigger a note while the contacted tine appears mechanically static. Phase 5 therefore includes the following ordered work:
-
-1. **ROADMAP/spec synchronization** — make engagement, deflection, release, vibration and geometry realism explicit v1 gates. **Complete.**
-2. **Pin -> tine engagement model** — derive engagement and normalized deflection from geometry. **Complete.**
+1. **ROADMAP/spec synchronization** — explicit engagement/deflection/release/vibration/realism gates. **Complete.**
+2. **Pin -> tine engagement model** — geometry-derived engagement and normalized deflection. **Complete.**
 3. **Tine deflection rendering** — visibly load the rooted tine while engaged. **Complete.**
-4. **Release -> vibration -> audio** — use engagement exit as the shared free-vibration/audio event. **Complete.**
-5. **Motion visibility tuning** — restrained state-derived visual amplification for desktop/mobile legibility. **Complete.**
+4. **Release -> vibration -> audio** — shared release event for free vibration and sound. **Complete.**
+5. **Motion visibility tuning** — restrained state-derived amplification for desktop/mobile legibility. **Complete.**
 6. **Comb/cylinder/pin geometry pass** — connected rooted comb, cylinder ends/shaft/supports and integrated pins. **Complete.**
-7. **Gear/crank/support geometry pass** — mechanically convincing gear hubs/spokes/teeth, supports and crank connections. **Complete.**
-8. **Material/lighting pass** — distinct readable metal/wood response without hiding contact. **Implemented; verification pending in current change.**
-9. **Camera/inspection pass** — clear default/reset view with practical close inspection through orbit/zoom. **Implemented; verification pending in current change.**
-10. **Mechanical-causality regression tests** — lock `crank -> gear -> cylinder -> engagement -> deflection -> release` and prevent detached presentation timing. **Implemented; verification pending in current change.**
-11. **Desktop/mobile browser gate update** — verify revised mechanism plus Customize/How to use/About/EN/JA/layout. **Next after steps 8-10 artifact acceptance.**
-12. **Pages publication** — merge and publish the revised main build.
-13. **Real-device display/interaction checks** — verify Android/mobile orbit, zoom, Customize, JA and contact visibility.
+7. **Gear/crank/support geometry pass** — convincing gear/support/crank connections. **Complete.**
+8. **Material/lighting pass** — distinct readable metal/wood response without hiding contact. **Complete.**
+9. **Camera/inspection pass** — clear default/reset view plus practical close inspection. **Complete.**
+10. **Mechanical-causality regression tests** — lock `crank -> gear -> cylinder -> engagement -> deflection -> release`. **Complete.**
+11. **Desktop/mobile browser gate update** — revised mechanism plus playing-state evidence, Reset view, Customize/How to use/About/EN/JA/layout. **In progress in current change.**
+12. **Pages publication** — publish the revised main build. **Material/camera build published; step 11-only test update does not change the user-facing build.**
+13. **Real-device display/interaction checks** — verify Android/mobile orbit, zoom, Customize, JA and contact visibility. **Next.**
 14. **Play/audio/speed/crank device checks** — verify Web Audio startup, perceptual synchronization, manual crank capture/release and practical performance.
-15. **Final bounded polish** — fix material defects found by the device gates without adding unrelated scope.
+15. **Final bounded polish** — fix defects found by device gates without unrelated scope.
 16. **Music Box v1 completion decision** — require green main CI/browser gates and passed manual/device gates.
 
 ### Phase 5 completion gate
