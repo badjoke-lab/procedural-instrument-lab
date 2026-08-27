@@ -126,7 +126,9 @@ test('piano roll edits TuneDocument and returns playback through the mechanical 
   await page.goto('/')
 
   const composer = page.locator('#compose')
-  await composer.locator('summary').click()
+  await expect(composer).not.toHaveAttribute('open', '')
+  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  await expect(page).toHaveURL(/#compose$/)
   await expect(composer).toHaveAttribute('open', '')
   await expect(page.getByText('Edit the selected melody. Changes regenerate the cylinder pins.')).toBeVisible()
 
