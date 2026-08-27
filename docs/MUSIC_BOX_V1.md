@@ -12,22 +12,22 @@ The primary page must be understandable to a first-time user who does not alread
 
 `tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
 
-Rendering and audio do not decide note timing independently. A selected tune is compiled into physical pin positions; only the resulting mechanical release/pluck event may start the audible tine output.
+Rendering and audio do not decide note timing independently. A selected tune is compiled into physical pin positions; only the resulting mechanical release/pluck event may start audible output.
 
 ## v1 tune behavior
 
 - The hard-coded scale is replaced by `TunePreset` data.
-- Shipped user-facing presets must have a stable id, EN/JA title, normalized NoteEvent data and attribution metadata.
+- Shipped presets have stable ids, EN/JA titles, normalized NoteEvent data and attribution metadata.
 - Initial demo tunes are recognizable public-domain melodies represented as project-authored NoteEvent sequences. Do not copy a modern MIDI file, commercial arrangement, recording or sampled performance.
-- Selecting a tune must stop the current automatic run, discard stale mechanism interaction state and regenerate the cylinder pin pattern from the selected preset.
-- Every shipped preset must compile entirely into the configured comb note set and one normalized cylinder revolution.
-- Tune selection must be covered by unit/browser tests and documented in How to use / About attribution material.
+- Selecting a tune stops the current automatic run and remounts mechanism interaction state before the new cylinder pin pattern is used.
+- Every shipped preset must compile into the configured comb note set and one normalized cylinder revolution.
+- Tune selection is covered by unit/browser tests and documented in How to use / About.
 
 ## Mechanical acceptance criteria
 
 - base, crank, cylinder, pins and comb/tines are generated in code,
 - tune events generate physical pin positions,
-- cylinder phase is the authoritative playback state,
+- cylinder phase is authoritative playback state,
 - engagement is derived from explicit geometry,
 - the affected rooted tine visibly deflects while engaged,
 - engagement exit emits exactly one release/pluck event for the pin pass,
@@ -39,80 +39,77 @@ Rendering and audio do not decide note timing independently. A selected tune is 
 
 ## Information architecture
 
-The primary page stays concise and task-oriented. It contains Tune, Play/Stop, Speed, Reset view, language controls, 3D scene and discoverable Customize. Detailed instructions belong on `How to use`; project background, inspiration and tune attribution belong on `About`.
+The primary page stays concise and task-oriented. It contains Tune, Play/Stop, Speed, Reset view, language controls, 3D scene and discoverable Customize. Detailed instructions belong on `How to use`; project background, inspiration and demo-tune rights/provenance belong on `About`.
 
 ## Current customization scope
 
-Currently exposed mechanical controls are cylinder length, tine spacing, driver gear tooth count and cylinder gear tooth count. Invalid configurations preserve the last valid mechanism.
+Currently exposed controls are cylinder length, tine spacing, driver gear tooth count and cylinder gear tooth count. Invalid configurations preserve the last valid mechanism.
 
-The next bounded expansion may add real parameters such as cylinder radius, pin dimensions and comb/note-count controls only after geometry, validation and audio consequences are specified.
+Advanced customization is deliberately later than composition/import/export. It will be selected from real cylinder-music-box research plus benchmark evidence showing which mechanism constraints actually block useful tunes.
 
-Future real-music-box customization must be organized around actual domains rather than arbitrary appearance sliders:
+Future controls are organized into:
 
-- **Music**: tune/pin pattern and later composition or exchangeable tune concepts,
+- **Music**: tune/pin pattern and composition,
 - **Mechanism**: cylinder, comb/tines, gears, drive, dampers and related geometry,
 - **Materials / resonance**: visual material plus explicitly modeled acoustic consequences where supported,
-- **Case**: enclosure/base variants kept distinct from the core mechanism.
+- **Case**: enclosure/base variants distinct from the core mechanism.
 
 Do not claim physical/acoustic simulation merely because a material color changes.
 
-## Domain-model rule
+## Composition/import boundary
 
-Music-box-specific code remains under `src/instruments/music-box/`. Separate tune, comb, cylinder, drive, material/resonance and case responsibilities only when current work needs the boundary. Do not create a speculative cross-instrument framework.
+The next creator stage uses a versioned editable `TuneDocument` separate from immutable app-supplied `TunePreset` definitions.
 
-The current TunePreset work is the first such extraction: tune data is no longer embedded in `main.tsx`.
+All future inputs converge before mechanical compilation:
 
-The tune representation must also remain compatible with a later editable composition/project document. Future inputs such as piano-roll editing, MIDI, keyboard performance, microphone pitch extraction, audio-file melody extraction and direct cylinder editing must converge on one editable tune representation before mechanical compilation. None of those inputs may become an alternate audio scheduler.
+`preset / piano roll / keyboard / MIDI / microphone recognition / audio-file recognition / cylinder editor -> editable tune data -> music-box fit/validation -> pin geometry -> mechanical runtime`
 
-## Scheduled composition inputs after v1
+Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-These are follow-on features, not current v1 completion requirements:
+The planned order is piano-roll editing, keyboard entry, MIDI import/export, microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
 
-- **Piano roll** as the first precise general-purpose editor and correction surface.
-- **MIDI file import** for exact note/timing interchange.
-- **On-screen/computer keyboard recording**, with Web MIDI device support added only where practical.
-- **Microphone recording** with explicit permission, initially for monophonic humming/singing/single-note instruments, producing editable detected notes.
-- **Audio-file import** (for example WAV/MP3/M4A where browser decoding supports it) that extracts a candidate melody rather than replaying the source file as the music-box output. Complex full mixes are not promised to transcribe perfectly.
-- **Direct cylinder editor** for a music-box-native view of note lanes/pin positions.
+## Benchmark-first verification rule
 
-All recognized/imported material must pass a music-box-fit stage that exposes note-range, density and mechanism limitations and asks before musically significant substitutions are made.
+Development does not assume high traffic or many manual tests. After the composition/import path exists, maintain synthetic tune and controlled synthetic-audio fixtures covering range, density, timing, simultaneous notes, known-invalid cases and recognition conditions.
 
-## Scheduled project data, export and sharing after v1
+Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
-Editable composition data and rendered media are separate products:
+## Project/export/sharing boundary
 
-- A **versioned native project format** will store editable tune/arrangement data plus relevant music-box configuration so projects can be exported and reopened without an account.
-- **MIDI export** may provide interchange of arranged note data where meaningful.
-- **Audio export** should start with a dependable lossless/browser-practical format such as WAV; compressed output such as MP3 can follow when the implementation is reliable.
-- **Video export** should capture the animated mechanism and the same mechanically driven audio. Browser-native formats such as WebM may be the first target; MP4 is added only if dependable in the supported runtime.
-- **Shareable links** should first use compact URL/state encoding when payload size permits.
-- Native project files remain a guaranteed portable sharing path.
-- Hosted public/private project pages, uploads or accounts are optional later work only if persistence, privacy, moderation/copyright and operating cost are justified.
+- A versioned native project format preserves editable tune/arrangement data plus relevant mechanism configuration.
+- Project files are the guaranteed server-free save/share path.
+- MIDI export provides note-data interchange where meaningful.
+- Audio export renders the same mechanically driven result; WAV is the first preferred target.
+- Video export captures the 3D mechanism with the same mechanically driven audio; WebM is the first practical target and MP4 is optional when dependable.
+- Compact URL-state sharing is preferred before hosted storage.
+- Hosted public/private project pages or accounts require a later explicit persistence/privacy/copyright/moderation/cost decision.
 
-Microphone and imported media should be processed locally/in-browser where practical. Source audio must not be silently uploaded or embedded into a shared project. Public sharing must distinguish app-supplied public-domain presets from user-provided material.
+Microphone and imported media should be processed locally/in-browser where practical. Source audio is never silently uploaded or embedded into project/share data.
 
 ## Visual/mechanical quality
 
-The first realism pass is complete enough to expose connected comb/cylinder/gear/crank relationships and visible tine release vibration. A second realism pass is deliberately scheduled after tune functionality, bounded customization and real-device functional verification.
+The first realism pass exposes connected comb/cylinder/gear/crank relationships and visible tine release vibration. A later realism pass follows composition/import/benchmark/save/export/share and evidence-based advanced customization.
 
-That later pass should improve machining detail, wood/brass/steel response, fasteners, bearings, comb/tine construction and enclosure presentation without changing the causal timing model.
+That pass will improve machining detail, wood/brass/steel response, fasteners, bearings, comb/tine construction, enclosure presentation, lighting and camera while preserving the same causal timing model.
 
 ## Audio quality scope
 
 - every audible tine sound is triggered by release/pluck,
-- no independent note scheduler may decide when preset or user-composed notes sound,
-- compact procedural synthesis is acceptable for v1,
-- later material/resonance work may alter timbre only through an explicit model rather than cosmetic labels,
-- future audio/video exports must render/record this same mechanically driven result rather than substitute a detached rendition.
+- no independent scheduler decides when preset or user-composed notes sound,
+- compact procedural synthesis is acceptable until later resonance work,
+- future material/resonance changes affect timbre only through an explicit model,
+- future audio/video exports render or record the same mechanically driven result rather than a detached rendition.
 
 ## Language scope
 
-English is default and Japanese is the first additional locale. Tune labels, controls, How to use and About copy must be updated in both catalogs together. Future composition/import/export/share UI follows the same rule.
+English is default and Japanese is the first additional locale. Tune, composition, import/export/share and customization copy must be updated in both catalogs together.
 
-## Current development schedule
+## Development schedule
 
-The authoritative ordered schedule is in `docs/ROADMAP.md`. Steps 1-23 cover current v1 and its direct customization foundation. Steps 24-40 schedule the follow-on composition, project-data, export and sharing lane. The immediate lane remains TunePreset extraction, three public-domain presets, selector, pin regeneration, safe tune switching, validation, browser coverage, documentation/attribution and Pages publication.
+The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
+
+The immediate lane is PR #17: TunePreset extraction, three public-domain presets, selector, pin regeneration, safe tune switching, validation, browser coverage, documentation/rights provenance and Pages publication. After that, development proceeds to `TuneDocument` and composition/import work rather than advanced customization.
 
 ## Scope rule
 
-No additional instrument work is part of this plan. Music-box completion and music-box customization/composition foundations have priority over any generic framework or expansion work.
+No additional instrument work is part of this plan. Music-box functionality, creation, import/export/sharing and evidence-based customization have priority over any generic framework or second instrument.
