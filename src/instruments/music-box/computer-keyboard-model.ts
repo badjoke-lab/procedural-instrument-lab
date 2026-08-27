@@ -9,7 +9,9 @@ export const COMPUTER_KEYBOARD_KEYS = [
   { code: 'KeyK', keyLabel: 'K', pitch: 72, pitchLabel: 'C5' },
 ] as const
 
-const PITCH_BY_CODE = new Map(COMPUTER_KEYBOARD_KEYS.map((key) => [key.code, key.pitch]))
+const PITCH_BY_CODE: ReadonlyMap<string, number> = new Map(
+  COMPUTER_KEYBOARD_KEYS.map((key) => [key.code, key.pitch]),
+)
 
 export function computerKeyboardPitch(code: string): number | null {
   return PITCH_BY_CODE.get(code) ?? null
