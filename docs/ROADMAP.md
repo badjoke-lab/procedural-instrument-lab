@@ -93,11 +93,12 @@ Current browser-runtime lane:
 
 - Playwright runs the production build in Chromium at desktop and mobile-emulated viewports,
 - runtime checks cover visible WebGL/UI surface, Play/Stop state, representative builder changes, responsive ordering, English/Japanese switching, horizontal overflow and browser errors,
-- successful browser runs retain screenshot/report evidence in CI artifacts.
+- the automated browser runtime gate is green on the current Phase 5/6 verification PR,
+- successful browser runs retain desktop/mobile runtime screenshots plus explicit English and Japanese localization screenshots/report evidence in CI artifacts.
 
 Remaining work:
 
-- make the automated browser runtime gate green and merge it,
+- merge the green automated browser runtime gate after final evidence review,
 - manually verify crank-handle capture versus OrbitControls in a desktop browser,
 - verify crank touch capture, Web Audio startup and practical performance on at least one real touch device,
 - fix any material interaction/readability defect found by those checks.
@@ -106,12 +107,12 @@ Completion gate:
 
 - the instrument is presentable as a standalone browser experience,
 - mechanical causality remains inspectable rather than hidden behind polish,
-- automated runtime checks are green,
+- automated runtime checks are green on main,
 - the remaining real-device interaction checks pass.
 
 ## Phase 6 — Localization
 
-Status: implemented; runtime verification in progress with Phase 5
+Status: implemented; automated runtime verification pass pending merge to main
 
 Completed and merged:
 
@@ -123,10 +124,16 @@ Completed and merged:
 - English and Japanese catalog parity is covered by unit tests,
 - integrated typecheck/tests/build are green on main.
 
+Current verification state:
+
+- automated desktop/mobile Chromium checks pass for locale switching, document `lang`, visible Japanese UI and horizontal-overflow protection on the current verification PR,
+- CI evidence retains explicit English and Japanese screenshots for both desktop and mobile runs.
+
 Remaining work:
 
-- pass automated desktop/mobile browser layout checks in both locales,
-- fix any runtime text overflow or layout defect found by browser/device inspection.
+- merge the automated locale runtime gate to main,
+- confirm readability and interaction on the remaining real-device/manual Phase 5 checks,
+- fix any runtime text overflow or layout defect found by device inspection.
 
 ## Phase 7 — Decide whether this remains music-box-only
 
