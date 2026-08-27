@@ -58,15 +58,15 @@ Do not claim physical/acoustic simulation merely because a material color change
 
 ## Composition/import boundary
 
-The next creator stage uses a versioned editable `TuneDocument` separate from immutable app-supplied `TunePreset` definitions.
+The creator stage uses a versioned editable `TuneDocument` separate from immutable app-supplied `TunePreset` definitions.
 
-All future inputs converge before mechanical compilation:
+All inputs converge before mechanical compilation:
 
 `preset / piano roll / keyboard / MIDI / microphone recognition / audio-file recognition / cylinder editor -> editable tune data -> music-box fit/validation -> pin geometry -> mechanical runtime`
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-The planned order is piano-roll editing, keyboard entry, MIDI import/export, microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing and on-screen keyboard recording are already merged. Computer-keyboard performance input is the active lane, followed by MIDI import/export, microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
 
 ## Benchmark-first verification rule
 
@@ -108,7 +108,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-The immediate lane is PR #17: TunePreset extraction, three public-domain presets, selector, pin regeneration, safe tune switching, validation, browser coverage, documentation/rights provenance and Pages publication. After that, development proceeds to `TuneDocument` and composition/import work rather than advanced customization.
+Steps 1-14 are complete on main. PR #22 is the active step 15 computer-keyboard lane. After its acceptance gate is green and merged, proceed to MIDI import rather than skipping ahead to microphone/audio import, advanced customization or final realism.
 
 ## Scope rule
 
