@@ -14,6 +14,9 @@ async function changeControl(page: Page, selector: string, value: string) {
     const control = document.querySelector<HTMLInputElement | HTMLSelectElement>(selector)
     if (!control) throw new Error(`Missing control: ${selector}`)
     control.value = value
+    if (control instanceof HTMLInputElement) {
+      control.dispatchEvent(new Event('input', { bubbles: true }))
+    }
     control.dispatchEvent(new Event('change', { bubbles: true }))
   }, { selector, value })
 }
