@@ -100,12 +100,14 @@ export function PianoRollEditor({
           choose: 'MIDIファイルを選ぶ',
           imported: 'MIDIを読み込みました。',
           failed: 'MIDIを読み込めませんでした。',
+          outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
         } : {
           title: 'Import MIDI',
           intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.',
           choose: 'Choose MIDI file',
           imported: 'MIDI imported.',
           failed: 'Could not import MIDI.',
+          outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
         }}
       />
 
