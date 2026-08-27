@@ -5,101 +5,62 @@ This document controls development order for Procedural Instrument Lab. Read it 
 ## Current product decision
 
 - Current committed product: one procedural mechanical cylinder music box.
-- Default UI language: English; Japanese is implemented as the first additional locale.
-- Current work is entirely focused on finishing Music Box v1.
+- Default UI language: English; Japanese is the first additional locale.
+- Current work is entirely focused on Music Box v1 and its direct follow-on customization foundation.
+- Additional instruments are out of scope for this roadmap.
 
-## Phase 0 — Repository foundation
+## Completed foundation
 
-Status: complete
+Phases 0-4 are complete: repository foundation, causal one-note mechanism, drive train, configurable comb/tune cylinder, direct crank manipulation and initial customization controls.
 
-## Phase 1 — Causal one-note mechanism
+The first Phase 5 realism pass is also merged and published: geometry-derived pin/tine engagement and deflection, rooted tine loading, release-driven vibration/audio, connected mechanism geometry, readable material/lighting baseline, inspection camera, causality regression tests, desktop/mobile browser gates, EN/JA, discoverable Customize/How to use/About, inspiration credit and GitHub Pages publication.
 
-Status: complete as the baseline contact implementation; Phase 5 now deepens the visible contact response.
+## Current development order
 
-## Phase 2 — Drive train
+The next priority is functional depth before a second photorealism pass. The existing simplified music box must evolve without locking future real-world music-box variation out of the model.
 
-Status: complete
+1. **ROADMAP/spec resynchronization** — record the new product order: tune features -> domain boundaries -> bounded mechanical customization -> real-device gates -> real music-box research -> advanced customization specification -> second realism pass. Completion means later work cannot mistake appearance polish for the next primary gate. **In progress in current change.**
+2. **Music-box domain model cleanup** — separate tune, comb, cylinder, drive and material responsibilities only where current work needs the separation. Do not build an unused generic instrument framework. Completion means new music-box capabilities stop accumulating as hard-coded UI/render constants.
+3. **TunePreset model** — replace the hard-coded scale demo with a music-box tune preset model carrying stable id, localized title, note events and attribution metadata. Completion means the runtime can support more than one tune without changing mechanism code. **Implemented in current change.**
+4. **Public-domain demo tunes** — add 2-3 recognizable public-domain melodies as original NoteEvent data, with no copied modern MIDI/arrangement/audio asset. Completion means the instrument demonstrates recognizable music rather than only a scale. **Three presets implemented in current change.**
+5. **Tune selector UI** — add localized tune selection near the primary playback controls. Completion means a first-time user can choose a melody directly.
+6. **Tune -> pin geometry regeneration** — compile the selected tune into the visible cylinder pin pattern. Completion means changing the tune visibly changes the mechanical cylinder rather than swapping an independent audio sequence.
+7. **Tune-switch runtime behavior** — define safe Stop/reset/recompile behavior while switching tunes. Completion means no stale engagement, vibration or audio state survives a tune change.
+8. **Preset/mechanism validation** — validate note range, pin spacing and compilation for every shipped preset. Completion means every selectable tune is mechanically representable by the current comb/cylinder configuration.
+9. **Browser gate update** — test all presets, selector behavior, pin regeneration, playback state, Customize, How to use/About and EN/JA. Completion means tune functionality is protected in production Chromium desktop/mobile.
+10. **How to use / About / attribution update** — explain tune selection and the tune-to-pin relationship; publish preset attribution/public-domain notes. Completion means user guidance and rights provenance match the implementation.
+11. **Pages publication** — merge and publish the tune-enabled build. Completion means real devices can exercise the new feature.
+12. **Bounded mechanical customization expansion** — add relatively safe real parameters such as cylinder radius, pin dimensions and comb/note-count controls only after their geometry/validation behavior is defined. Completion means Customize moves beyond the initial four controls without becoming cosmetic-only.
+13. **Comb / cylinder model expansion boundary** — allow generated per-tine/per-cylinder data needed for future note-count and geometry variation while keeping defaults automatic. Completion means future 18/30/72-note-style work or per-tine design does not require replacing the model.
+14. **Drive model boundary** — keep hand crank as the implemented v1 drive but isolate the boundary required for future spring motor/governor work. Completion means hand-crank assumptions are not scattered through unrelated modules.
+15. **Material / resonance boundary** — data-model visual materials separately from future acoustic resonance properties. Completion means later wood/metal changes can affect both rendering and sound without pretending current colors are physical simulation.
+16. **Case / mechanism boundary** — separate enclosure/base concepts from the core mechanism where needed. Completion means later open mechanism, wooden case or other enclosure variants can reuse the same core.
+17. **Real cylinder-music-box research pass** — document real note counts, comb/tine construction, dampers, cylinders, spring drives, governors, cases and materials using reliable sources. Completion means advanced customization is based on real design variation rather than invented sliders.
+18. **Advanced Customize specification** — classify future controls into Music / Mechanism / Materials / Case and decide what belongs in v1 follow-on releases. Completion means advanced customization has explicit mechanical/audio consequences and bounded scope.
+19. **Real-device display/interaction checks** — Android/mobile Tune, Customize, JA, orbit, zoom and pin/tine visibility. Completion means CI-only visual assumptions are eliminated.
+20. **Play/audio/speed/crank checks** — Web Audio startup, tune-switch playback, perceptual synchronization, manual crank capture/release and practical performance. Completion means the instrument is genuinely playable.
+21. **Second realism pass** — refine machining detail, wood/brass/steel response, fasteners, bearings, comb/tines and enclosure presentation after functional behavior is stable. Completion means the current generic-WebGL look moves materially closer to a real music box.
+22. **Final bounded polish** — fix remaining UI, camera, mobile, copy and performance defects without unrelated scope growth.
+23. **Music Box v1 completion decision** — require green main CI/browser gates plus passed manual/device gates and no unresolved v1-blocking defect. Completion means the browser experience can be presented as a finished procedural mechanical music box.
 
-## Phase 3 — Configurable comb and tune cylinder
+## Current position
 
-Status: complete
+The published main already contains the first realism/browser/Pages pass. The active branch starts the new schedule at steps 1-4 by formalizing TunePreset data and three public-domain demo melodies. Steps 5-11 are the immediate next product lane.
 
-## Phase 4 — Direct manipulation and customization controls
+## Mechanical causality completion gate
 
-Status: complete
+At all stages the authoritative chain remains:
 
-Completed behavior includes pointer/touch crank input, deterministic crank/gear/cylinder kinematics, validated mechanical customization, camera reset and responsive scene/customization ordering.
+`tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
 
-## Phase 5 — Instrument quality
-
-Status: in progress
-
-Already completed and merged:
-
-- procedural Web Audio synthesis downstream of mechanical events,
-- responsive UI, accessibility basics and bounded DPR,
-- Playwright desktop/mobile production-browser gate,
-- GitHub Pages verification build,
-- EN/JA runtime checks,
-- concise primary page with discoverable `Customize`, `How to use` and `About`,
-- mobile Customize controls in normal page flow with no nested-scroll trap,
-- verified inspiration credit on About,
-- Android portrait render and touch-orbit verification,
-- steps 1-4: mechanically derived pin/tine engagement and deflection, rooted tine loading, release-driven vibration/audio, and rendered/contact phase alignment,
-- steps 5-7: state-derived motion visibility plus connected comb/cylinder/pin/gear/crank/support geometry,
-- steps 8-10: readable metal/wood material-lighting pass, refined default/inspection camera, and crank-to-release causality regression coverage.
-
-Current implementation progress:
-
-- steps 1-10 are merged on main,
-- step 8/9 desktop/mobile artifacts were inspected and accepted: tines remain readable, supports do not hide contact, and the artificial contact marker is removed,
-- the step 8-10 Pages deployment is green and the updated mechanism is publicly available,
-- step 11 now retains an additional `runtime-playing.png` evidence image while the mechanism is running and verifies Reset view keeps the WebGL scene alive,
-- after the step 11 gate is green on main, the remaining work is real-device verification and bounded defect polish.
-
-### Current completion schedule — mechanical motion and realism
-
-1. **ROADMAP/spec synchronization** — explicit engagement/deflection/release/vibration/realism gates. **Complete.**
-2. **Pin -> tine engagement model** — geometry-derived engagement and normalized deflection. **Complete.**
-3. **Tine deflection rendering** — visibly load the rooted tine while engaged. **Complete.**
-4. **Release -> vibration -> audio** — shared release event for free vibration and sound. **Complete.**
-5. **Motion visibility tuning** — restrained state-derived amplification for desktop/mobile legibility. **Complete.**
-6. **Comb/cylinder/pin geometry pass** — connected rooted comb, cylinder ends/shaft/supports and integrated pins. **Complete.**
-7. **Gear/crank/support geometry pass** — convincing gear/support/crank connections. **Complete.**
-8. **Material/lighting pass** — distinct readable metal/wood response without hiding contact. **Complete.**
-9. **Camera/inspection pass** — clear default/reset view plus practical close inspection. **Complete.**
-10. **Mechanical-causality regression tests** — lock `crank -> gear -> cylinder -> engagement -> deflection -> release`. **Complete.**
-11. **Desktop/mobile browser gate update** — revised mechanism plus playing-state evidence, Reset view, Customize/How to use/About/EN/JA/layout. **In progress in current change.**
-12. **Pages publication** — publish the revised main build. **Material/camera build published; step 11-only test update does not change the user-facing build.**
-13. **Real-device display/interaction checks** — verify Android/mobile orbit, zoom, Customize, JA and contact visibility. **Next.**
-14. **Play/audio/speed/crank device checks** — verify Web Audio startup, perceptual synchronization, manual crank capture/release and practical performance.
-15. **Final bounded polish** — fix defects found by device gates without unrelated scope.
-16. **Music Box v1 completion decision** — require green main CI/browser gates and passed manual/device gates.
-
-### Phase 5 completion gate
-
-Phase 5 may be complete only when:
-
-- the engaged tine visibly responds to its pin,
-- release/pluck drives both free vibration and audio,
-- the mechanism is visually convincing enough to read as a connected music-box assembly,
-- mechanical causality remains inspectable after visual polish,
-- automated runtime checks are green on main,
-- desktop/mobile manual interaction gates pass,
-- material defects are fixed or explicitly deferred outside v1.
+Tune selection, customization, materials or presentation must not introduce an independent playback scheduler that bypasses this chain.
 
 ## Phase 6 — Localization
 
-Status: implemented; automated runtime verification complete
-
-English and Japanese catalogs, switching, document `lang`, parity tests and browser checks are merged. Remaining locale work is only readability/interaction verification during Phase 5 device checks and copy synchronization when mechanism explanations change.
-
-## Phase 7 — Post-v1 product decision
-
-Do not enter until Music Box v1 Phase 5/6 gates are complete.
+EN/JA implementation and automated runtime checks are complete. New tune/customization UI and documentation copy must be added to both locales together.
 
 ## Schedule discipline
 
-The phases and numbered Phase 5 finishing schedule above are ordered by dependency, not calendar promises. Work may overlap only when it does not bypass an earlier completion gate.
+The numbered schedule is dependency order, not a calendar promise. Work may overlap only where it does not bypass an earlier acceptance gate.
 
-Any change to phase order, completion criteria, mechanical causality, information architecture, language policy or v1 scope must update this document and the relevant specification in the same branch/PR.
+Any change to product order, completion criteria, mechanical causality, information architecture, language policy or customization scope must update this document and the relevant specification in the same branch/PR.
