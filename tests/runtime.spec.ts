@@ -9,13 +9,10 @@ function collectRuntimeErrors(page: Page) {
   return errors
 }
 
-async function changeSelect(page: Page, selector: string, value: string) {
-  await page.evaluate(({ selector, value }) => {
-    const select = document.querySelector<HTMLSelectElement>(selector)
-    if (!select) throw new Error(`Missing select: ${selector}`)
-    select.value = value
-    select.dispatchEvent(new Event('change', { bubbles: true }))
-  }, { selector, value })
+async function setRangeBoundary(page: Page, selector: string, key: 'Home' | 'End') {
+  const control = page.locator(selector)
+  await control.focus()
+  await page.keyboard.press(key)
 }
 
 test('music box renders and core controls work', async ({ page }, testInfo) => {
@@ -36,14 +33,24 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await transport.click()
   await expect(transport).toHaveText('Stop')
   await expect(transport).toHaveAttribute('aria-pressed', 'true')
+
+  await setRangeBoundary(page, '#speed-control', 'End')
+  await expect(page.locator('#speed-control')).toHaveValue('2')
+  await expect(transport).toHaveText('Stop')
+  await expect(transport).toHaveAttribute('aria-pressed', 'true')
   await page.waitForTimeout(700)
+
   await transport.click()
   await expect(transport).toHaveText('Play')
   await expect(transport).toHaveAttribute('aria-pressed', 'false')
 
-  await changeSelect(page, '#driver-teeth', '50')
+  await setRangeBoundary(page, '#cylinder-length', 'End')
+  await expect(page.locator('#cylinder-length')).toHaveValue('4.4')
+  await setRangeBoundary(page, '#tine-spacing', 'Home')
+  await expect(page.locator('#tine-spacing')).toHaveValue('0.26')
+  await page.locator('#driver-teeth').selectOption('50')
   await expect(page.locator('#driver-teeth')).toHaveValue('50')
-  await changeSelect(page, '#cylinder-teeth', '25')
+  await page.locator('#cylinder-teeth').selectOption('25')
   await expect(page.locator('#cylinder-teeth')).toHaveValue('25')
   await expect(page.locator('.builder-error')).toHaveCount(0)
 
@@ -72,6 +79,40 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
 
   await page.screenshot({ path: testInfo.outputPath('runtime.png'), fullPage: true })
   expect(errors).toEqual([])
+})
+
+test('invalid builder configuration keeps last valid mechanism and exposes an alert', async ({ page }) => {
+  const errors = collectRuntimeErrors(page)
+  await page.goto('/')
+
+  await setRangeBoundary(page, '#cylinder-length', 'Home')
+  await expect(page.locator('#cylinder-length')).toHaveValue('2.8')
+  await expect(page.locator('.builder-error')).toHaveCount(0)
+
+  await setRangeBoundary(page, '#tine-spacing', 'End')
+
+  await expect(page.locator('label[for="tine-spacing"] output')).toHaveText('0.34')
+  const alert = page.getByRole('alert')
+  await expect(alert).toBeVisible()
+  await expect(alert).toContainText('configuration')
+  await expect(page.locator('canvas')).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test('builder controls retain label associations and keyboard focusability', async ({ page }) => {
+  await page.goto('/')
+
+  for (const id of ['speed-control', 'cylinder-length', 'tine-spacing', 'driver-teeth', 'cylinder-teeth']) {
+    await expect(page.locator(`label[for="${id}"]`)).toBeVisible()
+    await expect(page.locator(`#${id}`)).toBeVisible()
+  }
+
+  const controls = page.locator('button, input, select')
+  const count = await controls.count()
+  expect(count).toBeGreaterThan(0)
+
+  await page.keyboard.press('Tab')
+  await expect(page.locator(':focus')).toBeVisible()
 })
 
 test('EN JA switching updates document language and visible UI', async ({ page }, testInfo) => {
