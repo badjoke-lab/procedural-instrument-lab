@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { MusicBoxAudio } from './audio'
+import { ScreenKeyboard } from './ScreenKeyboard'
 import {
   addPianoRollNote,
   deletePianoRollNote,
@@ -10,6 +12,7 @@ const PITCHES = [72, 71, 69, 67, 65, 64, 62, 60]
 const PITCH_NAMES: Record<number, string> = {
   60: 'C4', 62: 'D4', 64: 'E4', 65: 'F4', 67: 'G4', 69: 'A4', 71: 'B4', 72: 'C5',
 }
+const keyboardPreviewAudio = new MusicBoxAudio()
 
 export type PianoRollCopy = {
   title: string
@@ -35,6 +38,7 @@ export function PianoRollEditor({
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
+  const japanese = copy.title === '作曲'
 
   useEffect(() => {
     const revealFromHash = () => {
@@ -83,6 +87,25 @@ export function PianoRollEditor({
           <button type="button" disabled={!selected} onClick={removeSelected}>{copy.removeNote}</button>
         </div>
       </div>
+
+      <ScreenKeyboard
+        document={document}
+        onChange={onChange}
+        onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }}
+        copy={japanese ? {
+          title: '画面鍵盤',
+          intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。',
+          record: '録音',
+          stopRecording: '録音停止',
+          recording: '録音中',
+        } : {
+          title: 'On-screen keyboard',
+          intro: 'Play the keys. Record adds the performance to the editable notes below.',
+          record: 'Record',
+          stopRecording: 'Stop recording',
+          recording: 'Recording',
+        }}
+      />
 
       <div className="piano-roll-scroll">
         <div className="piano-roll-grid" style={gridStyle}>
