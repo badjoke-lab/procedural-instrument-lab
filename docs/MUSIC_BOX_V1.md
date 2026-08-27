@@ -4,7 +4,7 @@
 
 Build a browser-based, hand-cranked cylinder music box whose core instrument is generated from code and whose visible mechanism drives playback.
 
-This is not a music-box-themed player. The cylinder layout, contact events, tine motion and sound must share the same mechanical state.
+This is not a music-box-themed player. Cylinder layout, pin/tine engagement, tine deformation, release, vibration and sound must share the same mechanical state.
 
 The primary page must also be understandable to a first-time user who does not already know how a mechanical music box works.
 
@@ -14,100 +14,93 @@ The primary page must also be understandable to a first-time user who does not a
 - base, crank, cylinder, pins and comb/tines are generated in code,
 - tune events generate physical pin positions,
 - cylinder phase is the authoritative playback state,
-- pin contact is derived from explicit 3D pin-tip and tine-contact geometry rather than a detached playback timer,
-- pin contact triggers the corresponding tine,
-- the same contact-entry event triggers audible output,
-- each tine visibly decays after being plucked,
-- one full revolution produces one contact entry per configured pin across materially different sampling rates,
-- crank, visible gears and cylinder are derived from one drive state,
+- pin/tine engagement is derived from explicit 3D geometry rather than a detached playback timer,
+- engagement produces a mechanically derived deflection amount for the corresponding tine,
+- the affected tine visibly bends/deflects while the pin is engaging it,
+- leaving engagement emits exactly one release/pluck event for that pin pass,
+- the same release/pluck event starts visible free vibration and audible output,
+- each tine visibly decays after release,
+- one full revolution produces one release/pluck event per configured pin across materially different sampling rates,
+- crank, visible gears and cylinder derive from one drive state,
 - the user can rotate the 3D crank directly with pointer/touch input,
-- manual crank movement uses the same drive/contact/audio path as automatic playback,
-- selected mechanical parameters can be changed through customization controls and regenerate the relevant geometry,
+- manual crank movement uses the same drive/contact/deflection/release/audio path as automatic playback,
+- selected mechanical parameters can be changed through customization controls and regenerate relevant geometry,
 - customization controls cannot bypass `MusicBoxConfig` validation,
 - camera orbit/zoom works and a reset view is available,
-- speed can be changed without separating animation from sound,
-- the primary page exposes customization clearly enough that it is discoverable without scrolling inside a hidden/nested panel,
-- narrow/mobile layouts put customization controls in normal page flow rather than a fixed-height nested scrolling region,
-- detailed operation/mechanism instructions are available from a dedicated `How to use` page instead of making the primary page verbose,
-- project background and inspiration/credits are available from a dedicated `About` page,
-- the default UI language is English,
-- Japanese is supported through the same message layer,
+- speed can be changed without separating mechanism, vibration and sound,
+- customization is directly discoverable and mobile controls use normal page flow,
+- detailed operation/mechanism instructions are available from `How to use`,
+- project background and inspiration/credits are available from `About`,
+- English and Japanese use the same localization layer,
 - repository verification runs typecheck, mechanism tests, production build and browser runtime checks.
+
+## Mechanical motion quality
+
+A real music-box tine is not visually static at the moment a pin produces a note. For v1, the browser model must make the causal sequence inspectable:
+
+`pin approaches -> tine engages/deflects -> pin releases -> tine vibrates -> vibration decays`
+
+Full rigid-body or material finite-element simulation is not required. A compact deterministic contact model is acceptable when all visible motion is derived from the same pin/cylinder geometry and release event used for sound.
+
+Because real tine amplitudes can be too small to read at ordinary browser scale, a restrained visual amplification factor may be used. It must change only visible amplitude, never the event timing or which tine is moving.
+
+## Visual/mechanical detail quality
+
+The current primitive geometry is a functional baseline, not the final v1 presentation target. Before v1 completion:
+
+- the comb should read as a mechanically plausible rooted assembly rather than disconnected floating bars,
+- cylinder ends/shaft/supports and pins should read as connected machine parts,
+- gears, shafts, bearings/supports and crank connections should become mechanically convincing,
+- materials/lighting should distinguish wood, steel/brass-like parts, pins and tines without obscuring contact,
+- the default/reset inspection view should show the mechanism clearly, while orbit/zoom allows close contact inspection.
 
 ## Primary-page copy rule
 
-The primary music-box page should be concise and task-oriented.
-
-- Explain the product in one short, plain-language line.
-- Do not require terms such as `pin contact`, `tine`, `drive state` or `mechanical causality` to understand the main controls.
-- Link to `How to use` for detailed instructions and beginner-oriented mechanism explanation.
-- Link to `About` for implementation philosophy and inspiration/credits.
-- Use `Customize` / `カスタマイズ` as the primary user-facing name for the configurable mechanism section rather than `Builder` / `ビルダー`.
+The primary music-box page stays concise and task-oriented. Detailed instructions belong on `How to use`; implementation philosophy and inspiration/credits belong on `About`. `Customize` / `カスタマイズ` remains the user-facing name for the configurable mechanism section.
 
 ## Customization scope
 
-The current exposed v1 customization controls are a bounded set of mechanically meaningful parameters:
-
-- cylinder length,
-- tine spacing,
-- driver gear tooth count,
-- cylinder gear tooth count.
-
-These controls are not cosmetic presets. Each value must flow into the same instrument configuration used by geometry, drive kinematics and contact mapping. Invalid configurations must be rejected rather than rendered silently.
+The current exposed v1 controls are cylinder length, tine spacing, driver gear tooth count and cylinder gear tooth count. They flow into the same configuration used by geometry, drive kinematics and contact mapping. Invalid configurations are rejected while preserving the last valid mechanism.
 
 Broad appearance customization and free-form tune composition are not part of the current completion gate.
 
 ## How to use scope
 
-The dedicated How to use page should explain, in ordinary language:
-
-- Play / Stop,
-- speed control,
-- orbit/rotate and zoom,
-- Reset view,
-- direct crank manipulation,
-- Customize controls,
-- language switching,
-- the minimum mechanism background needed to understand cylinder, pins, comb/tines and gears.
-
-The explanation may be detailed there; the primary page should remain simple.
+The dedicated How to use page explains Play/Stop, speed, orbit/zoom, Reset view, direct crank manipulation, Customize, language switching and the minimum mechanism background needed to understand cylinder, pins, comb/tines and gears. As the contact model improves, this page must describe the visible deflection/release/vibration sequence accurately.
 
 ## About / credits scope
 
-The About page should contain:
-
-- what the project is trying to demonstrate,
-- the rule that sound/animation remain downstream of mechanical contact,
-- project/repository context where useful,
-- inspiration/credits.
-
-When an external work inspired the interaction/presentation concept but code/assets were not copied, use `Inspired by` wording rather than implying derivation. The current inspiration reference is the McGreenBeats X post supplied for the project; link the post directly. Add another source/repository only when its relationship to that inspiration is verified.
+The About page contains project purpose, mechanical-causality philosophy and inspiration/credits. External inspiration that did not contribute copied code/assets is credited with `Inspired by` wording. The current verified inspiration reference is the supplied McGreenBeats X post.
 
 ## Audio quality scope
 
-Phase 5 may improve timbre, but it must not change the source of playback timing.
-
-- every audible tine sound remains triggered by the same mechanical contact-entry event used for visible tine vibration,
-- restrained mechanical click/noise may be emitted by that same pluck event,
+- every audible tine sound is triggered by the mechanical release/pluck event,
+- restrained contact/mechanical noise may be derived from the same event,
 - no independent audio sequencer, look-ahead note scheduler or decorative timer may decide when notes occur,
-- v1 synthesis may use a compact procedural model rather than sampled recordings,
-- the initial quality model uses a fundamental plus quieter upper partials with shorter decays and a short filtered contact transient,
-- music-box-specific synthesis remains under `src/instruments/music-box/` until another instrument proves a shared audio abstraction is useful.
+- v1 synthesis may use a compact procedural model rather than sampled recordings.
 
 ## Language scope
 
-English is the default v1 UI locale. Japanese is the first additional locale. All new primary-page, Customize, How to use and About copy must be added to both catalogs together.
+English is the default v1 UI locale and Japanese is the first additional locale. New primary-page, Customize, How to use and About copy must be added to both catalogs together.
 
-Locale switching should use a compact control such as `EN / JA`; bilingual labels are not the default UI style.
+## Current finishing schedule
 
-## Current finishing milestones
-
-1. Fix mobile customization discoverability and remove nested scrolling.
-2. Add concise primary-page capability copy plus `Customize`, `How to use` and `About` navigation.
-3. Add the localized How to use and About pages, including inspiration credit.
-4. Extend browser tests for the new navigation/mobile-flow behavior.
-5. Publish to GitHub Pages and re-check the revised UI on a real mobile device.
-6. Complete the remaining Play/audio/crank/performance real-device checks.
+1. Synchronize ROADMAP/spec/checklist so tine engagement, deflection, release, vibration and geometry realism are explicit completion requirements.
+2. Replace boolean-only contact with an engagement state that includes mechanically derived deflection.
+3. Render tine deflection from a rooted comb/tine pivot while the pin remains engaged.
+4. Emit release/pluck on engagement exit and drive both free vibration and audio from it.
+5. Tune visual amplification so the motion remains legible on desktop/mobile without inventing timing.
+6. Improve comb, cylinder, pin, shaft and support geometry.
+7. Improve gears, crank and supporting mechanical connections.
+8. Improve materials and lighting while preserving inspectability.
+9. Refine default/reset camera and close inspection behavior.
+10. Lock the causal chain with mechanism regression tests.
+11. Extend desktop/mobile browser gates for the revised mechanism and existing information architecture/localization.
+12. Publish to GitHub Pages.
+13. Perform real-device display/interaction checks.
+14. Perform Play/audio/speed/manual-crank/performance checks.
+15. Apply only defects/polish required by those checks.
+16. Mark Music Box v1 complete only after all gates pass.
 
 ## Scope rule
 
