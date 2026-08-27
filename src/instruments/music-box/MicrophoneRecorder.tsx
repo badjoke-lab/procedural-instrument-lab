@@ -93,7 +93,11 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
   useEffect(() => () => {
     const recorder = recorderRef.current
     recorderRef.current = null
-    if (recorder && recorder.state !== 'inactive') recorder.stop()
+    if (recorder) {
+      recorder.ondataavailable = null
+      recorder.onstop = null
+      if (recorder.state !== 'inactive') recorder.stop()
+    }
     closeStream()
     if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current)
     clipUrlRef.current = ''
