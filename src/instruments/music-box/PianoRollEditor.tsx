@@ -37,8 +37,10 @@ export function PianoRollEditor({
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
 
   const addNote = () => {
-    const nextStart = Math.min(document.lengthBeats - 0.25, selected ? selected.startBeat + 1 : 0)
-    const next = addPianoRollNote(document, { pitch: selected?.pitch ?? 60, startBeat: Math.max(0, nextStart), durationBeats: 0.5 })
+    const durationBeats = Math.min(0.5, document.lengthBeats)
+    const maxStart = Math.max(0, document.lengthBeats - durationBeats)
+    const nextStart = Math.min(maxStart, selected ? selected.startBeat + 1 : 0)
+    const next = addPianoRollNote(document, { pitch: selected?.pitch ?? 60, startBeat: nextStart, durationBeats })
     const existing = new Set(document.notes.map((note) => note.id))
     const added = next.notes.find((note) => !existing.has(note.id))
     onChange(next)
@@ -54,7 +56,11 @@ export function PianoRollEditor({
 
   const updateSelected = (patch: Parameters<typeof updatePianoRollNote>[2]) => {
     if (!selected) return
-    onChange(updatePianoRollNote(document, selected.id, patch))
+    try {
+      onChange(updatePianoRollNote(document, selected.id, patch))
+    } catch {
+      // Keep the last valid document while a number input is temporarily incomplete.
+    }
   }
 
   return (
