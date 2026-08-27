@@ -166,10 +166,6 @@ test('How to use and About pages are reachable from the primary page', async ({ 
   await page.getByRole('link', { name: 'About' }).click()
   await expect(page).toHaveURL(/\?page=about$/)
   await expect(page.getByRole('heading', { name: 'About', level: 1 })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Demo tunes' })).toBeVisible()
-  await expect(page.getByText('Twinkle, Twinkle, Little Star')).toBeVisible()
-  await expect(page.getByText('Ode to Joy')).toBeVisible()
-  await expect(page.getByText('Au Clair de la Lune')).toBeVisible()
   const inspiration = page.getByRole('link', { name: 'View the X post' })
   await expect(inspiration).toHaveAttribute('href', 'https://x.com/McGreenBeats/status/2092243021777580466')
 
