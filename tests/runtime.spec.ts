@@ -9,6 +9,15 @@ function collectRuntimeErrors(page: Page) {
   return errors
 }
 
+async function changeSelect(page: Page, selector: string, value: string) {
+  await page.evaluate(({ selector, value }) => {
+    const select = document.querySelector<HTMLSelectElement>(selector)
+    if (!select) throw new Error(`Missing select: ${selector}`)
+    select.value = value
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+  }, { selector, value })
+}
+
 test('music box renders and core controls work', async ({ page }, testInfo) => {
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
@@ -32,19 +41,33 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await expect(transport).toHaveText('Play')
   await expect(transport).toHaveAttribute('aria-pressed', 'false')
 
-  await page.locator('#driver-teeth').selectOption('50')
-  await page.locator('#cylinder-teeth').selectOption('25')
+  await changeSelect(page, '#driver-teeth', '50')
+  await expect(page.locator('#driver-teeth')).toHaveValue('50')
+  await changeSelect(page, '#cylinder-teeth', '25')
+  await expect(page.locator('#cylinder-teeth')).toHaveValue('25')
   await expect(page.locator('.builder-error')).toHaveCount(0)
 
-  const scene = await page.locator('.scene').boundingBox()
-  const builder = await page.locator('.builder-panel').boundingBox()
-  expect(scene).not.toBeNull()
-  expect(builder).not.toBeNull()
+  const layout = await page.evaluate(() => {
+    const scene = document.querySelector<HTMLElement>('.scene')
+    const builder = document.querySelector<HTMLElement>('.builder-panel')
+    if (!scene || !builder) throw new Error('Missing scene or builder')
+    const sceneRect = scene.getBoundingClientRect()
+    const builderRect = builder.getBoundingClientRect()
+    return {
+      scene: { x: sceneRect.x, y: sceneRect.y, width: sceneRect.width, height: sceneRect.height },
+      builder: { x: builderRect.x, y: builderRect.y, width: builderRect.width, height: builderRect.height },
+    }
+  })
+
+  expect(layout.scene.width).toBeGreaterThan(0)
+  expect(layout.scene.height).toBeGreaterThan(0)
+  expect(layout.builder.width).toBeGreaterThan(0)
+  expect(layout.builder.height).toBeGreaterThan(0)
 
   if (testInfo.project.name === 'mobile-chromium') {
-    expect(scene!.y).toBeLessThan(builder!.y)
+    expect(layout.scene.y).toBeLessThan(layout.builder.y)
   } else {
-    expect(builder!.x).toBeLessThan(scene!.x)
+    expect(layout.builder.x).toBeLessThan(layout.scene.x)
   }
 
   await page.screenshot({ path: testInfo.outputPath('runtime.png'), fullPage: true })
