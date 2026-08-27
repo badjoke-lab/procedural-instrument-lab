@@ -15,11 +15,12 @@ async function setRangeBoundary(page: Page, selector: string, key: 'Home' | 'End
   await page.keyboard.press(key)
 }
 
-test('music box renders and core controls work', async ({ page }, testInfo) => {
+test('music box renders, switches tunes and core controls work', async ({ page }, testInfo) => {
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
 
   const canvas = page.locator('canvas')
+  const tuneSelect = page.locator('#tune-select')
   await expect(canvas).toBeVisible()
   await expect(page.getByText('Mechanical Music Box', { exact: true })).toBeVisible()
   await expect(page.getByText('Play and customize a music box.', { exact: true })).toBeVisible()
@@ -29,6 +30,8 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await expect(page.getByRole('link', { name: 'How to use' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'About' })).toBeVisible()
   await expect(page.getByText('Customize', { exact: true }).last()).toBeVisible()
+  await expect(tuneSelect).toHaveValue('twinkle')
+  await expect(tuneSelect.locator('option')).toHaveCount(3)
 
   const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
   expect(noHorizontalOverflow).toBe(true)
@@ -47,6 +50,18 @@ test('music box renders and core controls work', async ({ page }, testInfo) => {
   await expect(canvas).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('runtime-playing.png'), fullPage: true })
 
+  await tuneSelect.selectOption('ode-to-joy')
+  await expect(tuneSelect).toHaveValue('ode-to-joy')
+  await expect(transport).toHaveText('Play')
+  await expect(transport).toHaveAttribute('aria-pressed', 'false')
+  await expect(canvas).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath('runtime-ode-to-joy.png'), fullPage: true })
+
+  await tuneSelect.selectOption('au-clair-de-la-lune')
+  await expect(tuneSelect).toHaveValue('au-clair-de-la-lune')
+  await transport.click()
+  await expect(transport).toHaveText('Stop')
+  await page.waitForTimeout(400)
   await transport.click()
   await expect(transport).toHaveText('Play')
 
@@ -114,10 +129,10 @@ test('invalid customization keeps last valid mechanism and exposes an alert', as
   expect(errors).toEqual([])
 })
 
-test('customization controls retain label associations and keyboard focusability', async ({ page }) => {
+test('controls retain label associations and keyboard focusability', async ({ page }) => {
   await page.goto('/')
 
-  for (const id of ['speed-control', 'cylinder-length', 'tine-spacing', 'driver-teeth', 'cylinder-teeth']) {
+  for (const id of ['tune-select', 'speed-control', 'cylinder-length', 'tine-spacing', 'driver-teeth', 'cylinder-teeth']) {
     await expect(page.locator(`label[for="${id}"]`)).toBeVisible()
     await expect(page.locator(`#${id}`)).toBeVisible()
   }
@@ -138,6 +153,7 @@ test('How to use and About pages are reachable from the primary page', async ({ 
   await expect(page).toHaveURL(/\?page=how-to-use$/)
   await expect(page.getByRole('heading', { name: 'How to use', level: 1 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'How the music box works' })).toBeVisible()
+  await expect(page.getByText(/selected melody is compiled into the cylinder pin pattern/i)).toBeVisible()
 
   await page.getByRole('link', { name: 'About' }).click()
   await expect(page).toHaveURL(/\?page=about$/)
@@ -150,12 +166,13 @@ test('How to use and About pages are reachable from the primary page', async ({ 
   expect(errors).toEqual([])
 })
 
-test('EN JA switching updates document language and visible UI', async ({ page }, testInfo) => {
+test('EN JA switching updates document language, tune labels and visible UI', async ({ page }, testInfo) => {
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByText('Customize', { exact: true }).last()).toBeVisible()
+  await expect(page.locator('#tune-select option:checked')).toHaveText('Twinkle, Twinkle, Little Star')
   await page.screenshot({ path: testInfo.outputPath('localization-en.png'), fullPage: true })
 
   await page.getByRole('button', { name: 'JA' }).click()
@@ -163,6 +180,7 @@ test('EN JA switching updates document language and visible UI', async ({ page }
   await expect(page.getByText('カスタマイズ', { exact: true }).last()).toBeVisible()
   await expect(page.getByRole('button', { name: '視点をリセット' })).toBeVisible()
   await expect(page.getByRole('link', { name: '使い方' })).toBeVisible()
+  await expect(page.locator('#tune-select option:checked')).toHaveText('きらきら星')
 
   const noHorizontalOverflowJa = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
   expect(noHorizontalOverflowJa).toBe(true)
