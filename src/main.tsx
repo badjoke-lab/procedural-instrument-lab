@@ -15,8 +15,12 @@ import {
   tineContactPoint,
   validateMusicBoxConfig,
   type MusicBoxConfig,
+  type NoteEvent,
 } from './instruments/music-box/mechanism'
-import { DEFAULT_TUNE_ID, TUNE_PRESETS, getTunePreset, type TunePreset } from './instruments/music-box/tunes'
+import { DEFAULT_TUNE_ID, TUNE_PRESETS, getTunePreset } from './instruments/music-box/tunes'
+import { PianoRollEditor } from './instruments/music-box/PianoRollEditor'
+import { cloneTuneDocument } from './instruments/music-box/piano-roll-model'
+import { tuneDocumentToNoteEvents, type TuneDocument } from './instruments/music-box/tune-document'
 
 const audio = new MusicBoxAudio()
 const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
@@ -26,6 +30,8 @@ const TINE_VIBRATION_ANGLE = 0.095
 const brass = { color: '#c4a05b', metalness: 0.74, roughness: 0.28 }
 const steel = { color: '#d9dde1', metalness: 0.78, roughness: 0.24 }
 const darkSteel = { color: '#747b82', metalness: 0.72, roughness: 0.28 }
+
+type RuntimeTune = { id: string; events: NoteEvent[] }
 
 function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.12
@@ -101,7 +107,7 @@ function Mechanism({
   running: boolean
   speed: number
   config: MusicBoxConfig
-  tune: TunePreset
+  tune: RuntimeTune
   onManualStart: () => void
   onManualEnd: () => void
 }) {
@@ -368,6 +374,7 @@ function InfoPage({ page, locale, setLocale }: { page: 'how-to-use' | 'about'; l
             <h1>{t.howToUse}</h1>
             <p className="lede">{t.howToUseIntro}</p>
             <section><h2>{t.howPlayTitle}</h2><p>{t.howPlayBody}</p></section>
+            <section><h2>{t.howComposeTitle}</h2><p>{t.howComposeBody}</p></section>
             <section><h2>{t.howViewTitle}</h2><p>{t.howViewBody}</p></section>
             <section><h2>{t.howCrankTitle}</h2><p>{t.howCrankBody}</p></section>
             <section><h2>{t.howCustomizeTitle}</h2><p>{t.howCustomizeBody}</p></section>
@@ -394,6 +401,9 @@ function App() {
   const [running, setRunning] = useState(false)
   const [speed, setSpeed] = useState(0.85)
   const [selectedTuneId, setSelectedTuneId] = useState(DEFAULT_TUNE_ID)
+  const [editingTune, setEditingTune] = useState(false)
+  const [editorRevision, setEditorRevision] = useState(0)
+  const [editableDocument, setEditableDocument] = useState<TuneDocument>(() => cloneTuneDocument(getTunePreset(DEFAULT_TUNE_ID).document, 'custom-tune'))
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [cameraKey, setCameraKey] = useState(0)
   const [configError, setConfigError] = useState(false)
@@ -402,7 +412,10 @@ function App() {
     ...DEFAULT_MUSIC_BOX_CONFIG,
     notes: [...DEFAULT_MUSIC_BOX_CONFIG.notes],
   }))
-  const selectedTune = getTunePreset(selectedTuneId)
+  const selectedPreset = getTunePreset(selectedTuneId)
+  const runtimeTune: RuntimeTune = editingTune
+    ? { id: editableDocument.id, events: tuneDocumentToNoteEvents(editableDocument) }
+    : selectedPreset
   const t = messages[locale]
   const pageParam = new URLSearchParams(window.location.search).get('page')
   const page = pageParam === 'how-to-use' || pageParam === 'about' ? pageParam : null
@@ -425,8 +438,19 @@ function App() {
   }
 
   const selectTune = (id: string) => {
+    const preset = getTunePreset(id)
     setRunning(false)
-    setSelectedTuneId(id)
+    setSelectedTuneId(preset.id)
+    setEditableDocument(cloneTuneDocument(preset.document, 'custom-tune'))
+    setEditingTune(false)
+    setEditorRevision((value) => value + 1)
+  }
+
+  const editTune = (next: TuneDocument) => {
+    setRunning(false)
+    setEditableDocument(next)
+    setEditingTune(true)
+    setEditorRevision((value) => value + 1)
   }
 
   if (page) return <InfoPage page={page} locale={locale} setLocale={setLocale} />
@@ -443,6 +467,7 @@ function App() {
               {TUNE_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.title[locale]}</option>)}
             </select>
           </label>
+          {editingTune && <span className="custom-tune-badge" aria-live="polite">{t.customEdit}</span>}
           <label htmlFor="speed-control">
             {t.speed}
             <input id="speed-control" type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
@@ -454,9 +479,28 @@ function App() {
 
       <nav className="page-nav primary-actions" aria-label="Page navigation">
         <a className="primary-link" href="#customize">{t.customize}</a>
+        <a href="#compose">{t.compose}</a>
         <a href="?page=how-to-use">{t.howToUse}</a>
         <a href="?page=about">{t.about}</a>
       </nav>
+
+      <details id="compose" className="composer-drawer">
+        <summary>{t.compose}</summary>
+        <PianoRollEditor
+          document={editableDocument}
+          onChange={editTune}
+          copy={{
+            title: t.compose,
+            intro: t.composeIntro,
+            addNote: t.addNote,
+            removeNote: t.removeNote,
+            pitch: t.notePitch,
+            start: t.noteStart,
+            duration: t.noteDuration,
+            empty: t.noNotes,
+          }}
+        />
+      </details>
 
       <section className="workspace">
         <aside id="customize" className="builder-panel" aria-label={t.customize}>
@@ -495,11 +539,11 @@ function App() {
             <pointLight position={[4.5, 3.2, -4.5]} intensity={19} distance={13} decay={2} />
             <pointLight position={[-3.5, 4, 3.5]} intensity={11} distance={12} decay={2} />
             <Mechanism
-              key={selectedTune.id}
+              key={`${runtimeTune.id}-${editorRevision}`}
               running={running}
               speed={speed}
               config={config}
-              tune={selectedTune}
+              tune={runtimeTune}
               onManualStart={() => { setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />
