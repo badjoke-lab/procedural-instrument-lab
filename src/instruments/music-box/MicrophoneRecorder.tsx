@@ -26,13 +26,15 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const clipUrlRef = useRef('')
   const [recording, setRecording] = useState(false)
   const [clipUrl, setClipUrl] = useState('')
   const [status, setStatus] = useState('')
 
-  const revokeClip = () => {
-    if (clipUrl) URL.revokeObjectURL(clipUrl)
-    setClipUrl('')
+  const replaceClip = (url = '') => {
+    if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current)
+    clipUrlRef.current = url
+    setClipUrl(url)
   }
 
   const closeStream = () => {
@@ -50,7 +52,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       chunksRef.current = []
-      revokeClip()
+      replaceClip()
       const mimeType = preferredRecordingMimeType()
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
       recorderRef.current = recorder
@@ -60,8 +62,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
       recorder.onstop = () => {
         const type = recorder.mimeType || chunksRef.current[0]?.type || 'audio/webm'
         const blob = new Blob(chunksRef.current, { type })
-        const url = URL.createObjectURL(blob)
-        setClipUrl(url)
+        replaceClip(URL.createObjectURL(blob))
         setStatus(copy.ready)
         closeStream()
         recorderRef.current = null
@@ -71,6 +72,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
       setStatus(copy.recording)
     } catch {
       closeStream()
+      recorderRef.current = null
       setRecording(false)
       setStatus(copy.denied)
     }
@@ -84,16 +86,18 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
   }
 
   const discard = () => {
-    revokeClip()
+    replaceClip()
     setStatus('')
   }
 
   useEffect(() => () => {
     const recorder = recorderRef.current
+    recorderRef.current = null
     if (recorder && recorder.state !== 'inactive') recorder.stop()
     closeStream()
-    if (clipUrl) URL.revokeObjectURL(clipUrl)
-  }, [clipUrl])
+    if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current)
+    clipUrlRef.current = ''
+  }, [])
 
   return (
     <section className="microphone-recorder" role="region" aria-label={copy.title}>
