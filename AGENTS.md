@@ -15,17 +15,7 @@ Repository documents are the project source of truth. Do not rely on chat histor
 
 ## Keep documentation synchronized
 
-If a change alters any of the following, update the relevant specification/roadmap in the same branch or pull request:
-
-- product scope,
-- architecture boundaries,
-- runtime source-of-truth rules,
-- mechanical behavior,
-- acceptance criteria,
-- development sequencing,
-- information architecture or user-facing navigation,
-- language/localization policy,
-- instrument-expansion policy.
+If a change alters product scope, architecture boundaries, runtime source-of-truth rules, mechanical behavior, acceptance criteria, development sequencing, information architecture, language/localization policy, or instrument-expansion policy, update the relevant specification/roadmap in the same branch or pull request.
 
 Do not silently change project direction in code only.
 
@@ -40,11 +30,13 @@ Do not silently change project direction in code only.
 
 For the music box, rendering must not decide playback timing. Mechanical state is authoritative.
 
-The intended causal chain is:
+The required visible causal chain is:
 
-`tune/configuration -> pin geometry -> drive/cylinder state -> contact -> pluck event -> tine animation + audio`
+`tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
 
-Do not replace this with detached timers, pre-scripted visual animation, or independent audio scheduling that merely looks synchronized.
+A pin must not appear to pass through a tine while sound is emitted with no corresponding mechanical response. During engagement the affected tine must visibly deflect from the same contact state. When the pin releases the tine, that release/pluck event drives both the free vibration and audible output.
+
+Do not replace this with detached timers, pre-scripted visual animation, or independent audio scheduling that merely looks synchronized. Visual amplification of physically small tine motion is allowed only when it preserves the same contact/release state and is documented as a visibility aid.
 
 ## Information architecture rule
 
@@ -54,14 +46,13 @@ The primary instrument page must stay concise and task-oriented. It should make 
 - Keep detailed operating instructions and mechanical explanations on the dedicated `How to use` page.
 - Keep project background, implementation philosophy and inspiration/credits on the dedicated `About` page.
 - `Customize` must be visibly discoverable from the primary page.
-- On narrow/mobile layouts, the Customize controls must be part of normal document flow. Do not hide them inside a fixed-height nested scrolling region.
-- Internal/developer terminology such as `Builder` should not be the primary user-facing label when a clearer term such as `Customize` exists.
+- On narrow/mobile layouts, Customize controls must be part of normal document flow, not a fixed-height nested scroller.
 
 ## UI language rule
 
 - Default UI locale: English (`en`).
 - First additional locale: Japanese (`ja`).
-- User-facing strings should go through the localization/message layer.
+- User-facing strings go through the localization/message layer.
 - Do not use bilingual labels as the normal UI.
 - Code identifiers and mechanical parameter keys remain English and locale-independent.
 
@@ -75,8 +66,8 @@ Do not mark a mechanical milestone complete solely because geometry renders. Com
 
 Dedicated autonomous agents are not required merely to create more process. If agents are used, use narrow roles:
 
-- **mechanism agent**: geometry, kinematics, contact and deterministic mechanical state,
-- **audio agent**: synthesis/output driven by pluck events, never independent sequencing,
+- **mechanism agent**: geometry, kinematics, engagement/deflection/release and deterministic mechanical state,
+- **audio agent**: synthesis/output driven by release/pluck events, never independent sequencing,
 - **UI/i18n agent**: information architecture, controls, message catalogs, accessibility, responsive behavior and locale behavior,
 - **verification agent**: build/type checks and acceptance-gate checks against current docs.
 
