@@ -62,6 +62,18 @@ describe('music box contact geometry', () => {
     expect(pinTouchesTine(pin, 0, config)).toBe(true)
   })
 
+  it('matches contact geometry to the same cylinder phase used by rendering', () => {
+    const [pin] = compileTune([{ note: 64, start: 0.25 }], config)
+    const renderedContactPhase = -pin.angle
+    const tip = pinTipWorldPosition(pin, renderedContactPhase, config)
+    const contact = tineContactPoint(pin.noteIndex, config)
+
+    expect(tip.x).toBeCloseTo(contact.x, 10)
+    expect(tip.y).toBeCloseTo(contact.y, 10)
+    expect(tip.z).toBeCloseTo(contact.z, 10)
+    expect(pinTineEngagement(pin, renderedContactPhase, config).engaged).toBe(true)
+  })
+
   it('derives progressively smaller deflection toward the edge of engagement', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const centered = pinTineEngagement(pin, 0, config)
