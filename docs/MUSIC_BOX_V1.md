@@ -66,7 +66,9 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing and on-screen keyboard recording are already merged. Computer-keyboard performance input is the active lane, followed by MIDI import/export, microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording and computer-keyboard recording are merged. MIDI import is the active lane, followed by MIDI export, microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+
+MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
 
 ## Benchmark-first verification rule
 
@@ -108,7 +110,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-14 are complete on main. PR #22 is the active step 15 computer-keyboard lane. After its acceptance gate is green and merged, proceed to MIDI import rather than skipping ahead to microphone/audio import, advanced customization or final realism.
+Steps 1-15 are complete on main. PR #23 is the active step 16 MIDI-import lane. After its acceptance gate is green and merged, proceed to MIDI export rather than skipping ahead to microphone/audio import, advanced customization or final realism.
 
 ## Scope rule
 
