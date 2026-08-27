@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -36,8 +36,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 13. **Piano-roll editor** — add/remove/move notes and edit pitch/timing/duration. **Complete in PR #20, merged as `c3bf6dcbc9519bea5050535f8e1ea1d735b9d776`; final branch run #98 green with desktop/mobile evidence reviewed.**
 14. **On-screen keyboard input** — record performed pointer/touch notes into TuneDocument through the existing mechanical compiler path. **Complete in PR #21, merged as `2fde71128a20a3bef126606a2f4d05f4ca1dfcfe`; final branch run #108 green and Pages deploy #10 succeeded.**
 15. **Computer-keyboard input** — provide practical A/S/D/F/G/H/J/K note preview and recording into the same TuneDocument path while preserving normal form typing. **Complete in PR #22, merged as `9dd7f4a34f13cb6ceda8d473be8bbb13f38c3196`; final branch run #115 green with desktop/mobile evidence reviewed.**
-16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise local-file import path without creating a second playback scheduler. **In progress in PR #23.**
-17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools.
+16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise local-file import path without creating a second playback scheduler. **Complete in PR #23, merged as `421c0e502c9555abd0cdf63b98ae6988f0449cbf`; final branch run #125 green with desktop/mobile evidence reviewed.**
+17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools. **In progress in PR #24.**
 
 ### Microphone and owned audio input
 
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-15 are complete on main. PR #23 is the active lane for step 16 MIDI import. Supported MIDI must become editable TuneDocument data; valid pitches outside the current C4-C5 comb remain preserved in TuneDocument while `compileTune` naturally omits unsupported pitches from the current physical preview until Compatibility/Auto Fit exists. The UI must make that limitation visible rather than silently rewriting imported notes. Step 16 must pass unit/type/build and desktop/mobile local-file browser gates before merge. After step 16 is green and merged, proceed to step 17 MIDI export. Do not jump to microphone/audio import, advanced Customize or final realism first.
+Steps 1-16 are complete on main. PR #24 is the active lane for step 17 MIDI export. The current editable TuneDocument is exported as a derived Standard MIDI File rather than becoming a new playback source. Pitch, beat timing, duration and tempo must survive at the declared PPQ resolution, including valid pitches outside the current C4-C5 physical comb. Browser automation must verify a real local `.mid` download whose header is `MThd`, and desktop/mobile layout must remain readable with no page-level horizontal overflow. After step 17 is green and merged, proceed to step 18 microphone recording. Do not jump to later audio recognition, advanced Customize or final realism first.
 
 ## Mechanical causality gate
 
