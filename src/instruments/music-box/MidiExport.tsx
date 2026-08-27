@@ -11,7 +11,9 @@ export type MidiExportCopy = {
 export function MidiExport({ document, copy }: { document: TuneDocument; copy: MidiExportCopy }) {
   const download = () => {
     const bytes = exportMidi(document)
-    const blob = new Blob([bytes], { type: 'audio/midi' })
+    const buffer = new ArrayBuffer(bytes.byteLength)
+    new Uint8Array(buffer).set(bytes)
+    const blob = new Blob([buffer], { type: 'audio/midi' })
     const url = URL.createObjectURL(blob)
     const anchor = window.document.createElement('a')
     anchor.href = url
