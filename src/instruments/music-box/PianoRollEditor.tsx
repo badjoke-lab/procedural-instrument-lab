@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { MusicBoxAudio } from './audio'
+import { MidiImport } from './MidiImport'
 import { ScreenKeyboard } from './ScreenKeyboard'
 import {
   addPianoRollNote,
@@ -87,6 +88,28 @@ export function PianoRollEditor({
           <button type="button" disabled={!selected} onClick={removeSelected}>{copy.removeNote}</button>
         </div>
       </div>
+
+      <MidiImport
+        onImport={(next) => {
+          setSelectedNoteId(next.notes[0]?.id ?? '')
+          onChange(next)
+        }}
+        copy={japanese ? {
+          title: 'MIDIを読み込む',
+          intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。',
+          choose: 'MIDIファイルを選ぶ',
+          imported: 'MIDIを読み込みました。',
+          failed: 'MIDIを読み込めませんでした。',
+          outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
+        } : {
+          title: 'Import MIDI',
+          intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.',
+          choose: 'Choose MIDI file',
+          imported: 'MIDI imported.',
+          failed: 'Could not import MIDI.',
+          outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
+        }}
+      />
 
       <ScreenKeyboard
         document={document}

@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -35,8 +35,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 12. **TuneDocument specification** — define the versioned editable canonical tune representation shared by preset-derived, user-authored and imported material. **Complete in PR #18, merged as `d15ba27bf2e46c8e7ce428e23b5e4a37ef644334`; final branch run #84 green.**
 13. **Piano-roll editor** — add/remove/move notes and edit pitch/timing/duration. **Complete in PR #20, merged as `c3bf6dcbc9519bea5050535f8e1ea1d735b9d776`; final branch run #98 green with desktop/mobile evidence reviewed.**
 14. **On-screen keyboard input** — record performed pointer/touch notes into TuneDocument through the existing mechanical compiler path. **Complete in PR #21, merged as `2fde71128a20a3bef126606a2f4d05f4ca1dfcfe`; final branch run #108 green and Pages deploy #10 succeeded.**
-15. **Computer-keyboard input** — provide practical A/S/D/F/G/H/J/K note preview and recording into the same TuneDocument path while preserving normal form typing. **In progress in PR #22.**
-16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise import path.
+15. **Computer-keyboard input** — provide practical A/S/D/F/G/H/J/K note preview and recording into the same TuneDocument path while preserving normal form typing. **Complete in PR #22, merged as `9dd7f4a34f13cb6ceda8d473be8bbb13f38c3196`; final branch run #115 green with desktop/mobile evidence reviewed.**
+16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise local-file import path without creating a second playback scheduler. **In progress in PR #23.**
 17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools.
 
 ### Microphone and owned audio input
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-14 are complete on main. PR #22 is the active lane for step 15 computer-keyboard input. Its output must remain on the same recording/TuneDocument -> mechanical compiler path used by Piano Roll and the on-screen keyboard. It must pass unit/type/build and desktop browser coverage for preview, recording, localization and form-control exclusion before merge. After step 15 is green and merged, proceed to step 16 MIDI import. Do not jump to microphone/audio import, advanced Customize or final realism first.
+Steps 1-15 are complete on main. PR #23 is the active lane for step 16 MIDI import. Supported MIDI must become editable TuneDocument data; valid pitches outside the current C4-C5 comb remain preserved in TuneDocument while `compileTune` naturally omits unsupported pitches from the current physical preview until Compatibility/Auto Fit exists. The UI must make that limitation visible rather than silently rewriting imported notes. Step 16 must pass unit/type/build and desktop/mobile local-file browser gates before merge. After step 16 is green and merged, proceed to step 17 MIDI export. Do not jump to microphone/audio import, advanced Customize or final realism first.
 
 ## Mechanical causality gate
 
