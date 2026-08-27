@@ -29,9 +29,9 @@ const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
 const TINE_LOAD_ANGLE = 0.15
 const TINE_VIBRATION_ANGLE = 0.095
 
-const brass = { color: '#b8924f', metalness: 0.82, roughness: 0.24 }
-const steel = { color: '#b8bcc1', metalness: 0.92, roughness: 0.16 }
-const darkSteel = { color: '#5d6268', metalness: 0.88, roughness: 0.2 }
+const brass = { color: '#c4a05b', metalness: 0.74, roughness: 0.28 }
+const steel = { color: '#d9dde1', metalness: 0.78, roughness: 0.24 }
+const darkSteel = { color: '#747b82', metalness: 0.72, roughness: 0.28 }
 
 function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.12
@@ -47,11 +47,11 @@ function Gear({ radius, teeth }: { radius: number; teeth: number }) {
       </mesh>
       <mesh castShadow>
         <cylinderGeometry args={[hubRadius, hubRadius, 0.24, 32]} />
-        <meshStandardMaterial {...brass} roughness={0.19} />
+        <meshStandardMaterial {...brass} roughness={0.23} />
       </mesh>
       <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[rimRadius * 0.94, radius * 0.065, 10, Math.max(36, teeth * 2)]} />
-        <meshStandardMaterial {...brass} roughness={0.2} />
+        <meshStandardMaterial {...brass} roughness={0.24} />
       </mesh>
       {Array.from({ length: spokeCount }, (_, index) => {
         const angle = (index / spokeCount) * Math.PI * 2
@@ -70,7 +70,7 @@ function Gear({ radius, teeth }: { radius: number; teeth: number }) {
         return (
           <mesh castShadow key={`tooth-${index}`} position={[Math.cos(angle) * r, Math.sin(angle) * r, 0]} rotation={[0, 0, angle]}>
             <boxGeometry args={[toothDepth, Math.max(0.035, radius * 0.065), 0.16]} />
-            <meshStandardMaterial {...brass} roughness={0.21} />
+            <meshStandardMaterial {...brass} roughness={0.25} />
           </mesh>
         )
       })}
@@ -82,7 +82,7 @@ function BearingStand({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
       <RoundedBox args={[0.62, 1.45, 0.3]} radius={0.08} smoothness={3} position={[0, -0.73, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#6d5738" metalness={0.12} roughness={0.48} />
+        <meshStandardMaterial color="#765d3a" metalness={0.08} roughness={0.52} />
       </RoundedBox>
       <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.34, 32]} />
@@ -199,10 +199,10 @@ function Mechanism({
   return (
     <group>
       <RoundedBox args={[7.6, 0.7, 4.8]} radius={0.12} smoothness={4} position={[0, -1.65, 0]} receiveShadow castShadow>
-        <meshStandardMaterial color="#552c1d" roughness={0.62} />
+        <meshStandardMaterial color="#5a301e" roughness={0.66} />
       </RoundedBox>
       <RoundedBox args={[7.15, 0.08, 4.35]} radius={0.05} smoothness={3} position={[0, -1.27, 0]} receiveShadow>
-        <meshStandardMaterial color="#7a422a" roughness={0.55} />
+        <meshStandardMaterial color="#865039" roughness={0.58} />
       </RoundedBox>
 
       <BearingStand x={config.cylinderCenter[0]} z={oppositeSupportZ} />
@@ -216,13 +216,13 @@ function Mechanism({
       <group ref={cylinder} position={config.cylinderCenter}>
         <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[config.cylinderRadius, config.cylinderRadius, config.cylinderLength, 72]} />
-          <meshStandardMaterial color="#a9854d" metalness={0.58} roughness={0.29} />
+          <meshStandardMaterial color="#b18d50" metalness={0.56} roughness={0.33} />
         </mesh>
         {[-1, 1].map((side) => (
           <group key={side} position={[0, 0, side * config.cylinderLength / 2]}>
             <mesh castShadow rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[config.cylinderRadius * 1.015, config.cylinderRadius * 1.015, 0.075, 72]} />
-              <meshStandardMaterial {...brass} roughness={0.22} />
+              <meshStandardMaterial {...brass} roughness={0.26} />
             </mesh>
             <mesh castShadow rotation={[Math.PI / 2, 0, 0]} position={[0, 0, side * 0.055]}>
               <cylinderGeometry args={[0.18, 0.18, 0.11, 28]} />
@@ -241,11 +241,11 @@ function Mechanism({
             <group key={index}>
               <mesh castShadow position={[x, y, pin.axialPosition]} rotation={[0, 0, pin.angle - Math.PI / 2]}>
                 <cylinderGeometry args={[config.pinRadius, config.pinRadius * 0.92, config.pinLength, 16]} />
-                <meshStandardMaterial {...steel} roughness={0.13} />
+                <meshStandardMaterial {...steel} roughness={0.2} />
               </mesh>
               <mesh castShadow position={[tipX, tipY, pin.axialPosition]}>
                 <sphereGeometry args={[config.pinRadius * 1.04, 16, 12]} />
-                <meshStandardMaterial {...steel} roughness={0.12} />
+                <meshStandardMaterial {...steel} roughness={0.18} />
               </mesh>
             </group>
           )
@@ -254,10 +254,10 @@ function Mechanism({
 
       <group>
         <RoundedBox args={[0.48, 0.38, Math.max(3.5, config.cylinderLength + 0.28)]} radius={0.055} smoothness={3} position={[1.69, -0.03, 0]} castShadow>
-          <meshStandardMaterial {...darkSteel} roughness={0.23} />
+          <meshStandardMaterial {...darkSteel} roughness={0.3} />
         </RoundedBox>
         <RoundedBox args={[0.34, 0.14, Math.max(3.35, config.cylinderLength + 0.13)]} radius={0.035} smoothness={3} position={[1.5, 0.08, 0]} castShadow>
-          <meshStandardMaterial {...steel} roughness={0.18} />
+          <meshStandardMaterial {...steel} roughness={0.25} />
         </RoundedBox>
         {[-1, 1].map((side) => (
           <mesh key={side} castShadow position={[1.53, 0.17, side * Math.min(1.42, config.cylinderLength * 0.43)]} rotation={[Math.PI / 2, 0, 0]}>
@@ -275,17 +275,13 @@ function Mechanism({
               <group ref={(group) => { tineRefs.current[index] = group }} position={[anchorX, 0.23, contact.z]}>
                 <mesh castShadow position={[-length / 2, 0, 0]}>
                   <boxGeometry args={[length, 0.055, Math.max(0.105, tineWidth)]} />
-                  <meshStandardMaterial color="#d7d9dc" metalness={0.96} roughness={0.12} />
+                  <meshStandardMaterial color="#eef1f3" metalness={0.8} roughness={0.24} />
                 </mesh>
                 <mesh castShadow position={[-0.08, -0.035, 0]}>
                   <boxGeometry args={[0.16, 0.1, Math.max(0.105, tineWidth)]} />
                   <meshStandardMaterial {...darkSteel} />
                 </mesh>
               </group>
-              <mesh position={[contact.x, contact.y, contact.z]}>
-                <sphereGeometry args={[config.contactTolerance * 0.24, 12, 12]} />
-                <meshStandardMaterial color="#f0d58a" emissive="#5b4312" emissiveIntensity={0.2} metalness={0.35} roughness={0.3} />
-              </mesh>
             </group>
           )
         })}
@@ -306,7 +302,7 @@ function Mechanism({
 
       <group position={[driverCenter[0], -0.68, gearZ]}>
         <RoundedBox args={[0.62, 1.25, 0.34]} radius={0.07} smoothness={3} castShadow>
-          <meshStandardMaterial color="#6d5738" metalness={0.12} roughness={0.48} />
+          <meshStandardMaterial color="#765d3a" metalness={0.08} roughness={0.52} />
         </RoundedBox>
       </group>
 
@@ -320,7 +316,7 @@ function Mechanism({
           <meshStandardMaterial {...darkSteel} />
         </mesh>
         <RoundedBox args={[1.08, 0.18, 0.14]} radius={0.055} smoothness={3} position={[0.54, 0, -0.88]} castShadow>
-          <meshStandardMaterial {...steel} roughness={0.18} />
+          <meshStandardMaterial {...steel} roughness={0.24} />
         </RoundedBox>
         <mesh castShadow position={[1.08, 0, -1.08]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.085, 0.085, 0.42, 20]} />
@@ -338,7 +334,7 @@ function Mechanism({
           onPointerOut={() => { if (lastPointerX.current === null) document.body.style.cursor = '' }}
         >
           <cylinderGeometry args={[0.17, 0.15, 0.6, 24]} />
-          <meshStandardMaterial color="#4a2819" roughness={0.55} />
+          <meshStandardMaterial color="#522f20" roughness={0.58} />
         </mesh>
       </group>
     </group>
@@ -482,13 +478,13 @@ function App() {
         </aside>
 
         <div className="scene" aria-describedby="scene-hint">
-          <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, -7.5], fov: 42 }} shadows dpr={[1, 1.75]}>
+          <Canvas key={cameraKey} camera={{ position: [7.8, 4.4, -8.7], fov: 40 }} shadows dpr={[1, 1.75]} gl={{ toneMappingExposure: 1.08 }}>
             <color attach="background" args={['#0c0c0d']} />
-            <ambientLight intensity={0.42} />
-            <hemisphereLight args={['#d9e2f0', '#26140d', 0.75]} />
-            <directionalLight position={[5, 8, 5]} intensity={2.8} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-            <pointLight position={[-4, 2.5, -3]} intensity={16} distance={12} decay={2} />
-            <pointLight position={[3.5, 2.8, 2.5]} intensity={8} distance={9} decay={2} />
+            <ambientLight intensity={0.62} />
+            <hemisphereLight args={['#f0eee8', '#352117', 1.0]} />
+            <directionalLight position={[4.5, 7.5, -1.5]} intensity={3.15} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+            <pointLight position={[4.5, 3.2, -4.5]} intensity={19} distance={13} decay={2} />
+            <pointLight position={[-3.5, 4, 3.5]} intensity={11} distance={12} decay={2} />
             <Mechanism
               running={running}
               speed={speed}
@@ -496,9 +492,16 @@ function App() {
               onManualStart={() => { setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />
-            <ContactShadows position={[0, -1.98, 0]} opacity={0.3} scale={10} blur={2.2} far={4.5} />
+            <ContactShadows position={[0, -1.98, 0]} opacity={0.24} scale={10} blur={2.5} far={4.5} />
             <gridHelper args={[18, 18, '#343434', '#1d1d1d']} position={[0, -2.02, 0]} />
-            <OrbitControls makeDefault enabled={orbitEnabled} target={[0, -0.25, 0]} />
+            <OrbitControls
+              makeDefault
+              enabled={orbitEnabled}
+              target={[0.2, -0.15, 0]}
+              minDistance={3.8}
+              maxDistance={13}
+              maxPolarAngle={Math.PI * 0.48}
+            />
           </Canvas>
           <div id="scene-hint" className="scene-hint">{t.crankHint}</div>
         </div>
