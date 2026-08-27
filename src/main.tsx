@@ -15,14 +15,8 @@ import {
   tineContactPoint,
   validateMusicBoxConfig,
   type MusicBoxConfig,
-  type NoteEvent,
 } from './instruments/music-box/mechanism'
-
-const TUNE: NoteEvent[] = [
-  { note: 60, start: 0 }, { note: 62, start: 0.125 }, { note: 64, start: 0.25 },
-  { note: 65, start: 0.375 }, { note: 67, start: 0.5 }, { note: 69, start: 0.625 },
-  { note: 71, start: 0.75 }, { note: 72, start: 0.875 }
-]
+import { DEFAULT_TUNE_ID, TUNE_PRESETS, getTunePreset, type TunePreset } from './instruments/music-box/tunes'
 
 const audio = new MusicBoxAudio()
 const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
@@ -100,12 +94,14 @@ function Mechanism({
   running,
   speed,
   config,
+  tune,
   onManualStart,
   onManualEnd,
 }: {
   running: boolean
   speed: number
   config: MusicBoxConfig
+  tune: TunePreset
   onManualStart: () => void
   onManualEnd: () => void
 }) {
@@ -120,7 +116,7 @@ function Mechanism({
   const lastCylinderPhase = useRef(0)
   const motionDirection = useRef(-1)
   const lastPointerX = useRef<number | null>(null)
-  const pins = useMemo(() => compileTune(TUNE, config), [config])
+  const pins = useMemo(() => compileTune(tune.events, config), [tune, config])
   const drivenRadius = cylinderGearRadius(config)
   const gearZ = -config.cylinderLength / 2 - 0.22
   const oppositeSupportZ = config.cylinderLength / 2 + 0.18
@@ -397,6 +393,7 @@ function InfoPage({ page, locale, setLocale }: { page: 'how-to-use' | 'about'; l
 function App() {
   const [running, setRunning] = useState(false)
   const [speed, setSpeed] = useState(0.85)
+  const [selectedTuneId, setSelectedTuneId] = useState(DEFAULT_TUNE_ID)
   const [orbitEnabled, setOrbitEnabled] = useState(true)
   const [cameraKey, setCameraKey] = useState(0)
   const [configError, setConfigError] = useState(false)
@@ -405,6 +402,7 @@ function App() {
     ...DEFAULT_MUSIC_BOX_CONFIG,
     notes: [...DEFAULT_MUSIC_BOX_CONFIG.notes],
   }))
+  const selectedTune = getTunePreset(selectedTuneId)
   const t = messages[locale]
   const pageParam = new URLSearchParams(window.location.search).get('page')
   const page = pageParam === 'how-to-use' || pageParam === 'about' ? pageParam : null
@@ -426,6 +424,11 @@ function App() {
     })
   }
 
+  const selectTune = (id: string) => {
+    setRunning(false)
+    setSelectedTuneId(id)
+  }
+
   if (page) return <InfoPage page={page} locale={locale} setLocale={setLocale} />
 
   return (
@@ -434,6 +437,12 @@ function App() {
         <div className="brand"><strong>{t.productName}</strong><span>{t.productSummary}</span></div>
         <div className="controls">
           <button aria-pressed={running} onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
+          <label htmlFor="tune-select">
+            {t.tune}
+            <select id="tune-select" value={selectedTuneId} onChange={(event) => selectTune(event.target.value)}>
+              {TUNE_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.title[locale]}</option>)}
+            </select>
+          </label>
           <label htmlFor="speed-control">
             {t.speed}
             <input id="speed-control" type="range" min="0.25" max="2" step="0.05" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
@@ -486,9 +495,11 @@ function App() {
             <pointLight position={[4.5, 3.2, -4.5]} intensity={19} distance={13} decay={2} />
             <pointLight position={[-3.5, 4, 3.5]} intensity={11} distance={12} decay={2} />
             <Mechanism
+              key={selectedTune.id}
               running={running}
               speed={speed}
               config={config}
+              tune={selectedTune}
               onManualStart={() => { setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />

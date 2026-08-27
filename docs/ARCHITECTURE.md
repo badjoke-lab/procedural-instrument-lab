@@ -40,20 +40,51 @@ The release/pluck event, not a detached playback timer, is the audible event sou
 ## Module boundary
 
 - `src/core/`: only mechanisms proven reusable across instruments.
-- `src/instruments/music-box/`: cylinder, pins, comb, tines, crank, gears, tuning, contact/deflection/release logic and music-box synthesis.
+- `src/instruments/music-box/`: cylinder, pins, comb, tines, crank, gears, tuning, contact/deflection/release logic, music-box tune/project data and music-box synthesis.
 - `src/rendering/`: scene-level rendering helpers that are not specific to one instrument.
 - `src/audio/`: shared audio helpers only after reuse is demonstrated.
 - `src/interaction/`: shared camera/input helpers only after reuse is demonstrated.
 - `src/i18n/`: UI message catalogs and locale selection.
 
+## Tune and composition boundary
+
+A shipped `TunePreset` is immutable app-supplied tune data. Future user-created work must use a separate versioned editable composition/project representation rather than mutating preset definitions or using rendered audio as project state.
+
+All composition input paths converge before mechanical compilation:
+
+`preset / piano roll / MIDI / keyboard / microphone recognition / audio-file recognition / cylinder editor -> editable tune data -> music-box fit/validation -> pin geometry -> mechanical runtime`
+
+This ensures microphone or file analysis does not become an alternate player. Imported/recognized notes remain editable before the cylinder is generated.
+
+The project-data representation should carry stable schema/version metadata, tune note/timing data, user-facing metadata and only the music-box configuration needed to recreate the project. Source microphone/audio files are not automatically embedded in project data.
+
+## Export boundary
+
+Exports are derived views of the project/runtime, not new sources of truth:
+
+- native project export/import preserves editable composition plus relevant configuration,
+- MIDI export is note-data interchange where appropriate,
+- audio export renders mechanically driven sound,
+- video export captures the mechanism animation synchronized with that same mechanically driven sound,
+- share links reconstruct supported project state rather than pointing at an unrelated pre-rendered media stream.
+
+Start with browser-practical formats and only promise formats that are reliable in supported browsers. WAV is the preferred first audio target; WebM is a practical first video target. MP3/MP4 may follow when implementation support is dependable.
+
+## Persistence and sharing boundary
+
+Portable local project files and compact URL-state sharing do not require accounts or backend persistence and are preferred first.
+
+Hosted public/private project pages, uploads, accounts or cloud libraries are later optional capabilities only after privacy, copyright/moderation, storage cost and operating requirements are explicitly accepted. Microphone/file input should remain local/in-browser where practical and source media must never be silently uploaded.
+
 ## Product information architecture
 
 The primary music-box page is the interactive surface, not the documentation surface. It uses simple wording and only enough explanation for a first-time user to understand what can be done.
 
-- **Music box page**: concise title/copy, Play/Stop, speed, Reset view, EN/JA, 3D scene and discoverable `Customize`.
+- **Music box page**: concise title/copy, Tune, Play/Stop, speed, Reset view, EN/JA, 3D scene and discoverable `Customize`.
 - **Customize section**: bounded mechanical controls; on mobile it is normal document flow with no fixed-height nested scroller.
 - **How to use page**: operating instructions plus beginner-oriented explanations of crank, gears, cylinder, pins and comb/tines.
-- **About page**: project purpose, causal implementation philosophy and inspiration/credits.
+- **About page**: project purpose, causal implementation philosophy, inspiration/credits and supplied tune attribution.
+- Future composition/import/export screens should be separate task surfaces rather than overloading the primary instrument page.
 
 GitHub Pages is the current real-device verification host. Secondary pages must work under the project Pages base path without server-side routing.
 
@@ -65,13 +96,13 @@ English is the default UI language for v1 and Japanese (`ja`) is the first addit
 
 Mechanically meaningful parameters include tine count / note range, cylinder radius / length, pin dimensions, gear ratio, crank speed / tempo and tune. The current exposed controls remain intentionally bounded. Cosmetic-only settings must not pretend to be mechanical parameters.
 
-## Deferred
+## Scheduled later work
+
+The roadmap now explicitly schedules post-v1 piano-roll composition, MIDI import/export, keyboard performance input, microphone/audio-file melody extraction, direct cylinder editing, native project save/load, audio/video export and sharing.
+
+Still deferred without a committed implementation gate:
 
 - full rigid-body/contact physics,
-- spring motor simulation,
-- acoustically accurate resonator box,
-- MIDI import,
-- persistence / accounts,
+- acoustically accurate resonator simulation,
 - 3D-print export,
-- broad cosmetic editor,
 - additional instruments.
