@@ -6,6 +6,8 @@ Build a browser-based, hand-cranked cylinder music box whose core instrument is 
 
 This is not a music-box-themed player. The cylinder layout, contact events, tine motion and sound must share the same mechanical state.
 
+The primary page must also be understandable to a first-time user who does not already know how a mechanical music box works.
+
 ## Vertical-slice acceptance criteria
 
 - no external 3D model is required,
@@ -20,17 +22,31 @@ This is not a music-box-themed player. The cylinder layout, contact events, tine
 - crank, visible gears and cylinder are derived from one drive state,
 - the user can rotate the 3D crank directly with pointer/touch input,
 - manual crank movement uses the same drive/contact/audio path as automatic playback,
-- selected mechanical parameters can be changed through builder controls and regenerate the relevant geometry,
-- builder controls cannot bypass `MusicBoxConfig` validation,
+- selected mechanical parameters can be changed through customization controls and regenerate the relevant geometry,
+- customization controls cannot bypass `MusicBoxConfig` validation,
 - camera orbit/zoom works and a reset view is available,
 - speed can be changed without separating animation from sound,
+- the primary page exposes customization clearly enough that it is discoverable without scrolling inside a hidden/nested panel,
+- narrow/mobile layouts put customization controls in normal page flow rather than a fixed-height nested scrolling region,
+- detailed operation/mechanism instructions are available from a dedicated `How to use` page instead of making the primary page verbose,
+- project background and inspiration/credits are available from a dedicated `About` page,
 - the default UI language is English,
-- user-facing UI strings are routed through a localization-ready message layer rather than duplicated as hard-coded component text,
-- repository verification runs typecheck, mechanism tests and production build.
+- Japanese is supported through the same message layer,
+- repository verification runs typecheck, mechanism tests, production build and browser runtime checks.
 
-## Builder scope
+## Primary-page copy rule
 
-The initial builder exposes a bounded set of mechanically meaningful controls:
+The primary music-box page should be concise and task-oriented.
+
+- Explain the product in one short, plain-language line.
+- Do not require terms such as `pin contact`, `tine`, `drive state` or `mechanical causality` to understand the main controls.
+- Link to `How to use` for detailed instructions and beginner-oriented mechanism explanation.
+- Link to `About` for implementation philosophy and inspiration/credits.
+- Use `Customize` / `カスタマイズ` as the primary user-facing name for the configurable mechanism section rather than `Builder` / `ビルダー`.
+
+## Customization scope
+
+The current exposed v1 customization controls are a bounded set of mechanically meaningful parameters:
 
 - cylinder length,
 - tine spacing,
@@ -39,7 +55,33 @@ The initial builder exposes a bounded set of mechanically meaningful controls:
 
 These controls are not cosmetic presets. Each value must flow into the same instrument configuration used by geometry, drive kinematics and contact mapping. Invalid configurations must be rejected rather than rendered silently.
 
-Broad appearance customization is deferred until the mechanism and direct interaction are stable.
+Broad appearance customization and free-form tune composition are not part of the current completion gate.
+
+## How to use scope
+
+The dedicated How to use page should explain, in ordinary language:
+
+- Play / Stop,
+- speed control,
+- orbit/rotate and zoom,
+- Reset view,
+- direct crank manipulation,
+- Customize controls,
+- language switching,
+- the minimum mechanism background needed to understand cylinder, pins, comb/tines and gears.
+
+The explanation may be detailed there; the primary page should remain simple.
+
+## About / credits scope
+
+The About page should contain:
+
+- what the project is trying to demonstrate,
+- the rule that sound/animation remain downstream of mechanical contact,
+- project/repository context where useful,
+- inspiration/credits.
+
+When an external work inspired the interaction/presentation concept but code/assets were not copied, use `Inspired by` wording rather than implying derivation. The current inspiration reference is the McGreenBeats X post supplied for the project; link the post directly. Add another source/repository only when its relationship to that inspiration is verified.
 
 ## Audio quality scope
 
@@ -54,17 +96,19 @@ Phase 5 may improve timbre, but it must not change the source of playback timing
 
 ## Language scope
 
-English is the required v1 UI locale. Japanese is planned as the first additional locale, but Japanese translation is not a mechanical-v1 completion blocker.
+English is the default v1 UI locale. Japanese is the first additional locale. All new primary-page, Customize, How to use and About copy must be added to both catalogs together.
 
-When Japanese is added, locale switching should use a compact control such as `EN / JA`; bilingual labels are not the default UI style.
+Locale switching should use a compact control such as `EN / JA`; bilingual labels are not the default UI style.
 
-## Next mechanism milestones
+## Current finishing milestones
 
-1. Verify the improved procedural tine synthesis and restrained contact noise without changing mechanical event timing.
-2. Improve enclosure/material detail and mobile interaction without hiding the inspectable mechanism.
-3. Verify direct-crank gesture ergonomics on real browser/device and tune interaction if necessary.
-4. Add the Japanese message catalog and locale switch after the core interaction surface is stable enough that translation keys will not churn unnecessarily.
+1. Fix mobile customization discoverability and remove nested scrolling.
+2. Add concise primary-page capability copy plus `Customize`, `How to use` and `About` navigation.
+3. Add the localized How to use and About pages, including inspiration credit.
+4. Extend browser tests for the new navigation/mobile-flow behavior.
+5. Publish to GitHub Pages and re-check the revised UI on a real mobile device.
+6. Complete the remaining Play/audio/crank/performance real-device checks.
 
 ## Scope rule
 
-No second instrument work is required for v1. The repository name keeps expansion possible, but music-box completion has priority over generic framework work.
+No additional instrument work is part of this v1 plan. Music-box completion has priority over any generic framework or expansion work.

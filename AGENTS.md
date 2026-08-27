@@ -9,6 +9,7 @@ Before implementation work, read the latest relevant repository documents on the
 1. `docs/ARCHITECTURE.md`
 2. `docs/ROADMAP.md`
 3. the active instrument specification, currently `docs/MUSIC_BOX_V1.md`
+4. `docs/PRESENTATION_CHECKLIST.md` for Phase 5 presentation/runtime work
 
 Repository documents are the project source of truth. Do not rely on chat history, stale summaries, or assumptions when the repository contains a newer rule.
 
@@ -22,6 +23,7 @@ If a change alters any of the following, update the relevant specification/roadm
 - mechanical behavior,
 - acceptance criteria,
 - development sequencing,
+- information architecture or user-facing navigation,
 - language/localization policy,
 - instrument-expansion policy.
 
@@ -44,10 +46,21 @@ The intended causal chain is:
 
 Do not replace this with detached timers, pre-scripted visual animation, or independent audio scheduling that merely looks synchronized.
 
+## Information architecture rule
+
+The primary instrument page must stay concise and task-oriented. It should make the main capabilities discoverable without requiring prior knowledge of music-box mechanics.
+
+- Use simple user-facing language on the primary instrument page.
+- Keep detailed operating instructions and mechanical explanations on the dedicated `How to use` page.
+- Keep project background, implementation philosophy and inspiration/credits on the dedicated `About` page.
+- `Customize` must be visibly discoverable from the primary page.
+- On narrow/mobile layouts, the Customize controls must be part of normal document flow. Do not hide them inside a fixed-height nested scrolling region.
+- Internal/developer terminology such as `Builder` should not be the primary user-facing label when a clearer term such as `Customize` exists.
+
 ## UI language rule
 
 - Default UI locale: English (`en`).
-- First planned additional locale: Japanese (`ja`).
+- First additional locale: Japanese (`ja`).
 - User-facing strings should go through the localization/message layer.
 - Do not use bilingual labels as the normal UI.
 - Code identifiers and mechanical parameter keys remain English and locale-independent.
@@ -64,7 +77,7 @@ Dedicated autonomous agents are not required merely to create more process. If a
 
 - **mechanism agent**: geometry, kinematics, contact and deterministic mechanical state,
 - **audio agent**: synthesis/output driven by pluck events, never independent sequencing,
-- **UI/i18n agent**: controls, message catalogs, accessibility and locale behavior,
+- **UI/i18n agent**: information architecture, controls, message catalogs, accessibility, responsive behavior and locale behavior,
 - **verification agent**: build/type checks and acceptance-gate checks against current docs.
 
 Agents must follow the same repository source-of-truth rules and must not invent a separate roadmap.
