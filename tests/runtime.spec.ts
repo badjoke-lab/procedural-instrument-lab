@@ -29,6 +29,7 @@ test('music box renders, switches tunes and core controls work', async ({ page }
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Reset view' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Customize', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Compose', exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'How to use' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'About' })).toBeVisible()
   await expect(page.getByText('Customize', { exact: true }).last()).toBeVisible()
@@ -119,6 +120,41 @@ test('music box renders, switches tunes and core controls work', async ({ page }
   expect(errors).toEqual([])
 })
 
+test('piano roll edits TuneDocument and returns playback through the mechanical runtime', async ({ page }, testInfo) => {
+  test.setTimeout(120_000)
+  const errors = collectRuntimeErrors(page)
+  await page.goto('/')
+
+  const composer = page.locator('#compose')
+  await composer.locator('summary').click()
+  await expect(composer).toHaveAttribute('open', '')
+  await expect(page.getByText('Edit the selected melody. Changes regenerate the cylinder pins.')).toBeVisible()
+
+  const notes = page.locator('.piano-roll-note')
+  const before = await notes.count()
+  expect(before).toBeGreaterThan(8)
+  await page.getByRole('button', { name: 'Add note' }).click()
+  await expect(notes).toHaveCount(before + 1)
+  await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
+
+  const pitch = page.locator('.piano-roll-inspector select')
+  await expect(pitch).toBeVisible()
+  await pitch.selectOption('62')
+  await expect(pitch).toHaveValue('62')
+
+  const transport = page.locator('header .controls > button').first()
+  await expect(transport).toHaveText('Play')
+  await transport.click()
+  await expect(transport).toHaveText('Stop')
+  await page.waitForTimeout(300)
+  await expect(page.locator('canvas')).toBeVisible()
+
+  const noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
+  expect(noHorizontalOverflow).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('runtime-piano-roll.png'), fullPage: true })
+  expect(errors).toEqual([])
+})
+
 test('invalid customization keeps last valid mechanism and exposes an alert', async ({ page }) => {
   const errors = collectRuntimeErrors(page)
   await page.goto('/')
@@ -145,7 +181,7 @@ test('controls retain label associations and keyboard focusability', async ({ pa
     await expect(page.locator(`#${id}`)).toBeVisible()
   }
 
-  const controls = page.locator('button, input, select, a')
+  const controls = page.locator('button, input, select, a, summary')
   const count = await controls.count()
   expect(count).toBeGreaterThan(0)
 
