@@ -79,6 +79,9 @@ test('EN JA switching updates document language and visible UI', async ({ page }
   await page.goto('/')
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByText('Builder', { exact: true })).toBeVisible()
+  await page.screenshot({ path: testInfo.outputPath('localization-en.png'), fullPage: true })
+
   await page.getByRole('button', { name: 'JA' }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja')
   await expect(page.getByText('ビルダー', { exact: true })).toBeVisible()
@@ -86,11 +89,11 @@ test('EN JA switching updates document language and visible UI', async ({ page }
 
   const noHorizontalOverflowJa = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)
   expect(noHorizontalOverflowJa).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('localization-ja.png'), fullPage: true })
 
   await page.getByRole('button', { name: 'EN' }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByText('Builder', { exact: true })).toBeVisible()
 
-  await page.screenshot({ path: testInfo.outputPath('localization.png'), fullPage: true })
   expect(errors).toEqual([])
 })
