@@ -374,6 +374,7 @@ function InfoPage({ page, locale, setLocale }: { page: 'how-to-use' | 'about'; l
             <h1>{t.howToUse}</h1>
             <p className="lede">{t.howToUseIntro}</p>
             <section><h2>{t.howPlayTitle}</h2><p>{t.howPlayBody}</p></section>
+            <section><h2>{t.howComposeTitle}</h2><p>{t.howComposeBody}</p></section>
             <section><h2>{t.howViewTitle}</h2><p>{t.howViewBody}</p></section>
             <section><h2>{t.howCrankTitle}</h2><p>{t.howCrankBody}</p></section>
             <section><h2>{t.howCustomizeTitle}</h2><p>{t.howCustomizeBody}</p></section>
