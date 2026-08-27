@@ -69,6 +69,6 @@ test('on-screen keyboard localizes in Japanese', async ({ page }) => {
   await page.getByRole('link', { name: '作曲', exact: true }).click()
   const keyboard = page.getByRole('region', { name: '画面鍵盤' })
   await expect(keyboard).toBeVisible()
-  await expect(page.getByRole('button', { name: '録音' })).toBeVisible()
+  await expect(keyboard.getByRole('button', { name: '録音', exact: true })).toBeVisible()
   await expect(keyboard.getByText(/A S D F G H J K/)).toContainText('演奏・録音')
 })
