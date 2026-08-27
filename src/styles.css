@@ -14,9 +14,11 @@ header { display: flex; justify-content: space-between; align-items: center; gap
 button, select { min-height: 40px; border: 1px solid #606068; background: #202024; color: #fff; padding: 8px 10px; border-radius: 8px; }
 button { cursor: pointer; }
 button:hover, select:hover { border-color: #85858e; background: #29292e; }
+button:disabled { cursor: default; opacity: .45; }
 button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid #f0d58a; outline-offset: 2px; }
 label { font-size: 12px; color: #c4c4ca; display: flex; gap: 8px; align-items: center; }
 input[type="range"] { min-height: 28px; accent-color: #d6bb72; }
+input[type="number"] { min-height: 40px; border: 1px solid #606068; background: #202024; color: #fff; padding: 8px 10px; border-radius: 8px; width: 88px; }
 .page-nav { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid #2d2d32; background: #111114; }
 .page-nav a { display: inline-flex; min-height: 36px; align-items: center; padding: 6px 10px; border: 1px solid transparent; border-radius: 8px; color: #c8c8ce; text-decoration: none; font-size: 13px; }
 .page-nav a:hover, .page-nav a[aria-current="page"] { color: #fff; border-color: #505058; background: #1c1c20; }
@@ -34,6 +36,24 @@ input[type="range"] { min-height: 28px; accent-color: #d6bb72; }
 .scene { min-width: 0; min-height: 0; position: relative; background: radial-gradient(circle at 55% 35%, #171719 0%, #0c0c0d 62%); }
 .scene-hint { position: absolute; left: 12px; bottom: 12px; padding: 7px 9px; border: 1px solid #3a3a40; border-radius: 7px; background: rgba(17,17,20,.82); color: #b8b8c0; font-size: 11px; pointer-events: none; }
 canvas { width: 100% !important; height: 100% !important; touch-action: none; }
+.piano-roll-editor { border-top: 1px solid #303036; padding-top: 18px; margin-top: 20px; }
+.piano-roll-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.piano-roll-heading strong { display: block; font-size: 15px; }
+.piano-roll-heading span { display: block; color: #9999a2; font-size: 12px; line-height: 1.45; margin-top: 5px; }
+.piano-roll-actions { display: flex; gap: 6px; }
+.piano-roll-actions button { min-height: 34px; padding: 5px 8px; font-size: 11px; }
+.piano-roll-scroll { overflow-x: auto; border: 1px solid #303036; border-radius: 8px; background: #0d0d10; }
+.piano-roll-grid { min-width: max(520px, calc(var(--piano-roll-columns) * 28px)); }
+.piano-roll-row { display: grid; grid-template-columns: 36px 1fr; min-height: 31px; border-bottom: 1px solid #242429; }
+.piano-roll-row:last-child { border-bottom: 0; }
+.piano-roll-key { display: flex; align-items: center; justify-content: center; color: #9999a2; font-size: 10px; border-right: 1px solid #303036; background: #151519; }
+.piano-roll-lane { position: relative; min-width: 0; background-image: linear-gradient(to right, rgba(255,255,255,.055) 1px, transparent 1px); background-size: calc(100% / var(--piano-roll-columns)) 100%; }
+.piano-roll-note { position: absolute; top: 4px; bottom: 4px; min-height: 0; padding: 0; border-radius: 4px; border-color: #9a844b; background: #6d5c31; }
+.piano-roll-note[aria-pressed="true"] { border-color: #f0d58a; background: #a1843d; box-shadow: 0 0 0 1px rgba(240,213,138,.22); }
+.piano-roll-inspector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.piano-roll-inspector label { display: grid; gap: 5px; align-items: start; }
+.piano-roll-inspector select, .piano-roll-inspector input { width: 100%; min-width: 0; }
+.piano-roll-empty { color: #9999a2; font-size: 12px; }
 .info-shell { min-height: 100vh; background: #0c0c0d; }
 .info-header { position: sticky; top: 0; z-index: 2; }
 .info-page { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 64px; }
@@ -60,8 +80,12 @@ canvas { width: 100% !important; height: 100% !important; touch-action: none; }
   .builder-panel { order: 2; overflow: visible; max-height: none; border-right: 0; border-top: 1px solid #303036; padding: 18px 14px 28px; }
   .customize-heading { margin-bottom: 22px; }
   .builder-panel label { margin-bottom: 22px; }
-  button, select { min-height: 44px; }
+  button, select, input[type="number"] { min-height: 44px; }
   .scene-hint { left: 10px; right: 10px; bottom: 10px; text-align: center; }
+  .piano-roll-heading { display: block; }
+  .piano-roll-actions { margin-top: 10px; }
+  .piano-roll-inspector { grid-template-columns: 1fr; }
+  .piano-roll-inspector label { margin-bottom: 0; }
   .info-header { position: static; flex-direction: row; align-items: center; }
   .info-page { width: min(100% - 28px, 760px); padding-top: 28px; }
 }
