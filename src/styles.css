@@ -47,6 +47,17 @@ canvas { width: 100% !important; height: 100% !important; touch-action: none; }
 .piano-roll-heading span { display: block; color: #9999a2; font-size: 12px; line-height: 1.45; margin-top: 5px; }
 .piano-roll-actions { display: flex; gap: 6px; }
 .piano-roll-actions button { min-height: 34px; padding: 5px 8px; font-size: 11px; }
+.screen-keyboard { margin: 0 0 14px; padding: 12px; border: 1px solid #303036; border-radius: 8px; background: #141418; }
+.screen-keyboard-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.screen-keyboard-heading > div { min-width: 0; }
+.screen-keyboard-heading strong { display: block; font-size: 14px; }
+.screen-keyboard-heading span { display: block; margin-top: 4px; color: #9999a2; font-size: 12px; line-height: 1.45; }
+.screen-keyboard-heading button { flex: 0 0 auto; min-height: 36px; }
+.screen-keyboard-recording { margin: -2px 0 8px; color: #e8d398; font-size: 11px; }
+.screen-keyboard-keys { display: flex; gap: 4px; overflow-x: auto; padding: 2px 0 4px; }
+.screen-key { flex: 0 0 48px; min-width: 48px; min-height: 58px; padding: 6px 4px; touch-action: none; }
+.screen-key[aria-pressed="true"] { border-color: #f0d58a; background: #6d5c31; }
+.screen-key span { display: block; font-size: 11px; }
 .piano-roll-scroll { overflow-x: auto; border: 1px solid #303036; border-radius: 8px; background: #0d0d10; }
 .piano-roll-grid { min-width: max(520px, calc(var(--piano-roll-columns) * 28px)); }
 .piano-roll-row { display: grid; grid-template-columns: 36px 1fr; min-height: 31px; border-bottom: 1px solid #242429; }
@@ -91,6 +102,8 @@ canvas { width: 100% !important; height: 100% !important; touch-action: none; }
   .scene-hint { left: 10px; right: 10px; bottom: 10px; text-align: center; }
   .piano-roll-heading { display: block; }
   .piano-roll-actions { margin-top: 10px; }
+  .screen-keyboard-heading { display: block; }
+  .screen-keyboard-heading button { margin-top: 10px; }
   .piano-roll-inspector { grid-template-columns: 1fr; }
   .piano-roll-inspector label { margin-bottom: 0; }
   .info-header { position: static; flex-direction: row; align-items: center; }
