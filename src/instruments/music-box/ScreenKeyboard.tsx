@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  computerKeyboardPitch,
+  shouldIgnoreComputerKeyboardTarget,
+} from './computer-keyboard-model'
 import { recordScreenKeyboardNote } from './screen-keyboard-model'
 import type { PianoRollDraft } from './piano-roll-model'
 
@@ -19,6 +23,7 @@ export type ScreenKeyboardCopy = {
   record: string
   stopRecording: string
   recording: string
+  computerKeyboardHint: string
 }
 
 export function ScreenKeyboard({
@@ -34,25 +39,88 @@ export function ScreenKeyboard({
 }) {
   const [recording, setRecording] = useState(false)
   const [activePitches, setActivePitches] = useState<number[]>([])
+  const regionRef = useRef<HTMLElement | null>(null)
   const sessionStartedAt = useRef<number | null>(null)
   const activePresses = useRef(new Map<number, { pitch: number; startedAt: number }>())
+  const activeComputerPresses = useRef(new Map<string, { pitch: number; startedAt: number }>())
   const latestDocument = useRef(document)
+  const recordingRef = useRef(recording)
 
   useEffect(() => {
     latestDocument.current = document
   }, [document])
 
+  useEffect(() => {
+    recordingRef.current = recording
+  }, [recording])
+
+  useEffect(() => {
+    const isComposeVisible = () => {
+      const details = regionRef.current?.closest('details')
+      return !(details instanceof HTMLDetailsElement) || details.open
+    }
+
+    const pressComputerKey = (event: KeyboardEvent) => {
+      if (event.repeat || event.altKey || event.ctrlKey || event.metaKey) return
+      if (!isComposeVisible() || shouldIgnoreComputerKeyboardTarget(event.target)) return
+      const pitch = computerKeyboardPitch(event.code)
+      if (pitch === null || activeComputerPresses.current.has(event.code)) return
+
+      event.preventDefault()
+      const now = performance.now() / 1000
+      activeComputerPresses.current.set(event.code, { pitch, startedAt: now })
+      setActivePitches((current) => current.includes(pitch) ? current : [...current, pitch])
+      onPreview(pitch)
+    }
+
+    const releaseComputerKey = (event: KeyboardEvent) => {
+      const pressed = activeComputerPresses.current.get(event.code)
+      if (!pressed) return
+      event.preventDefault()
+      activeComputerPresses.current.delete(event.code)
+      setActivePitches((current) => current.filter((pitch) => pitch !== pressed.pitch))
+
+      if (!recordingRef.current || sessionStartedAt.current === null) return
+      const next = recordScreenKeyboardNote(latestDocument.current, {
+        pitch: pressed.pitch,
+        sessionStartedAtSeconds: sessionStartedAt.current,
+        keyStartedAtSeconds: pressed.startedAt,
+        keyEndedAtSeconds: performance.now() / 1000,
+      })
+      latestDocument.current = next
+      onChange(next)
+    }
+
+    const clearComputerKeys = () => {
+      activeComputerPresses.current.clear()
+      setActivePitches([])
+    }
+
+    window.addEventListener('keydown', pressComputerKey)
+    window.addEventListener('keyup', releaseComputerKey)
+    window.addEventListener('blur', clearComputerKeys)
+    return () => {
+      window.removeEventListener('keydown', pressComputerKey)
+      window.removeEventListener('keyup', releaseComputerKey)
+      window.removeEventListener('blur', clearComputerKeys)
+    }
+  }, [onChange, onPreview])
+
   const toggleRecording = () => {
     if (recording) {
       setRecording(false)
+      recordingRef.current = false
       sessionStartedAt.current = null
       activePresses.current.clear()
+      activeComputerPresses.current.clear()
       setActivePitches([])
       return
     }
     sessionStartedAt.current = performance.now() / 1000
     activePresses.current.clear()
+    activeComputerPresses.current.clear()
     latestDocument.current = document
+    recordingRef.current = true
     setRecording(true)
   }
 
@@ -84,13 +152,14 @@ export function ScreenKeyboard({
   }
 
   return (
-    <section className="screen-keyboard" role="region" aria-label={copy.title}>
+    <section ref={regionRef} className="screen-keyboard" role="region" aria-label={copy.title}>
       <div className="screen-keyboard-heading">
         <div><strong>{copy.title}</strong><span>{copy.intro}</span></div>
         <button type="button" aria-pressed={recording} onClick={toggleRecording}>
           {recording ? copy.stopRecording : copy.record}
         </button>
       </div>
+      <div className="computer-keyboard-hint">{copy.computerKeyboardHint}</div>
       {recording && <div className="screen-keyboard-recording" role="status">● {copy.recording}</div>}
       <div className="screen-keyboard-keys" role="group" aria-label={copy.title}>
         {KEYS.map(({ pitch, label }) => (
