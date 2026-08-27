@@ -9,9 +9,7 @@ test.beforeEach(async ({ page }) => {
       value: {
         getUserMedia: async () => {
           state.requests += 1
-          return {
-            getTracks: () => [{ stop: () => { state.stopped = true } }],
-          }
+          return { getTracks: () => [{ stop: () => { state.stopped = true } }] }
         },
       },
     })
@@ -34,7 +32,7 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('microphone permission is explicit and the local clip can be previewed and discarded', async ({ page }, testInfo) => {
+test('microphone permission is explicit and the local clip can be previewed, re-recorded and discarded', async ({ page }, testInfo) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Compose', exact: true }).click()
 
@@ -50,6 +48,13 @@ test('microphone permission is explicit and the local clip can be previewed and 
   await expect(recorder.getByRole('status')).toContainText('Recording ready')
   await expect(recorder.locator('audio')).toBeVisible()
   expect(await page.evaluate(() => (window as any).__micTestState.stopped)).toBe(true)
+
+  await recorder.getByRole('button', { name: 'Start recording' }).click()
+  await expect(recorder.getByRole('status')).toHaveText('Recording…')
+  await expect(recorder.locator('audio')).toHaveCount(0)
+  expect(await page.evaluate(() => (window as any).__micTestState.requests)).toBe(2)
+  await recorder.getByRole('button', { name: 'Stop recording' }).click()
+  await expect(recorder.locator('audio')).toBeVisible()
 
   await page.screenshot({ path: testInfo.outputPath('runtime-microphone-recording.png'), fullPage: true })
 
