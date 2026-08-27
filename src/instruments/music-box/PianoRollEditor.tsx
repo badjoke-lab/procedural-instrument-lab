@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { MusicBoxAudio } from './audio'
+import { MidiExport } from './MidiExport'
 import { MidiImport } from './MidiImport'
 import { ScreenKeyboard } from './ScreenKeyboard'
 import {
@@ -108,6 +109,19 @@ export function PianoRollEditor({
           imported: 'MIDI imported.',
           failed: 'Could not import MIDI.',
           outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
+        }}
+      />
+
+      <MidiExport
+        document={document}
+        copy={japanese ? {
+          title: 'MIDIを書き出す',
+          intro: '現在の編集データを .mid として保存します。音程・開始拍・長さ・テンポを保持します。',
+          download: 'MIDIを保存',
+        } : {
+          title: 'Export MIDI',
+          intro: 'Save the current editable tune as .mid with pitch, beat timing, duration and tempo.',
+          download: 'Download MIDI',
         }}
       />
 
