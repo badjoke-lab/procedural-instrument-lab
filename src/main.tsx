@@ -190,17 +190,17 @@ function Mechanism({
       </group>
 
       <group ref={crank} position={driverCenter}>
-        <mesh castShadow position={[0, 0, 0.48]}>
+        <mesh castShadow position={[0, 0, -0.48]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.07, 0.07, 0.96, 20]} />
           <meshStandardMaterial color="#a8a8a8" metalness={0.9} roughness={0.2} />
         </mesh>
-        <mesh castShadow position={[0.55, 0, 0.95]}>
+        <mesh castShadow position={[0.55, 0, -0.96]}>
           <boxGeometry args={[1.1, 0.16, 0.16]} />
           <meshStandardMaterial color="#a8a8a8" metalness={0.9} roughness={0.2} />
         </mesh>
         <mesh
           castShadow
-          position={[1.08, 0, 1.18]}
+          position={[1.08, 0, -1.18]}
           rotation={[Math.PI / 2, 0, 0]}
           onPointerDown={beginManualCrank}
           onPointerMove={moveManualCrank}
@@ -295,7 +295,7 @@ function App() {
         </aside>
 
         <div className="scene" aria-describedby="crank-hint">
-          <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, 7.5], fov: 42 }} shadows dpr={[1, 1.75]}>
+          <Canvas key={cameraKey} camera={{ position: [7.5, 5.2, -7.5], fov: 42 }} shadows dpr={[1, 1.75]}>
             <color attach="background" args={['#0c0c0d']} />
             <ambientLight intensity={0.45} />
             <hemisphereLight args={['#d8e0ef', '#2a1710', 0.8]} />
