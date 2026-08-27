@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -33,8 +33,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 ### Editable composition foundation
 
 12. **TuneDocument specification** — define the versioned editable canonical tune representation shared by preset-derived, user-authored and imported material. Completion means every input path can converge before mechanical compilation. **Complete in PR #18, merged as `d15ba27bf2e46c8e7ce428e23b5e4a37ef644334`; final branch run #84 green.**
-13. **Piano-roll editor** — add/remove/move notes and edit pitch/timing/duration. Completion means users can compose from scratch and later correct recognition/import results. **In progress in PR #20. The current implementation edits a preset-derived TuneDocument, regenerates cylinder pins through the existing compiler path and has dedicated desktop/mobile runtime coverage.**
-14. **On-screen keyboard input** — record notes from an on-screen keyboard into TuneDocument. Completion means users can perform rather than place every note manually.
+13. **Piano-roll editor** — add/remove/move notes and edit pitch/timing/duration. Completion means users can compose from scratch and later correct recognition/import results. **Complete in PR #20, merged as `c3bf6dcbc9519bea5050535f8e1ea1d735b9d776`; final branch run #98 green with desktop/mobile evidence reviewed.**
+14. **On-screen keyboard input** — record notes from an on-screen keyboard into TuneDocument. Completion means users can perform rather than place every note manually. **In progress in PR #21: touch/pointer C4-C5 keyboard, preview sound, quantized recording into TuneDocument, responsive layout, EN/JA and dedicated browser coverage are implemented; final CI/evidence review remains before merge.**
 15. **Computer-keyboard input** — provide practical keyboard-key note entry/recording. Completion means composition does not require external MIDI hardware.
 16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise import path.
 17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Preset foundation steps 1-11 and TuneDocument step 12 are complete on main. PR #20 is the active lane for step 13 Piano Roll. Its implementation must remain on the canonical TuneDocument -> mechanical compiler path and must pass desktop/mobile browser gates before merge. After step 13 is green and merged, proceed to step 14 on-screen keyboard input. Do not jump to MIDI/audio import, advanced Customize or final realism first.
+Preset foundation steps 1-11, TuneDocument step 12 and Piano Roll step 13 are complete on main. PR #21 is the active lane for step 14 on-screen keyboard input. Its recording output must remain on the canonical TuneDocument -> mechanical compiler path and must pass desktop/mobile recording/localization browser gates before merge. After step 14 is green and merged, proceed to step 15 computer-keyboard input. Do not jump to MIDI/audio import, advanced Customize or final realism first.
 
 ## Mechanical causality gate
 
