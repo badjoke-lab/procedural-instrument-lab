@@ -11,7 +11,7 @@ import {
   compileTune,
   cylinderGearRadius,
   driveKinematics,
-  pinTouchesTine,
+  pinTineEngagement,
   tineContactPoint,
   validateMusicBoxConfig,
   type MusicBoxConfig,
@@ -26,6 +26,8 @@ const TUNE: NoteEvent[] = [
 
 const audio = new MusicBoxAudio()
 const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
+const TINE_LOAD_ANGLE = 0.115
+const TINE_VIBRATION_ANGLE = 0.075
 
 function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.13
@@ -66,10 +68,12 @@ function Mechanism({
   const crank = useRef<THREE.Group>(null)
   const driverGear = useRef<THREE.Group>(null)
   const drivenGear = useRef<THREE.Group>(null)
-  const tineRefs = useRef<(THREE.Mesh | null)[]>([])
-  const driveAngle = useRef(0)
-  const touching = useRef(new Set<number>())
+  const tineRefs = useRef<(THREE.Group | null)[]>([])
+  const driveAngle = useRef(0.08)
+  const engagedPins = useRef(new Set<number>())
   const vibrations = useRef(config.notes.map(() => 0))
+  const lastCylinderPhase = useRef(0)
+  const motionDirection = useRef(-1)
   const lastPointerX = useRef<number | null>(null)
   const pins = useMemo(() => compileTune(TUNE, config), [config])
   const drivenRadius = cylinderGearRadius(config)
@@ -110,26 +114,40 @@ function Mechanism({
   useFrame((_, dt) => {
     if (running) driveAngle.current += dt * speed
     const drive = driveKinematics(driveAngle.current, config)
+    const phaseDelta = drive.cylinderPhase - lastCylinderPhase.current
+    if (Math.abs(phaseDelta) > 1e-6) motionDirection.current = Math.sign(phaseDelta)
+    lastCylinderPhase.current = drive.cylinderPhase
 
     if (crank.current) crank.current.rotation.z = drive.crankAngle
     if (driverGear.current) driverGear.current.rotation.z = drive.driverGearAngle
     if (drivenGear.current) drivenGear.current.rotation.z = drive.cylinderGearAngle
     if (cylinder.current) cylinder.current.rotation.z = drive.cylinderPhase
 
+    const frameDeflections = config.notes.map(() => 0)
+
     pins.forEach((pin, index) => {
-      const inContact = pinTouchesTine(pin, drive.cylinderPhase, config)
-      if (inContact && !touching.current.has(index)) {
-        touching.current.add(index)
+      const engagement = pinTineEngagement(pin, drive.cylinderPhase, config)
+      if (engagement.engaged) {
+        engagedPins.current.add(index)
+        frameDeflections[pin.noteIndex] = Math.max(frameDeflections[pin.noteIndex], engagement.deflection)
+      } else if (engagedPins.current.has(index)) {
+        engagedPins.current.delete(index)
         vibrations.current[pin.noteIndex] = 1
         void audio.pluck(config.notes[pin.noteIndex])
       }
-      if (!inContact) touching.current.delete(index)
     })
 
     vibrations.current = vibrations.current.map((value, index) => {
       const next = Math.max(0, value - dt * 2.3)
-      const mesh = tineRefs.current[index]
-      if (mesh) mesh.rotation.z = Math.sin((1 - next) * 55) * next * 0.09
+      const tine = tineRefs.current[index]
+      if (tine) {
+        const loaded = frameDeflections[index]
+        const loadAngle = motionDirection.current * loaded * TINE_LOAD_ANGLE
+        const vibrationAngle = loaded > 0
+          ? 0
+          : Math.sin((1 - next) * 55) * next * TINE_VIBRATION_ANGLE
+        tine.rotation.z = loadAngle + vibrationAngle
+      }
       return next
     })
   })
@@ -167,13 +185,17 @@ function Mechanism({
           const contact = tineContactPoint(index, config)
           const anchorX = 1.58 + index * 0.045
           const length = anchorX - contact.x
-          const centerX = contact.x + length / 2
           return (
             <group key={note}>
-              <mesh castShadow ref={(mesh) => { tineRefs.current[index] = mesh }} position={[centerX, 0, contact.z]}>
-                <boxGeometry args={[length, 0.075, 0.18]} />
-                <meshStandardMaterial color="#ddd8cd" metalness={0.9} roughness={0.16} />
-              </mesh>
+              <group
+                ref={(group) => { tineRefs.current[index] = group }}
+                position={[anchorX, 0, contact.z]}
+              >
+                <mesh castShadow position={[-length / 2, 0, 0]}>
+                  <boxGeometry args={[length, 0.075, 0.18]} />
+                  <meshStandardMaterial color="#ddd8cd" metalness={0.9} roughness={0.16} />
+                </mesh>
+              </group>
               <mesh position={[contact.x, contact.y, contact.z]}>
                 <sphereGeometry args={[config.contactTolerance * 0.32, 12, 12]} />
                 <meshStandardMaterial color="#f0d58a" emissive="#5b4312" emissiveIntensity={0.25} metalness={0.35} roughness={0.3} />
