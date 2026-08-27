@@ -63,12 +63,12 @@ Completed behavior:
 - manual crank movement changes the same authoritative crank angle used by autoplay,
 - manual interaction stops autoplay while dragging,
 - orbit camera input is disabled during crank dragging,
-- cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical builder controls,
-- builder changes flow through `MusicBoxConfig` validation,
+- cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical customization controls,
+- customization changes flow through `MusicBoxConfig` validation,
 - rejected configurations keep the last valid mechanism and display a localized error,
 - gear/cylinder parameter changes regenerate the relevant geometry/ratio,
 - a camera reset control restores the initial inspection view,
-- mobile layout keeps the 3D scene primary and moves builder controls below it.
+- mobile layout keeps the 3D scene primary and places customization below it.
 
 ## Phase 5 — Instrument quality
 
@@ -85,30 +85,46 @@ Completed and merged:
 - DOM controls have visible focus states and explicit label/control relationships,
 - Play exposes pressed state to assistive technology,
 - primary touch controls use larger targets,
-- builder layout collapses to one column at narrow widths,
 - rendering DPR is bounded for mobile GPU cost,
 - integrated typecheck, unit tests, production build and browser runtime gate are green on main,
 - Playwright runs the production build in Chromium at desktop and mobile-emulated viewports,
-- browser checks cover WebGL/UI rendering, Play/Stop state, responsive ordering, EN/JA switching, horizontal overflow and browser errors,
-- CI artifacts retain desktop/mobile runtime screenshots plus explicit English and Japanese screenshots.
+- browser checks cover WebGL/UI rendering, Play/Stop state, speed changes, all exposed customization controls, invalid configuration preservation/alert behavior, responsive ordering, EN/JA switching, horizontal overflow and browser errors,
+- CI artifacts retain desktop/mobile runtime screenshots plus explicit English and Japanese screenshots,
+- a GitHub Pages verification build is available for real-device inspection,
+- Android real-device inspection has confirmed the page renders in portrait and the 3D scene can be rotated by touch.
 
-Current verification lane:
+### Current lane — information architecture and mobile customization discoverability
 
-- extend automated coverage for speed changes while running, all builder controls, invalid configuration preservation/alert behavior, label association and keyboard focusability,
-- keep direct 3D crank-vs-orbit feel and real-device touch/Web Audio/performance checks manual because emulation is not sufficient evidence for those behaviors.
+The live mobile build revealed that customization controls can exist without being discoverable when they are trapped in a fixed-height nested scrolling region. This is now a Phase 5 product-quality blocker.
 
-Remaining work:
+Required changes, in order:
+
+1. keep the primary instrument page concise and use simple wording,
+2. expose a clear `Customize` entry point on the primary page,
+3. replace the user-facing `Builder` label with `Customize`,
+4. remove fixed-height/nested scrolling from the mobile customization area so controls participate in normal page scroll,
+5. add a dedicated `How to use` page for detailed operating instructions and music-box mechanism explanation,
+6. add a dedicated `About` page for project background, implementation philosophy and inspiration/credits,
+7. update automated browser checks to lock the new navigation and mobile-flow behavior,
+8. publish the revised UI to GitHub Pages and re-check it on a real mobile device.
+
+Completing this lane means a first-time user can discover customization without already understanding the interface, while the primary page remains visually simple.
+
+### Remaining real-device/manual verification
+
+After the information-architecture lane is green and published:
 
 - manually verify orbit/zoom and Reset view behavior in a desktop browser,
 - manually verify causal visual/audio synchronization during autoplay and speed changes,
 - manually verify crank-handle capture versus OrbitControls and orbit recovery after release,
 - manually verify the direct crank path uses the same contact/pluck behavior in practical interaction,
-- verify crank touch capture, Web Audio startup, readability and practical performance on at least one real touch device,
+- verify crank touch capture, Web Audio startup, locale readability and practical performance on at least one real touch device,
 - fix any material interaction/readability defect found by those checks.
 
 Completion gate:
 
 - the instrument is presentable as a standalone browser experience,
+- a first-time user can discover the main controls and customization without prior knowledge of the mechanism,
 - mechanical causality remains inspectable rather than hidden behind polish,
 - automated runtime checks are green on main,
 - the remaining real-device/manual interaction checks pass.
@@ -131,30 +147,16 @@ Completed and merged:
 
 Remaining work:
 
+- localize the new primary-page, Customize, How to use and About copy through the same catalog,
 - confirm locale readability and interaction during the remaining real-device/manual Phase 5 checks,
 - fix any runtime text overflow or readability defect found by device inspection.
 
-## Phase 7 — Decide whether this remains music-box-only
+## Phase 7 — Post-v1 product decision
 
-This is a decision gate, not a promise to add another instrument.
-
-Do not start a second instrument until Phase 5/6 completion. Then evaluate:
-
-- whether the music box is complete enough to stand alone,
-- whether another instrument has a meaningful mechanical interaction not already demonstrated,
-- which code was actually reused rather than hypothetically reusable,
-- whether any shared code should be promoted from instrument-local modules into `src/core/`.
-
-Possible outcomes:
-
-1. keep the repository focused on the music box indefinitely,
-2. add one second instrument as a reuse test,
-3. expand into a broader procedural-instrument collection.
-
-Do not choose outcome 2 or 3 merely because the repository name permits it.
+Do not enter this phase until Phase 5/6 are complete. Current work remains focused entirely on finishing the music box v1.
 
 ## Schedule discipline
 
 The phases above are ordered by dependency, not calendar promises. Work may overlap only when it does not bypass an earlier completion gate.
 
-Any change to phase order, completion criteria, language policy, or v1 scope must update this document and the relevant specification in the same branch/PR.
+Any change to phase order, completion criteria, information architecture, language policy, or v1 scope must update this document and the relevant specification in the same branch/PR.
