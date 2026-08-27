@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import {
   addPianoRollNote,
   deletePianoRollNote,
@@ -34,7 +34,7 @@ export function PianoRollEditor({
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
-  const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as React.CSSProperties), [columns])
+  const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
 
   const addNote = () => {
     const nextStart = Math.min(document.lengthBeats - 0.25, selected ? selected.startBeat + 1 : 0)
@@ -69,7 +69,7 @@ export function PianoRollEditor({
 
       <div className="piano-roll-scroll">
         <div className="piano-roll-grid" style={gridStyle}>
-          {PITCHES.map((pitch, row) => (
+          {PITCHES.map((pitch) => (
             <div className="piano-roll-row" key={pitch}>
               <span className="piano-roll-key">{PITCH_NAMES[pitch]}</span>
               <div className="piano-roll-lane">
@@ -84,7 +84,6 @@ export function PianoRollEditor({
                     style={{
                       left: `${(note.startBeat / document.lengthBeats) * 100}%`,
                       width: `${Math.max(1.5, (note.durationBeats / document.lengthBeats) * 100)}%`,
-                      top: `${row * 0}px`,
                     }}
                   />
                 ))}
