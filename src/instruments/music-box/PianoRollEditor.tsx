@@ -98,12 +98,14 @@ export function PianoRollEditor({
           record: '録音',
           stopRecording: '録音停止',
           recording: '録音中',
+          computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
         } : {
           title: 'On-screen keyboard',
           intro: 'Play the keys. Record adds the performance to the editable notes below.',
           record: 'Record',
           stopRecording: 'Stop recording',
           recording: 'Recording',
+          computerKeyboardHint: 'On a computer, A S D F G H J K also play and record C4-C5.',
         }}
       />
 
