@@ -18,7 +18,7 @@ It must verify at minimum:
 - `EN / JA` switching changes the visible UI and document `lang`,
 - browser console/page errors are absent during the covered flow.
 
-Successful runs retain browser evidence through the CI artifact `browser-runtime-evidence`.
+Successful runs retain browser evidence through the CI artifact `browser-runtime-evidence`, including desktop/mobile runtime screenshots and explicit English/Japanese localization screenshots.
 
 ## Desktop browser manual checks
 
