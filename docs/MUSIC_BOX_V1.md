@@ -62,6 +62,35 @@ Music-box-specific code remains under `src/instruments/music-box/`. Separate tun
 
 The current TunePreset work is the first such extraction: tune data is no longer embedded in `main.tsx`.
 
+The tune representation must also remain compatible with a later editable composition/project document. Future inputs such as piano-roll editing, MIDI, keyboard performance, microphone pitch extraction, audio-file melody extraction and direct cylinder editing must converge on one editable tune representation before mechanical compilation. None of those inputs may become an alternate audio scheduler.
+
+## Scheduled composition inputs after v1
+
+These are follow-on features, not current v1 completion requirements:
+
+- **Piano roll** as the first precise general-purpose editor and correction surface.
+- **MIDI file import** for exact note/timing interchange.
+- **On-screen/computer keyboard recording**, with Web MIDI device support added only where practical.
+- **Microphone recording** with explicit permission, initially for monophonic humming/singing/single-note instruments, producing editable detected notes.
+- **Audio-file import** (for example WAV/MP3/M4A where browser decoding supports it) that extracts a candidate melody rather than replaying the source file as the music-box output. Complex full mixes are not promised to transcribe perfectly.
+- **Direct cylinder editor** for a music-box-native view of note lanes/pin positions.
+
+All recognized/imported material must pass a music-box-fit stage that exposes note-range, density and mechanism limitations and asks before musically significant substitutions are made.
+
+## Scheduled project data, export and sharing after v1
+
+Editable composition data and rendered media are separate products:
+
+- A **versioned native project format** will store editable tune/arrangement data plus relevant music-box configuration so projects can be exported and reopened without an account.
+- **MIDI export** may provide interchange of arranged note data where meaningful.
+- **Audio export** should start with a dependable lossless/browser-practical format such as WAV; compressed output such as MP3 can follow when the implementation is reliable.
+- **Video export** should capture the animated mechanism and the same mechanically driven audio. Browser-native formats such as WebM may be the first target; MP4 is added only if dependable in the supported runtime.
+- **Shareable links** should first use compact URL/state encoding when payload size permits.
+- Native project files remain a guaranteed portable sharing path.
+- Hosted public/private project pages, uploads or accounts are optional later work only if persistence, privacy, moderation/copyright and operating cost are justified.
+
+Microphone and imported media should be processed locally/in-browser where practical. Source audio must not be silently uploaded or embedded into a shared project. Public sharing must distinguish app-supplied public-domain presets from user-provided material.
+
 ## Visual/mechanical quality
 
 The first realism pass is complete enough to expose connected comb/cylinder/gear/crank relationships and visible tine release vibration. A second realism pass is deliberately scheduled after tune functionality, bounded customization and real-device functional verification.
@@ -71,18 +100,19 @@ That later pass should improve machining detail, wood/brass/steel response, fast
 ## Audio quality scope
 
 - every audible tine sound is triggered by release/pluck,
-- no independent note scheduler may decide when preset notes sound,
+- no independent note scheduler may decide when preset or user-composed notes sound,
 - compact procedural synthesis is acceptable for v1,
-- later material/resonance work may alter timbre only through an explicit model rather than cosmetic labels.
+- later material/resonance work may alter timbre only through an explicit model rather than cosmetic labels,
+- future audio/video exports must render/record this same mechanically driven result rather than substitute a detached rendition.
 
 ## Language scope
 
-English is default and Japanese is the first additional locale. Tune labels, controls, How to use and About copy must be updated in both catalogs together.
+English is default and Japanese is the first additional locale. Tune labels, controls, How to use and About copy must be updated in both catalogs together. Future composition/import/export/share UI follows the same rule.
 
 ## Current development schedule
 
-The authoritative ordered 23-step schedule is in `docs/ROADMAP.md`. The immediate lane is domain/tune work: TunePreset extraction, three public-domain presets, selector, pin regeneration, safe tune switching, validation, browser coverage, documentation/attribution and Pages publication. Functional depth precedes the second realism pass.
+The authoritative ordered schedule is in `docs/ROADMAP.md`. Steps 1-23 cover current v1 and its direct customization foundation. Steps 24-40 schedule the follow-on composition, project-data, export and sharing lane. The immediate lane remains TunePreset extraction, three public-domain presets, selector, pin regeneration, safe tune switching, validation, browser coverage, documentation/attribution and Pages publication.
 
 ## Scope rule
 
-No additional instrument work is part of this plan. Music-box completion and music-box customization foundations have priority over any generic framework or expansion work.
+No additional instrument work is part of this plan. Music-box completion and music-box customization/composition foundations have priority over any generic framework or expansion work.
