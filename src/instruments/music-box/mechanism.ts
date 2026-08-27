@@ -30,6 +30,12 @@ export type DriveKinematics = {
   ratio: number
 }
 
+export type PinTineEngagement = {
+  engaged: boolean
+  distance: number
+  deflection: number
+}
+
 export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   notes: [60, 62, 64, 65, 67, 69, 71, 72],
   cylinderCenter: [-0.7, 0, 0],
@@ -113,7 +119,7 @@ export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] 
 
 export function pinTipWorldPosition(pin: Pin, phase: number, config: MusicBoxConfig): Point3 {
   const radius = config.cylinderRadius + config.pinLength
-  const theta = pin.angle - phase
+  const theta = pin.angle + phase
   const [cx, cy, cz] = config.cylinderCenter
 
   return {
@@ -136,8 +142,18 @@ export function distance3(a: Point3, b: Point3) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 }
 
-export function pinTouchesTine(pin: Pin, phase: number, config: MusicBoxConfig) {
+export function pinTineEngagement(pin: Pin, phase: number, config: MusicBoxConfig): PinTineEngagement {
   const pinTip = pinTipWorldPosition(pin, phase, config)
   const contact = tineContactPoint(pin.noteIndex, config)
-  return distance3(pinTip, contact) <= config.contactTolerance
+  const distance = distance3(pinTip, contact)
+  const engaged = distance <= config.contactTolerance
+  const deflection = engaged
+    ? Math.max(0, Math.min(1, 1 - distance / config.contactTolerance))
+    : 0
+
+  return { engaged, distance, deflection }
+}
+
+export function pinTouchesTine(pin: Pin, phase: number, config: MusicBoxConfig) {
+  return pinTineEngagement(pin, phase, config).engaged
 }

@@ -1,14 +1,12 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. It must be read together with `docs/ARCHITECTURE.md` and the active instrument specification.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md` and `AGENTS.md`.
 
 ## Current product decision
 
-- Repository scope: instrument-neutral.
 - Current committed product: one procedural mechanical cylinder music box.
-- Additional instruments: optional future work, not a v1 requirement.
-- Default UI language: English.
-- Japanese is the first additional locale and is implemented in the current main UI.
+- Default UI language: English; Japanese is implemented as the first additional locale.
+- Current work is entirely focused on finishing Music Box v1.
 
 ## Phase 0 — Repository foundation
 
@@ -16,147 +14,84 @@ Status: complete
 
 ## Phase 1 — Causal one-note mechanism
 
-Status: complete
-
-Completed behavior:
-
-- cylinder axis and pin geometry use one explicit instrument coordinate system,
-- pin tip world position is derived from pin geometry and cylinder phase,
-- each tine has a contact point derived from the same instrument configuration,
-- contact is resolved by 3D distance between the moving pin tip and corresponding tine contact point,
-- a contact-entry event drives both tine vibration and Web Audio output,
-- mechanism tests verify one contact entry per pin across materially different sampling rates,
-- repository verification typechecks, runs mechanism tests and produces a production build.
+Status: complete as the baseline contact implementation; Phase 5 now deepens the visible contact response.
 
 ## Phase 2 — Drive train
 
 Status: complete
 
-Completed behavior:
-
-- crank angle is the single authoritative drive input,
-- visible driver and cylinder gears derive their ratio from tooth counts,
-- crank, both gears and cylinder angles come from one deterministic kinematics function,
-- contact timing uses the resulting cylinder phase,
-- ratio/angle relationships are covered by mechanism tests.
-
 ## Phase 3 — Configurable comb and tune cylinder
 
 Status: complete
 
-Completed behavior:
-
-- note set/tine count live in instrument configuration,
-- tune events compile into axial pin lanes and cylinder angles,
-- changing tine spacing changes generated pin mapping deterministically,
-- configuration validation rejects note lanes that do not fit the cylinder and pin/tine spacing that would overlap,
-- invalid configuration does not silently generate geometry,
-- tests cover parameter-driven remapping and invalid configuration rejection.
-
-## Phase 4 — Direct manipulation and builder controls
+## Phase 4 — Direct manipulation and customization controls
 
 Status: complete
 
-Completed behavior:
-
-- the 3D crank handle accepts pointer/touch drag input,
-- manual crank movement changes the same authoritative crank angle used by autoplay,
-- manual interaction stops autoplay while dragging,
-- orbit camera input is disabled during crank dragging,
-- cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical customization controls,
-- customization changes flow through `MusicBoxConfig` validation,
-- rejected configurations keep the last valid mechanism and display a localized error,
-- gear/cylinder parameter changes regenerate the relevant geometry/ratio,
-- a camera reset control restores the initial inspection view,
-- mobile layout keeps the 3D scene primary and places customization below it.
+Completed behavior includes pointer/touch crank input, deterministic crank/gear/cylinder kinematics, validated mechanical customization, camera reset and responsive scene/customization ordering.
 
 ## Phase 5 — Instrument quality
 
 Status: in progress
 
-Completed and merged:
+Already completed and merged:
 
-- music-box-specific Web Audio synthesis uses a fundamental plus restrained inharmonic upper partials with different decay times,
-- the same mechanical pluck event emits a short filtered contact click,
-- audio remains downstream of mechanical contact,
-- audio-model tests verify tuning and partial/decay structure,
-- stronger scene depth through key/fill lighting and restrained contact shadows,
-- wood, cylinder, pins, gears and tines remain visually distinct,
-- DOM controls have visible focus states and explicit label/control relationships,
-- Play exposes pressed state to assistive technology,
-- primary touch controls use larger targets,
-- rendering DPR is bounded for mobile GPU cost,
-- integrated typecheck, unit tests, production build and browser runtime gate are green on main,
-- Playwright runs the production build in Chromium at desktop and mobile-emulated viewports,
-- browser checks cover WebGL/UI rendering, Play/Stop state, speed changes, all exposed customization controls, invalid configuration preservation/alert behavior, responsive ordering, EN/JA switching, horizontal overflow and browser errors,
-- CI artifacts retain desktop/mobile runtime screenshots plus explicit English and Japanese screenshots,
-- a GitHub Pages verification build is available for real-device inspection,
-- Android real-device inspection has confirmed the page renders in portrait and the 3D scene can be rotated by touch.
+- procedural Web Audio synthesis downstream of mechanical events,
+- scene lighting/material baseline,
+- responsive UI, accessibility basics and bounded DPR,
+- Playwright desktop/mobile production-browser gate,
+- GitHub Pages verification build,
+- EN/JA runtime checks,
+- concise primary page with discoverable `Customize`, `How to use` and `About`,
+- mobile Customize controls in normal page flow with no nested-scroll trap,
+- verified inspiration credit on About,
+- Android portrait render and touch-orbit verification.
 
-### Current lane — information architecture and mobile customization discoverability
+### Current completion schedule — mechanical motion and realism
 
-The live mobile build revealed that customization controls can exist without being discoverable when they are trapped in a fixed-height nested scrolling region. This is now a Phase 5 product-quality blocker.
+The functional baseline is not sufficient for v1 completion if a pin can audibly trigger a note while the contacted tine appears mechanically static. Phase 5 therefore includes the following ordered work:
 
-Required changes, in order:
+1. **ROADMAP/spec synchronization** — make engagement, deflection, release, vibration and geometry realism explicit v1 gates. Completion means the project cannot be closed with static-looking pin/tine contact.
+2. **Pin -> tine engagement model** — replace boolean-only contact with a mechanically derived state containing engagement and normalized deflection. Completion means the runtime knows not only whether a pin is near a tine, but how strongly it is engaging it.
+3. **Tine deflection rendering** — pivot/root each tine at the comb and visibly bend it while engaged. Completion means users can see the pin physically load the tine before the note.
+4. **Release -> vibration -> audio** — emit one release/pluck event when the pin exits engagement and use that same event for free tine vibration and sound. Completion means `push -> release -> vibrate -> sound` is one visible causal path.
+5. **Motion visibility tuning** — apply restrained visual amplification if needed for browser/mobile legibility. Completion means the active tine can be identified without changing event timing.
+6. **Comb/cylinder/pin geometry pass** — improve rooted comb form, cylinder ends/shaft/supports and pin integration. Completion means the mechanism no longer reads primarily as disconnected primitive shapes.
+7. **Gear/crank/support geometry pass** — improve tooth proportions, shafts, bearings/supports and crank connections. Completion means the drive train reads as a mechanically convincing assembly.
+8. **Material/lighting pass** — refine metal/wood response, roughness, highlights and shadows. Completion means materials look distinct and more realistic without hiding the contact area.
+9. **Camera/inspection pass** — refine default/reset view and close inspection readability. Completion means the whole mechanism is legible by default and pin/tine contact can be examined with orbit/zoom.
+10. **Mechanical-causality regression tests** — lock `crank -> gear -> cylinder -> engagement -> deflection -> release -> vibration/audio`. Completion means presentation changes cannot silently reintroduce detached timing.
+11. **Desktop/mobile browser gate update** — verify revised mechanism plus Customize/How to use/About/EN/JA/layout. Completion means the realism work remains production-browser safe.
+12. **Pages publication** — merge and publish the revised main build. Completion means the latest mechanism is available for real-device inspection.
+13. **Real-device display/interaction checks** — verify Android/mobile orbit, zoom, Customize, JA and contact visibility. Completion means CI-only visual assumptions are eliminated.
+14. **Play/audio/speed/crank device checks** — verify Web Audio startup, perceptual synchronization, manual crank capture/release and practical performance. Completion means the instrument is genuinely usable, not just renderable.
+15. **Final bounded polish** — fix material defects found by the device gates without adding unrelated scope. Completion means no known v1-blocking presentation/interaction defect remains.
+16. **Music Box v1 completion decision** — require green main CI/browser gates and passed manual/device gates. Completion means the browser experience can be presented as a finished procedural mechanical music box.
 
-1. keep the primary instrument page concise and use simple wording,
-2. expose a clear `Customize` entry point on the primary page,
-3. replace the user-facing `Builder` label with `Customize`,
-4. remove fixed-height/nested scrolling from the mobile customization area so controls participate in normal page scroll,
-5. add a dedicated `How to use` page for detailed operating instructions and music-box mechanism explanation,
-6. add a dedicated `About` page for project background, implementation philosophy and inspiration/credits,
-7. update automated browser checks to lock the new navigation and mobile-flow behavior,
-8. publish the revised UI to GitHub Pages and re-check it on a real mobile device.
+### Phase 5 completion gate
 
-Completing this lane means a first-time user can discover customization without already understanding the interface, while the primary page remains visually simple.
+Phase 5 may be complete only when:
 
-### Remaining real-device/manual verification
-
-After the information-architecture lane is green and published:
-
-- manually verify orbit/zoom and Reset view behavior in a desktop browser,
-- manually verify causal visual/audio synchronization during autoplay and speed changes,
-- manually verify crank-handle capture versus OrbitControls and orbit recovery after release,
-- manually verify the direct crank path uses the same contact/pluck behavior in practical interaction,
-- verify crank touch capture, Web Audio startup, locale readability and practical performance on at least one real touch device,
-- fix any material interaction/readability defect found by those checks.
-
-Completion gate:
-
-- the instrument is presentable as a standalone browser experience,
-- a first-time user can discover the main controls and customization without prior knowledge of the mechanism,
-- mechanical causality remains inspectable rather than hidden behind polish,
+- the engaged tine visibly responds to its pin,
+- release/pluck drives both free vibration and audio,
+- the mechanism is visually convincing enough to read as a connected music-box assembly,
+- mechanical causality remains inspectable after visual polish,
 - automated runtime checks are green on main,
-- the remaining real-device/manual interaction checks pass.
+- desktop/mobile manual interaction gates pass,
+- material defects are fixed or explicitly deferred outside v1.
 
 ## Phase 6 — Localization
 
 Status: implemented; automated runtime verification complete
 
-Completed and merged:
-
-- English is the default locale,
-- Japanese is implemented as the first additional locale,
-- `EN / JA` provides compact language switching,
-- document `lang` follows the active locale,
-- mechanism/configuration identifiers remain locale-independent,
-- English and Japanese catalog parity is covered by unit tests,
-- integrated typecheck/tests/build are green on main,
-- automated desktop/mobile Chromium checks pass for locale switching, document `lang`, visible Japanese UI and horizontal-overflow protection,
-- CI evidence retains explicit English and Japanese screenshots for both desktop and mobile runs.
-
-Remaining work:
-
-- localize the new primary-page, Customize, How to use and About copy through the same catalog,
-- confirm locale readability and interaction during the remaining real-device/manual Phase 5 checks,
-- fix any runtime text overflow or readability defect found by device inspection.
+English and Japanese catalogs, switching, document `lang`, parity tests and browser checks are merged. Remaining locale work is only readability/interaction verification during Phase 5 device checks and copy synchronization when mechanism explanations change.
 
 ## Phase 7 — Post-v1 product decision
 
-Do not enter this phase until Phase 5/6 are complete. Current work remains focused entirely on finishing the music box v1.
+Do not enter until Music Box v1 Phase 5/6 gates are complete.
 
 ## Schedule discipline
 
-The phases above are ordered by dependency, not calendar promises. Work may overlap only when it does not bypass an earlier completion gate.
+The phases and numbered Phase 5 finishing schedule above are ordered by dependency, not calendar promises. Work may overlap only when it does not bypass an earlier completion gate.
 
-Any change to phase order, completion criteria, information architecture, language policy, or v1 scope must update this document and the relevant specification in the same branch/PR.
+Any change to phase order, completion criteria, mechanical causality, information architecture, language policy or v1 scope must update this document and the relevant specification in the same branch/PR.
