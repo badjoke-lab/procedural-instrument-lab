@@ -66,11 +66,13 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording and MIDI import are merged. MIDI export is the active lane, followed by microphone capture/recognition, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import and MIDI export are merged. Microphone recording is the active lane, followed by mic melody extraction, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
 
 MIDI export is a derived interchange view of TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
+
+Microphone recording is a local capture boundary. Permission is requested only after an explicit Start action. The source recording is kept as a temporary browser Blob/object URL for preview and discard, is never silently uploaded or inserted into TuneDocument/project/share state, and releases its media tracks when capture ends. Step 19, not the recorder itself, converts suitable recordings into editable melody candidates.
 
 ## Benchmark-first verification rule
 
@@ -80,7 +82,7 @@ Benchmarks must report which current mechanism constraints prevent successful co
 
 ## Project/export/sharing boundary
 
-- A versioned native project format preserves editable tune/arrangement data plus relevant mechanism configuration.
+- A versioned native project format preserves editable tune/arrangement data plus relevant music-box configuration.
 - Project files are the guaranteed server-free save/share path.
 - MIDI export provides note-data interchange where meaningful and remains a derived file view of TuneDocument.
 - Audio export renders the same mechanically driven result; WAV is the first preferred target.
@@ -112,7 +114,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-16 are complete on main. PR #24 is the active step 17 MIDI-export lane. After its acceptance gate is green and merged, proceed to microphone recording rather than skipping ahead to audio recognition, advanced customization or final realism.
+Steps 1-17 are complete on main. PR #25 is the active step 18 microphone-recording lane. After its automated lifecycle/privacy gate is green and merged, proceed to mic -> melody extraction. Actual physical microphone permission/capture remains part of the minimal real-device verification lane and does not justify skipping step 19.
 
 ## Scope rule
 
