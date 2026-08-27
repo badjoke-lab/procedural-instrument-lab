@@ -14,4 +14,16 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - run: npx playwright install --with-deps chromium
       - run: npm run verify
+      - run: npm run test:browser
+      - name: Upload browser test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-runtime-evidence
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
