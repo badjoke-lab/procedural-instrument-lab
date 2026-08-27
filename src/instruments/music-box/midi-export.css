@@ -1,0 +1,11 @@
+.midi-export {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid #303036;
+  border-radius: 8px;
+  background: #141418;
+}
+.midi-export > div { min-width: 0; }
+.midi-export strong { display: block; font-size: 14px; }
+.midi-export span { display: block; margin-top: 4px; color: #9999a2; font-size: 12px; line-height: 1.45; }
+.midi-export button { margin-top: 10px; min-height: 36px; }
