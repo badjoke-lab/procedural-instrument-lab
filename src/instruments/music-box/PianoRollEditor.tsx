@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { MusicBoxAudio } from './audio'
+import { MicrophoneRecorder } from './MicrophoneRecorder'
 import { MidiExport } from './MidiExport'
 import { MidiImport } from './MidiImport'
 import { ScreenKeyboard } from './ScreenKeyboard'
@@ -27,15 +28,7 @@ export type PianoRollCopy = {
   empty: string
 }
 
-export function PianoRollEditor({
-  document,
-  onChange,
-  copy,
-}: {
-  document: PianoRollDraft
-  onChange: (next: PianoRollDraft) => void
-  copy: PianoRollCopy
-}) {
+export function PianoRollEditor({ document, onChange, copy }: { document: PianoRollDraft; onChange: (next: PianoRollDraft) => void; copy: PianoRollCopy }) {
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
@@ -73,11 +66,7 @@ export function PianoRollEditor({
 
   const updateSelected = (patch: Parameters<typeof updatePianoRollNote>[2]) => {
     if (!selected) return
-    try {
-      onChange(updatePianoRollNote(document, selected.id, patch))
-    } catch {
-      // Keep the last valid document while a number input is temporarily incomplete.
-    }
+    try { onChange(updatePianoRollNote(document, selected.id, patch)) } catch { /* Keep the last valid document. */ }
   }
 
   return (
@@ -90,103 +79,46 @@ export function PianoRollEditor({
         </div>
       </div>
 
-      <MidiImport
-        onImport={(next) => {
-          setSelectedNoteId(next.notes[0]?.id ?? '')
-          onChange(next)
-        }}
-        copy={japanese ? {
-          title: 'MIDIを読み込む',
-          intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。',
-          choose: 'MIDIファイルを選ぶ',
-          imported: 'MIDIを読み込みました。',
-          failed: 'MIDIを読み込めませんでした。',
-          outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
-        } : {
-          title: 'Import MIDI',
-          intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.',
-          choose: 'Choose MIDI file',
-          imported: 'MIDI imported.',
-          failed: 'Could not import MIDI.',
-          outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
-        }}
-      />
+      <MidiImport onImport={(next) => { setSelectedNoteId(next.notes[0]?.id ?? ''); onChange(next) }} copy={japanese ? {
+        title: 'MIDIを読み込む', intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。', choose: 'MIDIファイルを選ぶ', imported: 'MIDIを読み込みました。', failed: 'MIDIを読み込めませんでした。', outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
+      } : {
+        title: 'Import MIDI', intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.', choose: 'Choose MIDI file', imported: 'MIDI imported.', failed: 'Could not import MIDI.', outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
+      }} />
 
-      <MidiExport
-        document={document}
-        copy={japanese ? {
-          title: 'MIDIを書き出す',
-          intro: '現在の編集データを .mid として保存します。音程・開始拍・長さ・テンポを保持します。',
-          download: 'MIDIを保存',
-        } : {
-          title: 'Export MIDI',
-          intro: 'Save the current editable tune as .mid with pitch, beat timing, duration and tempo.',
-          download: 'Download MIDI',
-        }}
-      />
+      <MidiExport document={document} copy={japanese ? {
+        title: 'MIDIを書き出す', intro: '現在の編集データを .mid として保存します。音程・開始拍・長さ・テンポを保持します。', download: 'MIDIを保存',
+      } : {
+        title: 'Export MIDI', intro: 'Save the current editable tune as .mid with pitch, beat timing, duration and tempo.', download: 'Download MIDI',
+      }} />
 
-      <ScreenKeyboard
-        document={document}
-        onChange={onChange}
-        onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }}
-        copy={japanese ? {
-          title: '画面鍵盤',
-          intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。',
-          record: '録音',
-          stopRecording: '録音停止',
-          recording: '録音中',
-          computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
-        } : {
-          title: 'On-screen keyboard',
-          intro: 'Play the keys. Record adds the performance to the editable notes below.',
-          record: 'Record',
-          stopRecording: 'Stop recording',
-          recording: 'Recording',
-          computerKeyboardHint: 'On a computer, A S D F G H J K also play and record C4-C5.',
-        }}
-      />
+      <MicrophoneRecorder copy={japanese ? {
+        title: 'マイクで録音',
+        intro: '端末のマイクを使って音声を録音します。録音はこのブラウザ内にだけ保持され、次の工程でメロディーへ変換します。',
+        start: '録音を開始', stop: '録音を停止', discard: '録音を破棄', recording: '録音中です。', ready: '録音しました。ここで試聴できます。', unsupported: 'このブラウザではマイク録音を利用できません。', denied: 'マイクを開始できませんでした。権限を確認してください。', preview: '録音した音声',
+      } : {
+        title: 'Record microphone',
+        intro: 'Capture audio from this device. The recording stays in this browser and will become melody input in the next step.',
+        start: 'Start recording', stop: 'Stop recording', discard: 'Discard recording', recording: 'Recording…', ready: 'Recording ready. You can preview it here.', unsupported: 'Microphone recording is not supported in this browser.', denied: 'Could not start the microphone. Check permission and try again.', preview: 'Recorded audio',
+      }} />
 
-      <div className="piano-roll-scroll">
-        <div className="piano-roll-grid" style={gridStyle}>
-          {PITCHES.map((pitch) => (
-            <div className="piano-roll-row" key={pitch}>
-              <span className="piano-roll-key">{PITCH_NAMES[pitch]}</span>
-              <div className="piano-roll-lane">
-                {document.notes.filter((note) => note.pitch === pitch).map((note) => (
-                  <button
-                    type="button"
-                    key={note.id}
-                    className="piano-roll-note"
-                    aria-pressed={selected?.id === note.id}
-                    title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`}
-                    onClick={() => setSelectedNoteId(note.id)}
-                    style={{
-                      left: `${(note.startBeat / document.lengthBeats) * 100}%`,
-                      width: `${Math.max(1.5, (note.durationBeats / document.lengthBeats) * 100)}%`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ScreenKeyboard document={document} onChange={onChange} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
+        title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
+      } : {
+        title: 'On-screen keyboard', intro: 'Play the keys. Record adds the performance to the editable notes below.', record: 'Record', stopRecording: 'Stop recording', recording: 'Recording', computerKeyboardHint: 'On a computer, A S D F G H J K also play and record C4-C5.',
+      }} />
 
-      {selected ? (
-        <div className="piano-roll-inspector">
-          <label>{copy.pitch}
-            <select value={selected.pitch} onChange={(event) => updateSelected({ pitch: Number(event.target.value) })}>
-              {[...PITCHES].reverse().map((pitch) => <option key={pitch} value={pitch}>{PITCH_NAMES[pitch]}</option>)}
-            </select>
-          </label>
-          <label>{copy.start}
-            <input type="number" min="0" max={document.lengthBeats - 0.25} step="0.25" value={selected.startBeat} onChange={(event) => updateSelected({ startBeat: Number(event.target.value) })} />
-          </label>
-          <label>{copy.duration}
-            <input type="number" min="0.25" max={document.lengthBeats - selected.startBeat} step="0.25" value={selected.durationBeats} onChange={(event) => updateSelected({ durationBeats: Number(event.target.value) })} />
-          </label>
-        </div>
-      ) : <p className="piano-roll-empty">{copy.empty}</p>}
+      <div className="piano-roll-scroll"><div className="piano-roll-grid" style={gridStyle}>
+        {PITCHES.map((pitch) => <div className="piano-roll-row" key={pitch}>
+          <span className="piano-roll-key">{PITCH_NAMES[pitch]}</span>
+          <div className="piano-roll-lane">{document.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / document.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / document.lengthBeats) * 100)}%` }} />)}</div>
+        </div>)}
+      </div></div>
+
+      {selected ? <div className="piano-roll-inspector">
+        <label>{copy.pitch}<select value={selected.pitch} onChange={(event) => updateSelected({ pitch: Number(event.target.value) })}>{[...PITCHES].reverse().map((pitch) => <option key={pitch} value={pitch}>{PITCH_NAMES[pitch]}</option>)}</select></label>
+        <label>{copy.start}<input type="number" min="0" max={document.lengthBeats - 0.25} step="0.25" value={selected.startBeat} onChange={(event) => updateSelected({ startBeat: Number(event.target.value) })} /></label>
+        <label>{copy.duration}<input type="number" min="0.25" max={document.lengthBeats - selected.startBeat} step="0.25" value={selected.durationBeats} onChange={(event) => updateSelected({ durationBeats: Number(event.target.value) })} /></label>
+      </div> : <p className="piano-roll-empty">{copy.empty}</p>}
     </section>
   )
 }
