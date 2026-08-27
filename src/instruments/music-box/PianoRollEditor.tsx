@@ -38,7 +38,7 @@ export function PianoRollEditor({
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
-  const japanese = typeof window !== 'undefined' && window.document.documentElement.lang === 'ja'
+  const japanese = copy.title === '作曲'
 
   useEffect(() => {
     const revealFromHash = () => {
