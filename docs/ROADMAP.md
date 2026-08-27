@@ -8,7 +8,7 @@ This document controls development order for Procedural Instrument Lab. It must 
 - Current committed product: one procedural mechanical cylinder music box.
 - Additional instruments: optional future work, not a v1 requirement.
 - Default UI language: English.
-- Localization architecture: required from v1; Japanese is the first additional locale.
+- Japanese is the first additional locale and is implemented in the current main UI.
 
 ## Phase 0 — Repository foundation
 
@@ -25,8 +25,8 @@ Completed behavior:
 - each tine has a contact point derived from the same instrument configuration,
 - contact is resolved by 3D distance between the moving pin tip and corresponding tine contact point,
 - a contact-entry event drives both tine vibration and Web Audio output,
-- pure mechanism tests sample a full revolution at multiple rates and verify one entry per pin,
-- repository verification typechecks, runs mechanism tests and produces a production build in GitHub Actions.
+- mechanism tests verify one contact entry per pin across materially different sampling rates,
+- repository verification typechecks, runs mechanism tests and produces a production build.
 
 ## Phase 2 — Drive train
 
@@ -35,12 +35,10 @@ Status: complete
 Completed behavior:
 
 - crank angle is the single authoritative drive input,
-- a visible 40-tooth driver gear drives a visible 20-tooth cylinder gear,
-- the 2:1 ratio is derived from tooth counts rather than duplicated animation constants,
-- crank, both gears and cylinder angles are returned by one deterministic kinematics function,
+- visible driver and cylinder gears derive their ratio from tooth counts,
+- crank, both gears and cylinder angles come from one deterministic kinematics function,
 - contact timing uses the resulting cylinder phase,
-- ratio/angle relationships are covered by mechanism tests,
-- GitHub Actions verification is green with the drive train present.
+- ratio/angle relationships are covered by mechanism tests.
 
 ## Phase 3 — Configurable comb and tune cylinder
 
@@ -53,9 +51,7 @@ Completed behavior:
 - changing tine spacing changes generated pin mapping deterministically,
 - configuration validation rejects note lanes that do not fit the cylinder and pin/tine spacing that would overlap,
 - invalid configuration does not silently generate geometry,
-- a short multi-note tune remains driven through one cylinder revolution,
-- tests cover parameter-driven remapping and invalid configuration rejection,
-- GitHub Actions verification is green.
+- tests cover parameter-driven remapping and invalid configuration rejection.
 
 ## Phase 4 — Direct manipulation and builder controls
 
@@ -66,85 +62,89 @@ Completed behavior:
 - the 3D crank handle accepts pointer/touch drag input,
 - manual crank movement changes the same authoritative crank angle used by autoplay,
 - manual interaction stops autoplay while dragging,
-- orbit camera input is disabled during crank dragging to avoid gesture conflict,
+- orbit camera input is disabled during crank dragging,
 - cylinder length, tine spacing, driver gear teeth and cylinder gear teeth are exposed as mechanical builder controls,
-- builder changes flow through the existing `MusicBoxConfig` validation path,
-- rejected configurations keep the last valid mechanism and display a localized UI error,
-- changing gear tooth counts regenerates visible gear geometry and the mechanical ratio,
-- changing cylinder length/tine spacing regenerates the relevant instrument geometry,
+- builder changes flow through `MusicBoxConfig` validation,
+- rejected configurations keep the last valid mechanism and display a localized error,
+- gear/cylinder parameter changes regenerate the relevant geometry/ratio,
 - a camera reset control restores the initial inspection view,
-- new user-facing controls are routed through the message catalog,
-- mobile layout keeps the 3D scene primary and moves builder controls below it,
-- repository typecheck, mechanism tests and production build are green.
-
-Implementation note: automated verification confirms the code and mechanical path. Final pointer feel, gesture ergonomics and visual inspection on real browser/device remain presentation-quality checks in Phase 5 rather than a reason to block the verified implementation from main.
+- mobile layout keeps the 3D scene primary and moves builder controls below it.
 
 ## Phase 5 — Instrument quality
 
 Status: in progress
 
-Completed audio-quality lane:
+Completed and merged:
 
-- music-box-specific Web Audio synthesis is isolated in `src/instruments/music-box/audio.ts`,
-- each mechanical pluck event excites a fundamental plus restrained inharmonic upper partials with different decay times,
-- the same pluck event emits a short filtered mechanical contact click,
-- audio remains downstream of the mechanical contact event,
-- pure audio-model tests verify tuning and partial/decay structure,
-- repository typecheck, audio/mechanism tests and production build are green.
-
-Implemented in the v1 integration branch:
-
+- music-box-specific Web Audio synthesis uses a fundamental plus restrained inharmonic upper partials with different decay times,
+- the same mechanical pluck event emits a short filtered contact click,
+- audio remains downstream of mechanical contact,
+- audio-model tests verify tuning and partial/decay structure,
 - stronger scene depth through key/fill lighting and restrained contact shadows,
-- materials keep wood, cylinder, pins, gears and tines visually distinct,
-- contact markers remain visible without hiding the mechanism,
-- DOM controls have visible keyboard focus states and explicit label/control relationships,
+- wood, cylinder, pins, gears and tines remain visually distinct,
+- DOM controls have visible focus states and explicit label/control relationships,
 - Play exposes pressed state to assistive technology,
 - primary touch controls use larger targets,
-- builder layout collapses to one column at narrow mobile widths,
-- rendering DPR is bounded to reduce unnecessary high-density mobile GPU load,
-- runtime presentation checks are fixed in `docs/PRESENTATION_CHECKLIST.md`.
+- builder layout collapses to one column at narrow widths,
+- rendering DPR is bounded for mobile GPU cost,
+- integrated typecheck, unit tests and production build are green on main.
+
+Current browser-runtime lane:
+
+- Playwright runs the production build in Chromium at desktop and mobile-emulated viewports,
+- runtime checks cover visible WebGL/UI surface, Play/Stop state, representative builder changes, responsive ordering, English/Japanese switching, horizontal overflow and browser errors,
+- the automated browser runtime gate is green on the current Phase 5/6 verification PR,
+- successful browser runs retain desktop/mobile runtime screenshots plus explicit English and Japanese localization screenshots/report evidence in CI artifacts.
 
 Remaining work:
 
-- pass repository typecheck, all tests and production build for the integrated presentation/localization branch,
-- verify and tune crank/Orbit gesture ergonomics on real browser/device,
-- perform final visual inspection at desktop and mobile widths,
-- fix any device-specific interaction or readability defects found by that inspection.
+- merge the green automated browser runtime gate after final evidence review,
+- manually verify crank-handle capture versus OrbitControls in a desktop browser,
+- verify crank touch capture, Web Audio startup and practical performance on at least one real touch device,
+- fix any material interaction/readability defect found by those checks.
 
 Completion gate:
 
 - the instrument is presentable as a standalone browser experience,
-- mechanical causality remains inspectable rather than hidden behind visual polish.
+- mechanical causality remains inspectable rather than hidden behind polish,
+- automated runtime checks are green on main,
+- the remaining real-device interaction checks pass.
 
 ## Phase 6 — Localization
 
-Status: in progress, integrated with Phase 5 verification
+Status: implemented; automated runtime verification pass pending merge to main
 
-Implemented in the v1 integration branch:
+Completed and merged:
 
-- English remains the default locale,
+- English is the default locale,
 - Japanese is implemented as the first additional locale,
 - `EN / JA` provides compact language switching,
-- the document `lang` attribute follows the active locale,
+- document `lang` follows the active locale,
 - mechanism/configuration identifiers remain locale-independent,
-- English and Japanese catalog parity is covered by automated tests.
+- English and Japanese catalog parity is covered by unit tests,
+- integrated typecheck/tests/build are green on main.
+
+Current verification state:
+
+- automated desktop/mobile Chromium checks pass for locale switching, document `lang`, visible Japanese UI and horizontal-overflow protection on the current verification PR,
+- CI evidence retains explicit English and Japanese screenshots for both desktop and mobile runs.
 
 Remaining work:
 
-- verify repository typecheck/tests/build for the integrated branch,
-- verify both locales at desktop and mobile widths,
-- fix any text overflow or layout defects found by runtime inspection.
+- merge the automated locale runtime gate to main,
+- confirm readability and interaction on the remaining real-device/manual Phase 5 checks,
+- fix any runtime text overflow or layout defect found by device inspection.
 
 ## Phase 7 — Decide whether this remains music-box-only
 
 This is a decision gate, not a promise to add another instrument.
 
-Before starting a second instrument, evaluate:
+Do not start a second instrument until Phase 5/6 completion. Then evaluate:
 
 - whether the music box is complete enough to stand alone,
 - whether another instrument has a meaningful mechanical interaction not already demonstrated,
 - which code was actually reused rather than hypothetically reusable,
-- whether shared code should be promoted from instrument-local modules into `src/core/`.
+- whether any shared code should be promoted from instrument-local modules into `src/core/`.
 
 Possible outcomes:
 
