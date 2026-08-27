@@ -87,20 +87,23 @@ Completed and merged:
 - primary touch controls use larger targets,
 - builder layout collapses to one column at narrow widths,
 - rendering DPR is bounded for mobile GPU cost,
-- integrated typecheck, unit tests and production build are green on main.
-
-Current browser-runtime lane:
-
+- integrated typecheck, unit tests, production build and browser runtime gate are green on main,
 - Playwright runs the production build in Chromium at desktop and mobile-emulated viewports,
-- runtime checks cover visible WebGL/UI surface, Play/Stop state, representative builder changes, responsive ordering, English/Japanese switching, horizontal overflow and browser errors,
-- the automated browser runtime gate is green on the current Phase 5/6 verification PR,
-- successful browser runs retain desktop/mobile runtime screenshots plus explicit English and Japanese localization screenshots/report evidence in CI artifacts.
+- browser checks cover WebGL/UI rendering, Play/Stop state, responsive ordering, EN/JA switching, horizontal overflow and browser errors,
+- CI artifacts retain desktop/mobile runtime screenshots plus explicit English and Japanese screenshots.
+
+Current verification lane:
+
+- extend automated coverage for speed changes while running, all builder controls, invalid configuration preservation/alert behavior, label association and keyboard focusability,
+- keep direct 3D crank-vs-orbit feel and real-device touch/Web Audio/performance checks manual because emulation is not sufficient evidence for those behaviors.
 
 Remaining work:
 
-- merge the green automated browser runtime gate after final evidence review,
-- manually verify crank-handle capture versus OrbitControls in a desktop browser,
-- verify crank touch capture, Web Audio startup and practical performance on at least one real touch device,
+- manually verify orbit/zoom and Reset view behavior in a desktop browser,
+- manually verify causal visual/audio synchronization during autoplay and speed changes,
+- manually verify crank-handle capture versus OrbitControls and orbit recovery after release,
+- manually verify the direct crank path uses the same contact/pluck behavior in practical interaction,
+- verify crank touch capture, Web Audio startup, readability and practical performance on at least one real touch device,
 - fix any material interaction/readability defect found by those checks.
 
 Completion gate:
@@ -108,11 +111,11 @@ Completion gate:
 - the instrument is presentable as a standalone browser experience,
 - mechanical causality remains inspectable rather than hidden behind polish,
 - automated runtime checks are green on main,
-- the remaining real-device interaction checks pass.
+- the remaining real-device/manual interaction checks pass.
 
 ## Phase 6 — Localization
 
-Status: implemented; automated runtime verification pass pending merge to main
+Status: implemented; automated runtime verification complete
 
 Completed and merged:
 
@@ -122,18 +125,14 @@ Completed and merged:
 - document `lang` follows the active locale,
 - mechanism/configuration identifiers remain locale-independent,
 - English and Japanese catalog parity is covered by unit tests,
-- integrated typecheck/tests/build are green on main.
-
-Current verification state:
-
-- automated desktop/mobile Chromium checks pass for locale switching, document `lang`, visible Japanese UI and horizontal-overflow protection on the current verification PR,
+- integrated typecheck/tests/build are green on main,
+- automated desktop/mobile Chromium checks pass for locale switching, document `lang`, visible Japanese UI and horizontal-overflow protection,
 - CI evidence retains explicit English and Japanese screenshots for both desktop and mobile runs.
 
 Remaining work:
 
-- merge the automated locale runtime gate to main,
-- confirm readability and interaction on the remaining real-device/manual Phase 5 checks,
-- fix any runtime text overflow or layout defect found by device inspection.
+- confirm locale readability and interaction during the remaining real-device/manual Phase 5 checks,
+- fix any runtime text overflow or readability defect found by device inspection.
 
 ## Phase 7 — Decide whether this remains music-box-only
 
