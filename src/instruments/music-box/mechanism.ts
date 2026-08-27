@@ -119,7 +119,7 @@ export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] 
 
 export function pinTipWorldPosition(pin: Pin, phase: number, config: MusicBoxConfig): Point3 {
   const radius = config.cylinderRadius + config.pinLength
-  const theta = pin.angle - phase
+  const theta = pin.angle + phase
   const [cx, cy, cz] = config.cylinderCenter
 
   return {
