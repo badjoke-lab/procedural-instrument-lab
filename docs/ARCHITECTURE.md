@@ -17,9 +17,10 @@ At minimum, active development must consult:
 - `docs/ARCHITECTURE.md` for architectural and product-boundary rules,
 - `docs/MUSIC_BOX_V1.md` for current music-box acceptance criteria,
 - `docs/ROADMAP.md` for sequencing and completion gates,
+- `docs/PRESENTATION_CHECKLIST.md` for Phase 5 browser/device quality checks,
 - `AGENTS.md` for agent/contributor operating rules.
 
-When implementation decisions change product behavior, architecture, language policy, scope, or sequencing, the relevant documentation must be updated in the same change. Chat history is not the source of truth.
+When implementation decisions change product behavior, architecture, information architecture, language policy, scope, or sequencing, the relevant documentation must be updated in the same change. Chat history is not the source of truth.
 
 ## Source of truth for runtime state
 
@@ -46,41 +47,53 @@ For the music box, the intended pipeline is:
 
 The first vertical slice may stay compact while the mechanism is being proven. Refactoring into the full module tree comes after the causal pipeline works end-to-end.
 
+## Product information architecture
+
+The primary music-box page is the interactive surface, not the documentation surface. It should use simple wording and show only enough explanation for a first-time user to understand what can be done.
+
+The v1 information architecture is:
+
+- **Music box page**: concise title/copy, Play/Stop, speed, Reset view, EN/JA, 3D scene and a clearly discoverable `Customize` entry point.
+- **Customize section**: the bounded mechanical controls. On mobile it is part of normal document flow and must not be hidden inside a fixed-height nested scroller.
+- **How to use page**: detailed operating instructions plus beginner-oriented explanations of crank, gears, cylinder, pins and comb/tines.
+- **About page**: project purpose, causal/mechanical implementation philosophy and inspiration/credits.
+
+A user should not need prior knowledge of music-box mechanics to discover the main functions. Detailed mechanical explanations must not make the primary page verbose.
+
+GitHub Pages is the current real-device verification host. Lightweight secondary pages should work under the project Pages base path without requiring server-side routing.
+
 ## Language policy
 
 English is the default UI language for v1.
 
-The implementation must remain localization-ready from the beginning:
+The implementation must remain localization-ready:
 
-- user-facing UI strings must be referenced through a small message-catalog layer rather than hard-coded throughout components,
-- the initial required locale is `en`,
-- Japanese `ja` is the first planned additional locale,
+- user-facing UI strings must be referenced through the message-catalog layer rather than hard-coded throughout components,
+- the required locales are `en` and `ja`,
 - the UI must not show bilingual labels such as `Play / 再生` by default,
-- when locale switching is introduced, a compact selector such as `EN / JA` is preferred,
+- locale switching uses a compact selector such as `EN / JA`,
 - instrument/mechanism identifiers, code symbols, file names and canonical parameter keys remain English and locale-independent.
-
-Localization work must not block the mechanical v1 milestones. The architecture must make Japanese addition straightforward without requiring UI restructuring.
 
 ## v1 customization target
 
-Mechanically meaningful parameters:
+Mechanically meaningful parameters include:
 
-- tine count / note range
-- cylinder radius / length
-- pin dimensions
-- gear ratio
-- crank speed / tempo
-- tune
+- tine count / note range,
+- cylinder radius / length,
+- pin dimensions,
+- gear ratio,
+- crank speed / tempo,
+- tune.
 
-A configuration change must regenerate or remap the mechanism where physically relevant. Cosmetic-only settings must not pretend to be mechanical parameters.
+The current exposed v1 controls are intentionally bounded; not every internal parameter must be user-editable yet. A configuration change must regenerate or remap the mechanism where physically relevant. Cosmetic-only settings must not pretend to be mechanical parameters.
 
 ## Deferred
 
-- rigid-body physics
-- spring motor simulation
-- acoustically accurate resonator box
-- MIDI import
-- persistence / accounts
-- 3D-print export
-- broad cosmetic editor
-- additional instruments
+- rigid-body physics,
+- spring motor simulation,
+- acoustically accurate resonator box,
+- MIDI import,
+- persistence / accounts,
+- 3D-print export,
+- broad cosmetic editor,
+- additional instruments.
