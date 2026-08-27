@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -26,13 +26,13 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 6. **Tune -> pin geometry** — compile the selected tune into visible cylinder pins. Completion means changing tunes changes the physical cylinder rather than an independent audio track. **Complete in PR #17.**
 7. **Tune-switch runtime** — stop/reset stale engagement and vibration state when tunes change. Completion means switching tunes cannot leave detached mechanical/audio state. **Complete in PR #17.**
 8. **Preset mechanical validation** — validate note range, normalized starts and compilation for every shipped preset. Completion means every selectable tune fits the current mechanism. **Complete in PR #17.**
-9. **Preset browser gate** — protect selector, playback state, EN/JA, Customize and responsive behavior in desktop/mobile Chromium. Completion means tune functionality has automated runtime coverage. **Green in PR #17 run #80.**
+9. **Preset browser gate** — protect selector, playback state, EN/JA, Customize and responsive behavior in desktop/mobile Chromium. Completion means tune functionality has automated runtime coverage. **Complete in PR #17; final branch run #81 green.**
 10. **How to use / About / attribution** — explain Tune -> pin behavior and disclose demo-tune provenance/public-domain status. Completion means user guidance and rights provenance match the shipped presets. **Complete in PR #17.**
-11. **Preset Pages publication** — merge and publish the tune-enabled build, then perform only the minimum real-device checks that automation cannot replace. **Pending PR #17 merge and Pages deployment.**
+11. **Preset Pages publication** — merge and publish the tune-enabled build, then perform only the minimum real-device checks that automation cannot replace. **Complete: PR #17 merged as `4c0c05444b336f54f873fb757a4128442c8e5bd1` and Pages deployment succeeded.**
 
 ### Editable composition foundation
 
-12. **TuneDocument specification** — define the versioned editable canonical tune representation shared by preset-derived, user-authored and imported material. Completion means every input path can converge before mechanical compilation.
+12. **TuneDocument specification** — define the versioned editable canonical tune representation shared by preset-derived, user-authored and imported material. Completion means every input path can converge before mechanical compilation. **In progress in PR #18.**
 13. **Piano-roll editor** — add/remove/move notes and edit pitch/timing/duration. Completion means users can compose from scratch and later correct recognition/import results.
 14. **On-screen keyboard input** — record notes from an on-screen keyboard into TuneDocument. Completion means users can perform rather than place every note manually.
 15. **Computer-keyboard input** — provide practical keyboard-key note entry/recording. Completion means composition does not require external MIDI hardware.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-PR #17 has completed steps 1-10 on its current implementation: benchmark-first specification synchronization, TunePreset/domain extraction, three public-domain presets, selector, Tune -> pin regeneration, safe switching, preset validation, EN/JA/browser coverage and How to use/About rights provenance. Run #80 is green for typecheck, unit tests, production build and desktop/mobile Chromium runtime gates. Step 11 is the only remaining preset-foundation action: merge #17, verify main CI, and publish/verify GitHub Pages. After step 11, the next development lane is step 12 TuneDocument, not advanced customization.
+Preset foundation steps 1-11 are complete on main. PR #18 is the active lane for step 12. It defines versioned beat-based `TuneDocument`, validates editable data, derives shipped preset mechanical events from that document, and preserves the existing mechanical compiler boundary. After step 12 is green and merged, proceed to step 13 Piano Roll. Do not jump to advanced Customize or final realism first.
 
 ## Mechanical causality gate
 

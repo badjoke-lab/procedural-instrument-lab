@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_MUSIC_BOX_CONFIG, compileTune } from './mechanism'
+import { tuneDocumentToNoteEvents, validateTuneDocument } from './tune-document'
 import { DEFAULT_TUNE_ID, TUNE_PRESETS, getTunePreset } from './tunes'
 
 describe('music-box tune presets', () => {
@@ -9,8 +10,16 @@ describe('music-box tune presets', () => {
       expect(preset.publicDomain).toBe(true)
       expect(preset.title.en.length).toBeGreaterThan(0)
       expect(preset.title.ja.length).toBeGreaterThan(0)
-      expect(preset.events.length).toBeGreaterThan(8)
+      expect(preset.document.notes.length).toBeGreaterThan(8)
       expect(preset.attribution.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('backs every preset with a valid TuneDocument and derives mechanical events from it', () => {
+    for (const preset of TUNE_PRESETS) {
+      expect(validateTuneDocument(preset.document)).toEqual([])
+      expect(preset.document.id).toBe(preset.id)
+      expect(preset.events).toEqual(tuneDocumentToNoteEvents(preset.document))
     }
   })
 
