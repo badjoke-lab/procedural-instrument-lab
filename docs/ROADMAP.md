@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -43,8 +43,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 18. **Microphone recording** — explicit-permission, local/browser recording. Completion means humming/singing/single-note instruments can be captured, locally previewed and discarded without upload or premature note inference. **Complete in PR #25, merged as `33314c00a498e97cd50bc2a291a1373af232fb7c`; final PR run #140 green, main verify #141 and Pages deploy #14 succeeded.**
 19. **Mic -> melody extraction** — detect pitch/timing into editable TuneDocument notes, initially optimized for monophonic material. **Complete in PR #26, merged as `8f2251cb7ea9c7dcbcd60cfecd2609d56a0847ac`; final branch run #145 green with desktop/mobile evidence reviewed.**
-20. **Audio-file import** — accept practical browser-decodable formats such as WAV/MP3/M4A where supported, without silently uploading source media. **In progress on `feat/music-box-audio-file-import`. The first boundary selects a local audio file, keeps it in-browser as a temporary File/object URL, allows local preview/discard and leaves TuneDocument/mechanism state unchanged.**
-21. **Audio -> melody extraction** — derive candidate note data rather than replaying the source file as the music box.
+20. **Audio-file import** — accept practical browser-decodable formats such as WAV/MP3/M4A where supported, without silently uploading source media. **Complete in PR #27, merged as `4b60f7dba885e175196b4c9eca0454b6b086384b`; final branch run #147 green with desktop/mobile evidence reviewed.**
+21. **Audio -> melody extraction** — derive candidate note data rather than replaying the source file as the music box. **In progress on `feat/music-box-audio-melody-extraction`. The selected local File is explicitly analyzed with the same monophonic local decode/pitch/timing core used by microphone recognition and successful candidates replace editable TuneDocument data only after user action.**
 22. **Recognition correction UI** — show recognized notes in the piano roll and allow correction before mechanical compilation.
 
 ### Make ordinary music mechanically playable
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-19 are complete on main. Step 20 audio-file import is the active lane. File selection must be an explicit local browser action; the selected source remains temporary local media that can be previewed/discarded and must not change TuneDocument or become music-box playback. Browser automation may use synthetic local files to prove file-state/privacy behavior, while the real OS file picker and platform-specific codec support remain minimal real-device gates. After step 20 is green and merged, proceed to step 21 audio -> melody extraction using the same editable-candidate boundary established for microphone recognition.
+Steps 1-20 are complete on main. Step 21 audio -> melody extraction is the active lane. File selection remains an explicit local browser action, and analysis begins only after an explicit extraction action. The selected source is decoded locally with the shared monophonic recognition core; successful pitch/timing candidates become editable TuneDocument data, while decoding/recognition failure leaves the existing TuneDocument unchanged. Source media must never become music-box playback or be uploaded/embedded. Browser automation uses synthetic decoded audio; the real OS file picker and platform-specific codec support remain minimal real-device gates. After step 21 is green and merged, proceed to step 22 recognition correction UI.
 
 ## Mechanical causality gate
 
