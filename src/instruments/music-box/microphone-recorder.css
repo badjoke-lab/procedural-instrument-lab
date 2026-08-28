@@ -17,10 +17,22 @@
   color: #b8b8c3;
 }
 
-.microphone-recorder-actions {
+.microphone-recorder-actions,
+.microphone-recorder-analysis {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
+}
+
+.microphone-recorder-analysis {
+  padding: 0 0.8rem 0.8rem;
+  margin-top: -0.35rem;
+  border-right: 1px solid #34343b;
+  border-bottom: 1px solid #34343b;
+  border-left: 1px solid #34343b;
+  border-radius: 0 0 0.55rem 0.55rem;
+  background: #151519;
 }
 
 .microphone-recorder audio {

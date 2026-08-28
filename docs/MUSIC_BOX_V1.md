@@ -66,17 +66,21 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import and MIDI export are merged. Microphone recording is the active lane, followed by mic melody extraction, audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export and microphone recording are merged. Mic melody extraction is the active lane, followed by audio-file import/recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
 
 MIDI export is a derived interchange view of TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
 
-Microphone recording is a local capture boundary. Permission is requested only after an explicit Start action. The source recording is kept as a temporary browser Blob/object URL for preview and discard, is never silently uploaded or inserted into TuneDocument/project/share state, and releases its media tracks when capture ends. Step 19, not the recorder itself, converts suitable recordings into editable melody candidates.
+Microphone recording is a local capture boundary. Permission is requested only after an explicit Start action. The source recording is kept as a temporary browser Blob/object URL for preview and discard, is never silently uploaded or inserted into TuneDocument/project/share state, and releases its media tracks when capture ends.
+
+Mic melody extraction is also local and user-controlled. A completed recording is decoded to PCM only after the user chooses extraction. The initial recognizer targets monophonic material, estimates fundamental pitch/timing and converts stable note candidates into a new editable TuneDocument. Extraction failure leaves the current TuneDocument unchanged. Raw microphone media never becomes music-box playback and never writes pins directly.
 
 ## Benchmark-first verification rule
 
 Development does not assume high traffic or many manual tests. After the composition/import path exists, maintain synthetic tune and controlled synthetic-audio fixtures covering range, density, timing, simultaneous notes, known-invalid cases and recognition conditions.
+
+Mic recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -114,7 +118,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-17 are complete on main. PR #25 is the active step 18 microphone-recording lane. After its automated lifecycle/privacy gate is green and merged, proceed to mic -> melody extraction. Actual physical microphone permission/capture remains part of the minimal real-device verification lane and does not justify skipping step 19.
+Steps 1-18 are complete on main. Step 19 mic -> melody extraction is active on `feat/music-box-mic-melody-extraction`. Completion requires local decode/analysis, explicit user-triggered conversion into editable TuneDocument candidates, EN/JA UI, synthetic known-frequency unit coverage and browser coverage of the recording -> extraction -> editable-data path. Real microphone/codec behavior remains in the minimal real-device verification lane. After step 19 is green and merged, proceed to step 20 audio-file import.
 
 ## Scope rule
 

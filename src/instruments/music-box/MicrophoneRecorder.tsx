@@ -22,7 +22,7 @@ export function preferredRecordingMimeType(): string | undefined {
   return undefined
 }
 
-export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
+export function MicrophoneRecorder({ copy, onClipChange }: { copy: MicrophoneRecorderCopy; onClipChange?: (clip: Blob | null) => void }) {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -53,6 +53,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
       streamRef.current = stream
       chunksRef.current = []
       replaceClip()
+      onClipChange?.(null)
       const mimeType = preferredRecordingMimeType()
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
       recorderRef.current = recorder
@@ -63,6 +64,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
         const type = recorder.mimeType || chunksRef.current[0]?.type || 'audio/webm'
         const blob = new Blob(chunksRef.current, { type })
         replaceClip(URL.createObjectURL(blob))
+        onClipChange?.(blob)
         setStatus(copy.ready)
         closeStream()
         recorderRef.current = null
@@ -87,6 +89,7 @@ export function MicrophoneRecorder({ copy }: { copy: MicrophoneRecorderCopy }) {
 
   const discard = () => {
     replaceClip()
+    onClipChange?.(null)
     setStatus('')
   }
 

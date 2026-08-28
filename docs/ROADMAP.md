@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -41,8 +41,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ### Microphone and owned audio input
 
-18. **Microphone recording** — explicit-permission, local/browser recording. Completion means humming/singing/single-note instruments can be captured, locally previewed and discarded without upload or premature note inference. **In progress in PR #25.**
-19. **Mic -> melody extraction** — detect pitch/timing into editable TuneDocument notes, initially optimized for monophonic material.
+18. **Microphone recording** — explicit-permission, local/browser recording. Completion means humming/singing/single-note instruments can be captured, locally previewed and discarded without upload or premature note inference. **Complete in PR #25, merged as `33314c00a498e97cd50bc2a291a1373af232fb7c`; final PR run #140 green, main verify #141 and Pages deploy #14 succeeded.**
+19. **Mic -> melody extraction** — detect pitch/timing into editable TuneDocument notes, initially optimized for monophonic material. **In progress on `feat/music-box-mic-melody-extraction`. Initial implementation decodes locally, estimates fundamental pitch with autocorrelation, groups stable frames into note candidates and requires an explicit Extract melody action before replacing editable TuneDocument data.**
 20. **Audio-file import** — accept practical browser-decodable formats such as WAV/MP3/M4A where supported, without silently uploading source media.
 21. **Audio -> melody extraction** — derive candidate note data rather than replaying the source file as the music box.
 22. **Recognition correction UI** — show recognized notes in the piano roll and allow correction before mechanical compilation.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-17 are complete on main. PR #25 is the active lane for step 18 microphone recording. Microphone permission must be requested only after an explicit user action. Captured media stays local/in-browser as a temporary recording that can be previewed and discarded; stopping/failure/unmount must release active media tracks. Step 18 must not infer notes or feed raw microphone playback into the music-box runtime: melody recognition begins in step 19. Browser automation may fake capture APIs to verify lifecycle/privacy invariants, while real permission/device capture remains a minimal real-device gate. After step 18 is green and merged, proceed to step 19 mic -> melody extraction.
+Steps 1-18 are complete on main. Step 19 mic -> melody extraction is the active lane. A completed local recording may be decoded and analyzed only after the user explicitly requests extraction. The first recognizer is deliberately monophonic: it derives pitch/timing candidates locally from PCM and converts successful results into editable TuneDocument data. Extraction failure must leave the existing TuneDocument unchanged. Raw microphone audio must never become music-box playback or write pins directly. Synthetic known-frequency fixtures and fake browser decoding carry repeatable verification; real microphone/codec behavior remains in the minimal real-device gate. After step 19 is green and merged, proceed to step 20 local audio-file import.
 
 ## Mechanical causality gate
 

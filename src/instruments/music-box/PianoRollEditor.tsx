@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { MusicBoxAudio } from './audio'
+import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
 import { MidiExport } from './MidiExport'
 import { MidiImport } from './MidiImport'
@@ -30,6 +31,7 @@ export type PianoRollCopy = {
 
 export function PianoRollEditor({ document, onChange, copy }: { document: PianoRollDraft; onChange: (next: PianoRollDraft) => void; copy: PianoRollCopy }) {
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
+  const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
@@ -91,15 +93,26 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
         title: 'Export MIDI', intro: 'Save the current editable tune as .mid with pitch, beat timing, duration and tempo.', download: 'Download MIDI',
       }} />
 
-      <MicrophoneRecorder copy={japanese ? {
+      <MicrophoneRecorder onClipChange={setMicrophoneClip} copy={japanese ? {
         title: 'マイクで録音',
-        intro: '端末のマイクを使って音声を録音します。録音はこのブラウザ内にだけ保持され、次の工程でメロディーへ変換します。',
+        intro: '端末のマイクを使って音声を録音します。録音はこのブラウザ内にだけ保持され、単旋律として解析できます。',
         start: '録音を開始', stop: '録音を停止', discard: '録音を破棄', recording: '録音中です。', ready: '録音しました。ここで試聴できます。', unsupported: 'このブラウザではマイク録音を利用できません。', denied: 'マイクを開始できませんでした。権限を確認してください。', preview: '録音した音声',
       } : {
         title: 'Record microphone',
-        intro: 'Capture audio from this device. The recording stays in this browser and will become melody input in the next step.',
+        intro: 'Capture audio from this device. The recording stays in this browser and can be analyzed as a monophonic melody.',
         start: 'Start recording', stop: 'Stop recording', discard: 'Discard recording', recording: 'Recording…', ready: 'Recording ready. You can preview it here.', unsupported: 'Microphone recording is not supported in this browser.', denied: 'Could not start the microphone. Check permission and try again.', preview: 'Recorded audio',
       }} />
+
+      <MicMelodyExtractor
+        clip={microphoneClip}
+        tempoBpm={document.tempoBpm}
+        onExtract={(next) => { setSelectedNoteId(next.notes[0]?.id ?? ''); onChange(next) }}
+        copy={japanese ? {
+          analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を編集データへ変換しました。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
+        } : {
+          analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates were converted to editable tune data.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
+        }}
+      />
 
       <ScreenKeyboard document={document} onChange={onChange} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
