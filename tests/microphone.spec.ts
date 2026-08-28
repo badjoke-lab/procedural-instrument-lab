@@ -85,6 +85,31 @@ test('microphone permission is explicit and the local clip can be previewed, ana
   await expect(page.getByRole('button', { name: 'Extract melody' })).toHaveCount(0)
 })
 
+test('failed microphone analysis leaves the editable tune unchanged', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  const before = await page.locator('.piano-roll-note').count()
+  const recorder = page.getByRole('region', { name: 'Record microphone' })
+  await recorder.getByRole('button', { name: 'Start recording' }).click()
+  await recorder.getByRole('button', { name: 'Stop recording' }).click()
+
+  await page.evaluate(() => {
+    class SilentAudioContext {
+      async decodeAudioData(_data: ArrayBuffer) {
+        const sampleRate = 48_000
+        const channel = new Float32Array(Math.round(sampleRate * 0.5))
+        return { sampleRate, length: channel.length, numberOfChannels: 1, getChannelData: () => channel }
+      }
+      async close() {}
+    }
+    Object.defineProperty(window, 'AudioContext', { value: SilentAudioContext, configurable: true })
+  })
+
+  await page.getByRole('button', { name: 'Extract melody' }).click()
+  await expect(page.getByText('Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.')).toBeVisible()
+  await expect(page.locator('.piano-roll-note')).toHaveCount(before)
+})
+
 test('microphone recording and melody extraction copy localizes to Japanese', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'JA' }).click()
