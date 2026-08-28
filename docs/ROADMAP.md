@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -37,11 +37,11 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 14. **On-screen keyboard input** — record performed pointer/touch notes into TuneDocument through the existing mechanical compiler path. **Complete in PR #21, merged as `2fde71128a20a3bef126606a2f4d05f4ca1dfcfe`; final branch run #108 green and Pages deploy #10 succeeded.**
 15. **Computer-keyboard input** — provide practical A/S/D/F/G/H/J/K note preview and recording into the same TuneDocument path while preserving normal form typing. **Complete in PR #22, merged as `9dd7f4a34f13cb6ceda8d473be8bbb13f38c3196`; final branch run #115 green with desktop/mobile evidence reviewed.**
 16. **MIDI import** — parse supported `.mid` note/timing data into TuneDocument. Completion means DAW/notation users have a precise local-file import path without creating a second playback scheduler. **Complete in PR #23, merged as `421c0e502c9555abd0cdf63b98ae6988f0449cbf`; final branch run #125 green with desktop/mobile evidence reviewed.**
-17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools. **In progress in PR #24.**
+17. **MIDI export** — export arranged TuneDocument note data to MIDI where meaningful. Completion means created arrangements can return to other music tools. **Complete in PR #24, merged as `b9f93119a92c341b17cd2a3d0f446e7a23849f55`; final branch run #131 green with desktop/mobile evidence reviewed.**
 
 ### Microphone and owned audio input
 
-18. **Microphone recording** — explicit-permission, preferably local/browser recording. Completion means humming/singing/single-note instruments can be captured in the app.
+18. **Microphone recording** — explicit-permission, local/browser recording. Completion means humming/singing/single-note instruments can be captured, locally previewed and discarded without upload or premature note inference. **In progress in PR #25.**
 19. **Mic -> melody extraction** — detect pitch/timing into editable TuneDocument notes, initially optimized for monophonic material.
 20. **Audio-file import** — accept practical browser-decodable formats such as WAV/MP3/M4A where supported, without silently uploading source media.
 21. **Audio -> melody extraction** — derive candidate note data rather than replaying the source file as the music box.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-16 are complete on main. PR #24 is the active lane for step 17 MIDI export. The current editable TuneDocument is exported as a derived Standard MIDI File rather than becoming a new playback source. Pitch, beat timing, duration and tempo must survive at the declared PPQ resolution, including valid pitches outside the current C4-C5 physical comb. Browser automation must verify a real local `.mid` download whose header is `MThd`, and desktop/mobile layout must remain readable with no page-level horizontal overflow. After step 17 is green and merged, proceed to step 18 microphone recording. Do not jump to later audio recognition, advanced Customize or final realism first.
+Steps 1-17 are complete on main. PR #25 is the active lane for step 18 microphone recording. Microphone permission must be requested only after an explicit user action. Captured media stays local/in-browser as a temporary recording that can be previewed and discarded; stopping/failure/unmount must release active media tracks. Step 18 must not infer notes or feed raw microphone playback into the music-box runtime: melody recognition begins in step 19. Browser automation may fake capture APIs to verify lifecycle/privacy invariants, while real permission/device capture remains a minimal real-device gate. After step 18 is green and merged, proceed to step 19 mic -> melody extraction.
 
 ## Mechanical causality gate
 

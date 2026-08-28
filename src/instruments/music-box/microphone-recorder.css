@@ -1,0 +1,32 @@
+.microphone-recorder {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #34343b;
+  border-radius: 0.55rem;
+  background: #151519;
+}
+
+.microphone-recorder-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.microphone-recorder-copy span,
+.microphone-recorder-status {
+  color: #b8b8c3;
+}
+
+.microphone-recorder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.microphone-recorder audio {
+  width: min(100%, 34rem);
+}
+
+.microphone-recorder-status {
+  margin: 0;
+}
