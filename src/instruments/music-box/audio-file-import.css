@@ -1,0 +1,62 @@
+.audio-file-import {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #34343b;
+  border-radius: 0.55rem;
+  background: #151519;
+}
+
+.audio-file-import-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.audio-file-import-copy span,
+.audio-file-import-status,
+.audio-file-import-name {
+  color: #b8b8c3;
+}
+
+.audio-file-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.audio-file-import-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.45rem;
+  padding: 0 0.75rem;
+  border: 1px solid #555560;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.audio-file-import-picker:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.audio-file-import-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.audio-file-import-status,
+.audio-file-import-name {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.audio-file-import audio {
+  width: min(100%, 34rem);
+}

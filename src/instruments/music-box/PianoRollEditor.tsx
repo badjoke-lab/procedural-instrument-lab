@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { AudioFileImport } from './AudioFileImport'
 import { MusicBoxAudio } from './audio'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
@@ -113,6 +114,16 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
           analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates were converted to editable tune data.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
         }}
       />
+
+      <AudioFileImport copy={japanese ? {
+        title: '音声ファイルを読み込む',
+        intro: '端末内の音声ファイルをブラウザ内だけで開きます。この段階ではまだ音程へ変換しません。',
+        choose: '音声ファイルを選ぶ', ready: '音声ファイルを読み込みました。ここで試聴できます。', discard: 'ファイルを破棄', unsupported: '対応する音声ファイルを選んでください。', preview: '読み込んだ音声',
+      } : {
+        title: 'Import audio file',
+        intro: 'Open an audio file from this device locally in your browser. This step does not convert it to notes yet.',
+        choose: 'Choose audio file', ready: 'Audio file loaded. You can preview it here.', discard: 'Discard file', unsupported: 'Choose a supported audio file.', preview: 'Imported audio',
+      }} />
 
       <ScreenKeyboard document={document} onChange={onChange} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
