@@ -16,24 +16,42 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('local audio file can be analyzed into editable tune data', async ({ page }, testInfo) => {
+test('recognized audio stays a correctable candidate until explicitly accepted', async ({ page }, testInfo) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Compose', exact: true }).click()
   const importer = page.getByRole('region', { name: 'Import audio file' })
-
-  await importer.locator('input[type="file"]').setInputFiles({
-    name: 'a4-melody.wav',
-    mimeType: 'audio/wav',
-    buffer: Buffer.from('RIFF-local-test-audio'),
-  })
+  await importer.locator('input[type="file"]').setInputFiles({ name: 'a4-melody.wav', mimeType: 'audio/wav', buffer: Buffer.from('RIFF-local-test-audio') })
 
   await page.getByRole('button', { name: 'Extract melody from audio' }).click()
-  await expect(page.getByText('Audio melody candidates were converted to editable tune data.')).toBeVisible()
+  await expect(page.getByText('Audio melody candidates are shown in the piano roll below. Review or correct them before accepting.')).toBeVisible()
+  const review = page.getByRole('region', { name: 'Review recognized melody' })
+  await expect(review).toBeVisible()
   await expect(page.locator('.piano-roll-note[title^="A4"]')).toHaveCount(1)
-  await page.screenshot({ path: testInfo.outputPath('runtime-audio-melody.png'), fullPage: true })
+  await expect(page.getByText('Edited tune')).toHaveCount(0)
 
-  await importer.getByRole('button', { name: 'Discard file' }).click()
-  await expect(page.getByRole('button', { name: 'Extract melody from audio' })).toHaveCount(0)
+  await page.getByLabel('Pitch').selectOption('67')
+  await expect(page.locator('.piano-roll-note[title^="G4"]')).toHaveCount(1)
+  await expect(page.getByText('Edited tune')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath('runtime-recognition-review.png'), fullPage: true })
+
+  await review.getByRole('button', { name: 'Accept recognized melody' }).click()
+  await expect(review).toHaveCount(0)
+  await expect(page.getByText('Edited tune')).toBeVisible()
+  await expect(page.locator('.piano-roll-note[title^="G4"]')).toHaveCount(1)
+})
+
+test('recognition candidate can be discarded without changing accepted tune', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  const before = await page.locator('.piano-roll-note').count()
+  const importer = page.getByRole('region', { name: 'Import audio file' })
+  await importer.locator('input[type="file"]').setInputFiles({ name: 'a4-melody.wav', mimeType: 'audio/wav', buffer: Buffer.from('RIFF-local-test-audio') })
+  await page.getByRole('button', { name: 'Extract melody from audio' }).click()
+  const review = page.getByRole('region', { name: 'Review recognized melody' })
+  await review.getByRole('button', { name: 'Discard candidate' }).click()
+  await expect(review).toHaveCount(0)
+  await expect(page.locator('.piano-roll-note')).toHaveCount(before)
+  await expect(page.getByText('Edited tune')).toHaveCount(0)
 })
 
 test('failed audio analysis leaves the editable tune unchanged and localizes to Japanese', async ({ page }) => {
