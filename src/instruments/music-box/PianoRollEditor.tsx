@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { AudioFileImport } from './AudioFileImport'
+import { AudioMelodyExtractor } from './AudioMelodyExtractor'
 import { MusicBoxAudio } from './audio'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
@@ -33,6 +34,7 @@ export type PianoRollCopy = {
 export function PianoRollEditor({ document, onChange, copy }: { document: PianoRollDraft; onChange: (next: PianoRollDraft) => void; copy: PianoRollCopy }) {
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
   const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
+  const [audioFile, setAudioFile] = useState<File | null>(null)
   const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
   const columns = Math.max(1, Math.ceil(document.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
@@ -72,6 +74,11 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
     try { onChange(updatePianoRollNote(document, selected.id, patch)) } catch { /* Keep the last valid document. */ }
   }
 
+  const applyExtractedTune = (next: PianoRollDraft) => {
+    setSelectedNoteId(next.notes[0]?.id ?? '')
+    onChange(next)
+  }
+
   return (
     <section className="piano-roll-editor" aria-label={copy.title}>
       <div className="piano-roll-heading">
@@ -82,7 +89,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
         </div>
       </div>
 
-      <MidiImport onImport={(next) => { setSelectedNoteId(next.notes[0]?.id ?? ''); onChange(next) }} copy={japanese ? {
+      <MidiImport onImport={applyExtractedTune} copy={japanese ? {
         title: 'MIDIを読み込む', intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。', choose: 'MIDIファイルを選ぶ', imported: 'MIDIを読み込みました。', failed: 'MIDIを読み込めませんでした。', outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
       } : {
         title: 'Import MIDI', intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.', choose: 'Choose MIDI file', imported: 'MIDI imported.', failed: 'Could not import MIDI.', outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
@@ -107,7 +114,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       <MicMelodyExtractor
         clip={microphoneClip}
         tempoBpm={document.tempoBpm}
-        onExtract={(next) => { setSelectedNoteId(next.notes[0]?.id ?? ''); onChange(next) }}
+        onExtract={applyExtractedTune}
         copy={japanese ? {
           analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を編集データへ変換しました。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
         } : {
@@ -115,15 +122,26 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
         }}
       />
 
-      <AudioFileImport copy={japanese ? {
+      <AudioFileImport onFileChange={setAudioFile} copy={japanese ? {
         title: '音声ファイルを読み込む',
-        intro: '端末内の音声ファイルをブラウザ内だけで開きます。この段階ではまだ音程へ変換しません。',
+        intro: '端末内の音声ファイルをブラウザ内だけで開きます。対応する単旋律なら、そのまま編集可能な音へ解析できます。',
         choose: '音声ファイルを選ぶ', ready: '音声ファイルを読み込みました。ここで試聴できます。', discard: 'ファイルを破棄', unsupported: '対応する音声ファイルを選んでください。', preview: '読み込んだ音声',
       } : {
         title: 'Import audio file',
-        intro: 'Open an audio file from this device locally in your browser. This step does not convert it to notes yet.',
+        intro: 'Open an audio file locally in your browser. Supported monophonic material can then be analyzed into editable notes.',
         choose: 'Choose audio file', ready: 'Audio file loaded. You can preview it here.', discard: 'Discard file', unsupported: 'Choose a supported audio file.', preview: 'Imported audio',
       }} />
+
+      <AudioMelodyExtractor
+        file={audioFile}
+        tempoBpm={document.tempoBpm}
+        onExtract={applyExtractedTune}
+        copy={japanese ? {
+          analyze: '音声からメロディーを抽出', analyzing: '音声を解析中…', ready: '音声ファイルからメロディー候補を編集データへ変換しました。', failed: '安定した単旋律を抽出できませんでした。より明瞭な単音の音声ファイルを試してください。',
+        } : {
+          analyze: 'Extract melody from audio', analyzing: 'Analyzing audio…', ready: 'Audio melody candidates were converted to editable tune data.', failed: 'Could not extract a stable monophonic melody. Try a clearer single-note audio file.',
+        }}
+      />
 
       <ScreenKeyboard document={document} onChange={onChange} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
