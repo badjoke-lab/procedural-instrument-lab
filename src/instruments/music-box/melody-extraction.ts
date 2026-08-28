@@ -40,7 +40,7 @@ export function estimateFundamentalFrequency(
 
   const minLag = Math.max(1, Math.floor(sampleRate / options.maxFrequency))
   const maxLag = Math.min(frame.length - 2, Math.ceil(sampleRate / options.minFrequency))
-  let bestLag = -1
+  const correlations: number[] = []
   let bestCorrelation = 0
 
   for (let lag = minLag; lag <= maxLag; lag += 1) {
@@ -56,14 +56,33 @@ export function estimateFundamentalFrequency(
       normB += b * b
     }
     const normalized = normA > 0 && normB > 0 ? correlation / Math.sqrt(normA * normB) : 0
-    if (normalized > bestCorrelation) {
-      bestCorrelation = normalized
-      bestLag = lag
+    correlations.push(normalized)
+    if (normalized > bestCorrelation) bestCorrelation = normalized
+  }
+
+  if (bestCorrelation < 0.65) return null
+
+  // Pure and near-periodic sources can produce equally strong peaks at integer
+  // multiples of the real period. Choosing the global maximum can therefore
+  // report a subharmonic several octaves too low. Prefer the first local peak
+  // that is essentially as strong as the best observed correlation.
+  const strongPeakThreshold = Math.max(0.65, bestCorrelation * 0.98)
+  for (let index = 1; index < correlations.length - 1; index += 1) {
+    const current = correlations[index]
+    if (
+      current >= strongPeakThreshold
+      && current >= correlations[index - 1]
+      && current >= correlations[index + 1]
+    ) {
+      return sampleRate / (minLag + index)
     }
   }
 
-  if (bestLag < 0 || bestCorrelation < 0.65) return null
-  return sampleRate / bestLag
+  const bestIndex = correlations.reduce(
+    (best, value, index) => value > correlations[best] ? index : best,
+    0,
+  )
+  return sampleRate / (minLag + bestIndex)
 }
 
 export function extractMonophonicNotes(
