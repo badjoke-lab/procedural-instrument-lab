@@ -35,8 +35,10 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
   const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
   const [audioFile, setAudioFile] = useState<File | null>(null)
-  const selected = document.notes.find((note) => note.id === selectedNoteId) ?? document.notes[0]
-  const columns = Math.max(1, Math.ceil(document.lengthBeats))
+  const [recognitionCandidate, setRecognitionCandidate] = useState<PianoRollDraft | null>(null)
+  const workingDocument = recognitionCandidate ?? document
+  const selected = workingDocument.notes.find((note) => note.id === selectedNoteId) ?? workingDocument.notes[0]
+  const columns = Math.max(1, Math.ceil(workingDocument.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
   const japanese = copy.title === '作曲'
 
@@ -51,32 +53,61 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
     return () => window.removeEventListener('hashchange', revealFromHash)
   }, [])
 
+  useEffect(() => {
+    setRecognitionCandidate(null)
+    setSelectedNoteId(document.notes[0]?.id ?? '')
+  }, [document.id])
+
+  const updateWorkingDocument = (next: PianoRollDraft) => {
+    if (recognitionCandidate) setRecognitionCandidate(next)
+    else onChange(next)
+  }
+
   const addNote = () => {
-    const durationBeats = Math.min(0.5, document.lengthBeats)
-    const maxStart = Math.max(0, document.lengthBeats - durationBeats)
+    const durationBeats = Math.min(0.5, workingDocument.lengthBeats)
+    const maxStart = Math.max(0, workingDocument.lengthBeats - durationBeats)
     const nextStart = Math.min(maxStart, selected ? selected.startBeat + 1 : 0)
-    const next = addPianoRollNote(document, { pitch: selected?.pitch ?? 60, startBeat: nextStart, durationBeats })
-    const existing = new Set(document.notes.map((note) => note.id))
+    const next = addPianoRollNote(workingDocument, { pitch: selected?.pitch ?? 60, startBeat: nextStart, durationBeats })
+    const existing = new Set(workingDocument.notes.map((note) => note.id))
     const added = next.notes.find((note) => !existing.has(note.id))
-    onChange(next)
+    updateWorkingDocument(next)
     if (added) setSelectedNoteId(added.id)
   }
 
   const removeSelected = () => {
     if (!selected) return
-    const next = deletePianoRollNote(document, selected.id)
-    onChange(next)
+    const next = deletePianoRollNote(workingDocument, selected.id)
+    updateWorkingDocument(next)
     setSelectedNoteId(next.notes[0]?.id ?? '')
   }
 
   const updateSelected = (patch: Parameters<typeof updatePianoRollNote>[2]) => {
     if (!selected) return
-    try { onChange(updatePianoRollNote(document, selected.id, patch)) } catch { /* Keep the last valid document. */ }
+    try { updateWorkingDocument(updatePianoRollNote(workingDocument, selected.id, patch)) } catch { /* Keep the last valid document. */ }
   }
 
-  const applyExtractedTune = (next: PianoRollDraft) => {
+  const stageRecognizedTune = (next: PianoRollDraft) => {
+    setRecognitionCandidate(next)
+    setSelectedNoteId(next.notes[0]?.id ?? '')
+  }
+
+  const importMidi = (next: PianoRollDraft) => {
+    setRecognitionCandidate(null)
     setSelectedNoteId(next.notes[0]?.id ?? '')
     onChange(next)
+  }
+
+  const acceptRecognition = () => {
+    if (!recognitionCandidate) return
+    const next = recognitionCandidate
+    setRecognitionCandidate(null)
+    onChange(next)
+    setSelectedNoteId(next.notes[0]?.id ?? '')
+  }
+
+  const discardRecognition = () => {
+    setRecognitionCandidate(null)
+    setSelectedNoteId(document.notes[0]?.id ?? '')
   }
 
   return (
@@ -89,16 +120,16 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
         </div>
       </div>
 
-      <MidiImport onImport={applyExtractedTune} copy={japanese ? {
+      <MidiImport onImport={importMidi} copy={japanese ? {
         title: 'MIDIを読み込む', intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。', choose: 'MIDIファイルを選ぶ', imported: 'MIDIを読み込みました。', failed: 'MIDIを読み込めませんでした。', outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
       } : {
         title: 'Import MIDI', intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.', choose: 'Choose MIDI file', imported: 'MIDI imported.', failed: 'Could not import MIDI.', outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
       }} />
 
       <MidiExport document={document} copy={japanese ? {
-        title: 'MIDIを書き出す', intro: '現在の編集データを .mid として保存します。音程・開始拍・長さ・テンポを保持します。', download: 'MIDIを保存',
+        title: 'MIDIを書き出す', intro: '現在の確定済み編集データを .mid として保存します。音程・開始拍・長さ・テンポを保持します。', download: 'MIDIを保存',
       } : {
-        title: 'Export MIDI', intro: 'Save the current editable tune as .mid with pitch, beat timing, duration and tempo.', download: 'Download MIDI',
+        title: 'Export MIDI', intro: 'Save the currently accepted editable tune as .mid with pitch, beat timing, duration and tempo.', download: 'Download MIDI',
       }} />
 
       <MicrophoneRecorder onClipChange={setMicrophoneClip} copy={japanese ? {
@@ -114,11 +145,11 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       <MicMelodyExtractor
         clip={microphoneClip}
         tempoBpm={document.tempoBpm}
-        onExtract={applyExtractedTune}
+        onExtract={stageRecognizedTune}
         copy={japanese ? {
-          analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を編集データへ変換しました。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
+          analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
         } : {
-          analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates were converted to editable tune data.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
+          analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
         }}
       />
 
@@ -135,15 +166,26 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       <AudioMelodyExtractor
         file={audioFile}
         tempoBpm={document.tempoBpm}
-        onExtract={applyExtractedTune}
+        onExtract={stageRecognizedTune}
         copy={japanese ? {
-          analyze: '音声からメロディーを抽出', analyzing: '音声を解析中…', ready: '音声ファイルからメロディー候補を編集データへ変換しました。', failed: '安定した単旋律を抽出できませんでした。より明瞭な単音の音声ファイルを試してください。',
+          analyze: '音声からメロディーを抽出', analyzing: '音声を解析中…', ready: '音声から抽出した候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。より明瞭な単音の音声ファイルを試してください。',
         } : {
-          analyze: 'Extract melody from audio', analyzing: 'Analyzing audio…', ready: 'Audio melody candidates were converted to editable tune data.', failed: 'Could not extract a stable monophonic melody. Try a clearer single-note audio file.',
+          analyze: 'Extract melody from audio', analyzing: 'Analyzing audio…', ready: 'Audio melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try a clearer single-note audio file.',
         }}
       />
 
-      <ScreenKeyboard document={document} onChange={onChange} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
+      {recognitionCandidate && <div className="piano-roll-heading" role="region" aria-label={japanese ? '認識結果の確認' : 'Review recognized melody'}>
+        <div>
+          <strong>{japanese ? '認識結果を確認' : 'Review recognized melody'}</strong>
+          <span>{japanese ? '下のピアノロールはまだ候補です。音程・開始拍・長さを修正し、よければ確定してください。確定するまでシリンダーのピン配置は変わりません。' : 'The piano roll below is still a candidate. Correct pitch, start beat or duration, then accept it. Cylinder pins do not change until you accept.'}</span>
+        </div>
+        <div className="piano-roll-actions">
+          <button type="button" onClick={acceptRecognition}>{japanese ? '認識結果を確定' : 'Accept recognized melody'}</button>
+          <button type="button" onClick={discardRecognition}>{japanese ? '候補を破棄' : 'Discard candidate'}</button>
+        </div>
+      </div>}
+
+      <ScreenKeyboard document={workingDocument} onChange={updateWorkingDocument} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
       } : {
         title: 'On-screen keyboard', intro: 'Play the keys. Record adds the performance to the editable notes below.', record: 'Record', stopRecording: 'Stop recording', recording: 'Recording', computerKeyboardHint: 'On a computer, A S D F G H J K also play and record C4-C5.',
@@ -152,14 +194,14 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       <div className="piano-roll-scroll"><div className="piano-roll-grid" style={gridStyle}>
         {PITCHES.map((pitch) => <div className="piano-roll-row" key={pitch}>
           <span className="piano-roll-key">{PITCH_NAMES[pitch]}</span>
-          <div className="piano-roll-lane">{document.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / document.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / document.lengthBeats) * 100)}%` }} />)}</div>
+          <div className="piano-roll-lane">{workingDocument.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / workingDocument.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / workingDocument.lengthBeats) * 100)}%` }} />)}</div>
         </div>)}
       </div></div>
 
       {selected ? <div className="piano-roll-inspector">
         <label>{copy.pitch}<select value={selected.pitch} onChange={(event) => updateSelected({ pitch: Number(event.target.value) })}>{[...PITCHES].reverse().map((pitch) => <option key={pitch} value={pitch}>{PITCH_NAMES[pitch]}</option>)}</select></label>
-        <label>{copy.start}<input type="number" min="0" max={document.lengthBeats - 0.25} step="0.25" value={selected.startBeat} onChange={(event) => updateSelected({ startBeat: Number(event.target.value) })} /></label>
-        <label>{copy.duration}<input type="number" min="0.25" max={document.lengthBeats - selected.startBeat} step="0.25" value={selected.durationBeats} onChange={(event) => updateSelected({ durationBeats: Number(event.target.value) })} /></label>
+        <label>{copy.start}<input type="number" min="0" max={workingDocument.lengthBeats - 0.25} step="0.25" value={selected.startBeat} onChange={(event) => updateSelected({ startBeat: Number(event.target.value) })} /></label>
+        <label>{copy.duration}<input type="number" min="0.25" max={workingDocument.lengthBeats - selected.startBeat} step="0.25" value={selected.durationBeats} onChange={(event) => updateSelected({ durationBeats: Number(event.target.value) })} /></label>
       </div> : <p className="piano-roll-empty">{copy.empty}</p>}
     </section>
   )
