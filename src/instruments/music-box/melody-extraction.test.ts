@@ -27,6 +27,10 @@ describe('monophonic melody extraction', () => {
     expect(frequencyToMidi(440)).toBe(69)
   })
 
+  it('ignores silence', () => {
+    expect(extractMonophonicNotes(silence(0.5), 48_000)).toEqual([])
+  })
+
   it('detects stable synthetic notes separated by silence', () => {
     const sampleRate = 48_000
     const samples = join(
