@@ -66,17 +66,19 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction and local audio-file import are merged. Audio-file melody extraction is the active lane, followed by recognition correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import and audio-file melody extraction are merged. Recognition correction UI is the active lane, followed by compatibility analysis and Auto Fit to Music Box.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
 
-MIDI export is a derived interchange view of TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
+MIDI export is a derived interchange view of the accepted TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
 
 Microphone recording is a local capture boundary. Permission is requested only after an explicit Start action. The source recording is kept as a temporary browser Blob/object URL for preview and discard, is never silently uploaded or inserted into TuneDocument/project/share state, and releases its media tracks when capture ends.
 
-Mic melody extraction is also local and user-controlled. A completed recording is decoded to PCM only after the user chooses extraction. The initial recognizer targets monophonic material, estimates fundamental pitch/timing and converts stable note candidates into a new editable TuneDocument. Extraction failure leaves the current TuneDocument unchanged. Raw microphone media never becomes music-box playback and never writes pins directly.
+Mic melody extraction is local and user-controlled. A completed recording is decoded to PCM only after the user chooses extraction. The initial recognizer targets monophonic material and estimates fundamental pitch/timing. Recognition success opens a candidate review state rather than immediately changing the accepted TuneDocument. Extraction failure leaves the accepted TuneDocument unchanged. Raw microphone media never becomes music-box playback and never writes pins directly.
 
-Audio-file import follows the same source-media boundary. A user explicitly selects a practical local audio format; the browser retains a temporary `File` and object URL for local preview/discard only. Audio-file melody extraction explicitly decodes that local File with the same monophonic recognition core used for microphone clips and converts successful pitch/timing candidates into editable TuneDocument data. Failure leaves the existing TuneDocument unchanged. The source file never becomes music-box playback and is never uploaded or embedded into project/share state.
+Audio-file import follows the same source-media boundary. A user explicitly selects a practical local audio format; the browser retains a temporary `File` and object URL for local preview/discard only. Audio-file melody extraction explicitly decodes that local File with the same monophonic recognition core used for microphone clips. Successful pitch/timing candidates enter the same review state; failure leaves the accepted TuneDocument unchanged. The source file never becomes music-box playback and is never uploaded or embedded into project/share state.
+
+Recognition correction is a staging boundary between recognition and mechanical compilation. A candidate TuneDocument is shown in the existing piano roll and can be corrected using pitch, start, duration, add/remove and keyboard editing. The previously accepted TuneDocument remains the only source allowed to regenerate cylinder pins until the user chooses `Accept recognized melody`. `Discard candidate` restores the accepted tune unchanged. MIDI export continues to export only the accepted tune.
 
 ## Benchmark-first verification rule
 
@@ -120,7 +122,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-20 are complete on main. Step 21 audio -> melody extraction is active on `feat/music-box-audio-melody-extraction`. Completion requires explicit local analysis, reuse of the established monophonic recognition core, conversion into editable TuneDocument candidates only after user action, failure-state preservation, EN/JA UI and desktop/mobile browser coverage. Real OS file-picker and platform codec behavior remain in the minimal real-device verification lane. After step 21 is green and merged, proceed to step 22 recognition correction UI.
+Steps 1-21 are complete on main. Step 22 recognition correction UI is active on `feat/music-box-recognition-correction`. Completion requires recognition candidates to remain staged until explicit acceptance, correction through the existing piano roll, discard without accepted-tune mutation, accepted-tune-only MIDI export/mechanical compilation, EN/JA review controls and desktop/mobile browser evidence. After Step 22 is green and merged, proceed to Step 23 compatibility analyzer.
 
 ## Scope rule
 
