@@ -66,7 +66,7 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording and mic melody extraction are merged. Audio-file import is the active lane, followed by audio-file recognition, correction UI, compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction and local audio-file import are merged. Audio-file melody extraction is the active lane, followed by recognition correction UI, compatibility analysis and Auto Fit to Music Box.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
 
@@ -76,13 +76,13 @@ Microphone recording is a local capture boundary. Permission is requested only a
 
 Mic melody extraction is also local and user-controlled. A completed recording is decoded to PCM only after the user chooses extraction. The initial recognizer targets monophonic material, estimates fundamental pitch/timing and converts stable note candidates into a new editable TuneDocument. Extraction failure leaves the current TuneDocument unchanged. Raw microphone media never becomes music-box playback and never writes pins directly.
 
-Audio-file import follows the same source-media boundary. A user explicitly selects a practical local audio format; the browser retains a temporary `File` and object URL for local preview/discard only. Step 20 does not alter TuneDocument and does not replay the imported source as the music box. Step 21 will decode suitable files and derive editable melody candidates through the existing recognition boundary.
+Audio-file import follows the same source-media boundary. A user explicitly selects a practical local audio format; the browser retains a temporary `File` and object URL for local preview/discard only. Audio-file melody extraction explicitly decodes that local File with the same monophonic recognition core used for microphone clips and converts successful pitch/timing candidates into editable TuneDocument data. Failure leaves the existing TuneDocument unchanged. The source file never becomes music-box playback and is never uploaded or embedded into project/share state.
 
 ## Benchmark-first verification rule
 
 Development does not assume high traffic or many manual tests. After the composition/import path exists, maintain synthetic tune and controlled synthetic-audio fixtures covering range, density, timing, simultaneous notes, known-invalid cases and recognition conditions.
 
-Mic recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
+Mic/audio recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -120,7 +120,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-19 are complete on main. Step 20 audio-file import is active on `feat/music-box-audio-file-import`. Completion requires explicit local file selection, temporary in-browser preview/discard, unsupported-file handling, no TuneDocument/mechanism mutation, EN/JA UI and desktop/mobile browser coverage. Real OS file-picker and platform codec behavior remain in the minimal real-device verification lane. After step 20 is green and merged, proceed to step 21 audio -> melody extraction.
+Steps 1-20 are complete on main. Step 21 audio -> melody extraction is active on `feat/music-box-audio-melody-extraction`. Completion requires explicit local analysis, reuse of the established monophonic recognition core, conversion into editable TuneDocument candidates only after user action, failure-state preservation, EN/JA UI and desktop/mobile browser coverage. Real OS file-picker and platform codec behavior remain in the minimal real-device verification lane. After step 21 is green and merged, proceed to step 22 recognition correction UI.
 
 ## Scope rule
 
