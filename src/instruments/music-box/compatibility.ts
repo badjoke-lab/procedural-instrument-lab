@@ -2,9 +2,11 @@ import { DEFAULT_MUSIC_BOX_CONFIG, type MusicBoxConfig } from './mechanism'
 import { assertTuneDocument, type TuneDocument } from './tune-document'
 
 export type CompatibilityIssueKind = 'range' | 'simultaneous' | 'density' | 'pin-spacing'
+export type CompatibilitySeverity = 'blocking' | 'review'
 
 export type CompatibilityIssue = {
   kind: CompatibilityIssueKind
+  severity: CompatibilitySeverity
   noteIds: string[]
   detail: string
 }
@@ -28,7 +30,7 @@ export function analyzeMusicBoxCompatibility(
 
   for (const note of document.notes) {
     if (!supported.has(note.pitch)) {
-      issues.push({ kind: 'range', noteIds: [note.id], detail: `MIDI ${note.pitch} is outside the current comb.` })
+      issues.push({ kind: 'range', severity: 'blocking', noteIds: [note.id], detail: `MIDI ${note.pitch} is outside the current comb.` })
     }
   }
 
@@ -42,8 +44,9 @@ export function analyzeMusicBoxCompatibility(
     if (notes.length > 1) {
       issues.push({
         kind: 'simultaneous',
+        severity: 'review',
         noteIds: notes.map((note) => note.id),
-        detail: `${notes.length} notes start together at beat ${startBeat}; review chord loading before fitting.`,
+        detail: `${notes.length} notes start together at beat ${startBeat}; the current model can align pins, but chord loading should be reviewed.`,
       })
     }
   }
@@ -67,6 +70,7 @@ export function analyzeMusicBoxCompatibility(
       const kind: CompatibilityIssueKind = arcSpacing < config.pinRadius * 2 ? 'pin-spacing' : 'density'
       issues.push({
         kind,
+        severity: 'blocking',
         noteIds: [current.id, next.id],
         detail: `${pitch} pins are ${arcSpacing.toFixed(3)} units apart; current minimum is ${minimumSpacing.toFixed(3)}.`,
       })
@@ -74,7 +78,7 @@ export function analyzeMusicBoxCompatibility(
   }
 
   return {
-    playable: issues.length === 0,
+    playable: !issues.some((issue) => issue.severity === 'blocking'),
     supportedNotes: document.notes.filter((note) => supported.has(note.pitch)).length,
     totalNotes: document.notes.length,
     issues,
