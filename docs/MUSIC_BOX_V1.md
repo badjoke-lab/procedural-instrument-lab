@@ -128,7 +128,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is active on `feat/music-box-compatibility-analyzer` / PR #30. Completion requires a non-destructive report for range, simultaneous starts, density and pin spacing; clear blocking-vs-review status; Compose UI visibility for normal editing and recognition candidates; EN/JA copy; unit fixtures; and desktop/mobile browser evidence. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-22 are complete on main. Step 23 compatibility analyzer is active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). Completion requires a non-destructive report for range, simultaneous starts, density and pin spacing; clear blocking-vs-review status; Compose UI visibility for normal editing and recognition candidates; EN/JA copy; unit fixtures; and desktop/mobile browser evidence. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
 
 ## Scope rule
 
