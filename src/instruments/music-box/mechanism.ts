@@ -33,6 +33,7 @@ export type DriveKinematics = {
 export type PinTineEngagement = {
   engaged: boolean
   distance: number
+  /** Position through the contact window from the high-angle edge (0) to low-angle edge (1). */
   deflection: number
 }
 
@@ -164,14 +165,16 @@ export function tineLength(noteIndex: number, config: MusicBoxConfig) {
 
 export function tineLoadAngle(
   noteIndex: number,
-  deflection: number,
+  contactProgress: number,
   motionDirection: number,
   config: MusicBoxConfig,
 ) {
   const length = tineLength(noteIndex, config)
   const maximumAngle = Math.asin(Math.min(0.95, config.contactTolerance / length))
   const direction = Math.sign(motionDirection) || -1
-  return -direction * Math.max(0, Math.min(1, deflection)) * maximumAngle
+  const canonicalProgress = Math.max(0, Math.min(1, contactProgress))
+  const directionalProgress = direction < 0 ? canonicalProgress : 1 - canonicalProgress
+  return -direction * directionalProgress * maximumAngle
 }
 
 export function distance3(a: Point3, b: Point3) {
@@ -199,16 +202,11 @@ export function pinContactHalfAngle(config: MusicBoxConfig) {
 }
 
 /**
- * Contact is geometric, while deflection is directional loading progress.
- * A pin enters with deflection 0, keeps loading the tine, then reaches maximum
- * deflection immediately before it leaves the contact zone and plucks the tine.
+ * Contact is geometric. The returned progress runs from the high-angle edge
+ * of the contact window to the low-angle edge; tineLoadAngle mirrors that
+ * progress for reverse motion so either direction keeps loading until release.
  */
-export function pinTineEngagement(
-  pin: Pin,
-  phase: number,
-  config: MusicBoxConfig,
-  motionDirection = -1,
-): PinTineEngagement {
+export function pinTineEngagement(pin: Pin, phase: number, config: MusicBoxConfig): PinTineEngagement {
   const pinTip = pinTipWorldPosition(pin, phase, config)
   const contact = tineContactPoint(pin.noteIndex, config)
   const distance = distance3(pinTip, contact)
@@ -220,10 +218,7 @@ export function pinTineEngagement(
   const pinAngle = pin.angle + phase
   const angularOffset = normalizeAngle(pinAngle - contactAngle)
   const halfAngle = Math.max(1e-9, pinContactHalfAngle(config))
-  const direction = Math.sign(motionDirection) || -1
-  const progress = direction < 0
-    ? (halfAngle - angularOffset) / (2 * halfAngle)
-    : (angularOffset + halfAngle) / (2 * halfAngle)
+  const progress = (halfAngle - angularOffset) / (2 * halfAngle)
   const deflection = Math.max(0, Math.min(1, progress))
 
   return { engaged: true, distance, deflection }
