@@ -132,6 +132,7 @@ function Mechanism({
   const lastCylinderPhase = useRef(driveKinematics(0.08, config).cylinderPhase)
   const motionDirection = useRef(-1)
   const lastPointerX = useRef<number | null>(null)
+  const manualAudioReady = useRef(false)
   const pins = useMemo(() => compileTune(tune.events, config), [tune, config])
   const drivenRadius = cylinderGearRadius(config)
   const gearZ = -config.cylinderLength / 2 - 0.22
@@ -156,6 +157,10 @@ function Mechanism({
   const beginManualCrank = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation()
     lastPointerX.current = event.nativeEvent.clientX
+    manualAudioReady.current = false
+    void audio.unlock()
+      .catch(() => false)
+      .finally(() => { manualAudioReady.current = true })
     const target = event.target as HTMLElement
     target.setPointerCapture?.(event.pointerId)
     onManualStart()
@@ -165,6 +170,10 @@ function Mechanism({
     if (lastPointerX.current === null) return
     event.stopPropagation()
     const nextX = event.nativeEvent.clientX
+    if (!manualAudioReady.current) {
+      lastPointerX.current = nextX
+      return
+    }
     const deltaX = nextX - lastPointerX.current
     lastPointerX.current = nextX
     driveAngle.current += deltaX * 0.018
@@ -174,6 +183,7 @@ function Mechanism({
     if (lastPointerX.current === null) return
     event.stopPropagation()
     lastPointerX.current = null
+    manualAudioReady.current = false
     const target = event.target as HTMLElement
     target.releasePointerCapture?.(event.pointerId)
     onManualEnd()
@@ -443,6 +453,8 @@ function InfoPage({ page, locale, setLocale }: { page: 'how-to-use' | 'about'; l
 
 function App() {
   const [running, setRunning] = useState(false)
+  const [audioStarting, setAudioStarting] = useState(false)
+  const playRequest = useRef(0)
   const [speed, setSpeed] = useState(0.85)
   const [selectedTuneId, setSelectedTuneId] = useState(DEFAULT_TUNE_ID)
   const [editingTune, setEditingTune] = useState(false)
@@ -468,6 +480,11 @@ function App() {
     document.documentElement.lang = locale
   }, [locale])
 
+  const cancelPendingPlay = () => {
+    playRequest.current += 1
+    setAudioStarting(false)
+  }
+
   const updateConfig = (patch: Partial<MusicBoxConfig>) => {
     setConfig((current) => {
       const next = { ...current, ...patch }
@@ -483,6 +500,7 @@ function App() {
 
   const selectTune = (id: string) => {
     const preset = getTunePreset(id)
+    cancelPendingPlay()
     setRunning(false)
     setSelectedTuneId(preset.id)
     setEditableDocument(cloneTuneDocument(preset.document, 'custom-tune'))
@@ -491,6 +509,7 @@ function App() {
   }
 
   const editTune = (next: TuneDocument) => {
+    cancelPendingPlay()
     setRunning(false)
     setEditableDocument(next)
     setEditingTune(true)
@@ -498,8 +517,25 @@ function App() {
   }
 
   const toggleRunning = () => {
-    if (!running) void audio.unlock()
-    setRunning((value) => !value)
+    if (running) {
+      cancelPendingPlay()
+      setRunning(false)
+      return
+    }
+    if (audioStarting) {
+      cancelPendingPlay()
+      return
+    }
+
+    const request = ++playRequest.current
+    setAudioStarting(true)
+    void audio.unlock()
+      .catch(() => false)
+      .then(() => {
+        if (playRequest.current !== request) return
+        setAudioStarting(false)
+        setRunning(true)
+      })
   }
 
   if (page) return <InfoPage page={page} locale={locale} setLocale={setLocale} />
@@ -593,7 +629,7 @@ function App() {
               speed={speed}
               config={config}
               tune={runtimeTune}
-              onManualStart={() => { void audio.unlock(); setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
+              onManualStart={() => { cancelPendingPlay(); setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />
             <ContactShadows position={[0, -1.98, 0]} opacity={0.24} scale={10} blur={2.5} far={4.5} />
