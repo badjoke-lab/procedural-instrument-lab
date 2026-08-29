@@ -3,12 +3,11 @@ import {
   DEFAULT_MUSIC_BOX_CONFIG,
   TINE_REST_Y,
   compileTune,
-  distance3,
   driveKinematics,
   gearRatio,
   pinContactWindow,
   pinTineEngagement,
-  pinTineSurfaceContactRadius,
+  pinTineSurfaceGap,
   pinTouchesTine,
   sampleCylinderPhaseSegment,
   tineAnchorPoint,
@@ -16,7 +15,6 @@ import {
   tineLength,
   tineLoadAngle,
   tineTipPosition,
-  pinTipWorldPosition,
   validateMusicBoxConfig,
   type MusicBoxConfig,
   type NoteEvent,
@@ -64,7 +62,7 @@ function countReleases(framesPerRevolution: number, direction: -1 | 1) {
 }
 
 describe('music box contact geometry', () => {
-  it('uses the rendered pin sphere and rendered tine surface as the contact pair', () => {
+  it('uses the rendered pin sphere and rendered tine box as the contact pair', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const contact = tineContactPoint(pin.noteIndex, config)
     const anchor = tineAnchorPoint(pin.noteIndex, config)
@@ -74,8 +72,6 @@ describe('music box contact geometry', () => {
 
     const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, 0.5)
     const state = pinTineEngagement(pin, phase, config, -1)
-    const pinTip = pinTipWorldPosition(pin, phase, config)
-    const loadedTineTip = tineTipPosition(pin.noteIndex, state.loadAngle, config)
 
     expect(contact.y).toBeCloseTo(config.cylinderCenter[1] + TINE_REST_Y, 10)
     expect(anchor.y).toBeCloseTo(contact.y, 10)
@@ -83,7 +79,7 @@ describe('music box contact geometry', () => {
     expect(tineLength(pin.noteIndex, config)).toBeCloseTo(anchor.x - contact.x, 10)
     expect(state.engaged).toBe(true)
     expect(state.deflection).toBeGreaterThan(0)
-    expect(distance3(pinTip, loadedTineTip)).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+    expect(Math.abs(pinTineSurfaceGap(pin, phase, state.loadAngle, config))).toBeLessThan(1e-5)
     expect(pinTouchesTine(pin, phase, config, -1)).toBe(true)
   })
 
@@ -105,9 +101,10 @@ describe('music box contact geometry', () => {
     expect(nearRelease.engaged).toBe(true)
     expect(nearRelease.deflection).toBeGreaterThan(0.98)
     expect(Math.abs(loadedTip.y - restTip.y)).toBeCloseTo(config.contactTolerance, 3)
+    expect(Math.abs(pinTineSurfaceGap(pin, nearReleasePhase, nearRelease.loadAngle, config))).toBeLessThan(1e-5)
   })
 
-  it('keeps the visible sphere in surface contact while the tine loads monotonically forward', () => {
+  it('keeps the visible sphere in box-surface contact while the tine loads monotonically forward', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const window = pinContactWindow(pin, -1, config)
     expect(window).not.toBeNull()
@@ -116,11 +113,7 @@ describe('music box contact geometry', () => {
     const states = [0.2, 0.5, 0.8].map((progress) => {
       const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, progress)
       const state = pinTineEngagement(pin, phase, config, -1)
-      const surfaceDistance = distance3(
-        pinTipWorldPosition(pin, phase, config),
-        tineTipPosition(pin.noteIndex, state.loadAngle, config),
-      )
-      expect(surfaceDistance).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+      expect(Math.abs(pinTineSurfaceGap(pin, phase, state.loadAngle, config))).toBeLessThan(1e-5)
       return state
     })
 
@@ -129,7 +122,7 @@ describe('music box contact geometry', () => {
     expect(states[1].deflection).toBeLessThan(states[2].deflection)
   })
 
-  it('mirrors the same surface-contact loading when the cylinder is manually reversed', () => {
+  it('mirrors the same box-surface contact loading when the cylinder is manually reversed', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const window = pinContactWindow(pin, 1, config)
     expect(window).not.toBeNull()
@@ -138,11 +131,7 @@ describe('music box contact geometry', () => {
     const states = [0.2, 0.5, 0.8].map((progress) => {
       const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, 1, progress)
       const state = pinTineEngagement(pin, phase, config, 1)
-      const surfaceDistance = distance3(
-        pinTipWorldPosition(pin, phase, config),
-        tineTipPosition(pin.noteIndex, state.loadAngle, config),
-      )
-      expect(surfaceDistance).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+      expect(Math.abs(pinTineSurfaceGap(pin, phase, state.loadAngle, config))).toBeLessThan(1e-5)
       return state
     })
 
