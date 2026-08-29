@@ -66,9 +66,9 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction and recognition correction are merged. Compatibility analysis is the active lane, followed by Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit to Music Box is the active lane, followed by fit preview/manual correction.
 
-MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer now reports those preserved notes as blocking range conflicts; Step 24 Auto Fit will offer explicit transformations rather than changing them automatically.
+MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer reports those preserved notes as blocking range conflicts; Auto Fit can now derive explicit transformations without changing the source automatically.
 
 MIDI export is a derived interchange view of the accepted TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
 
@@ -80,9 +80,13 @@ Audio-file import follows the same source-media boundary. A user explicitly sele
 
 Recognition correction is a staging boundary between recognition and mechanical compilation. A candidate TuneDocument is shown in the existing piano roll and can be corrected using pitch, start, duration, add/remove and keyboard editing. The previously accepted TuneDocument remains the only source allowed to regenerate cylinder pins until the user chooses `Accept recognized melody`. `Discard candidate` restores the accepted tune unchanged. MIDI export continues to export only the accepted tune.
 
-Compatibility analysis is read-only advisory logic between editable tune data and later Auto Fit. It checks the editable document currently shown in Compose, including a staged recognition candidate, against current comb/cylinder pin constraints. It reports out-of-range pitches, simultaneous starts, same-lane density and pin-spacing conflicts. Simultaneous starts are review warnings because the current model can align pins across separate tine lanes; range, density and direct pin-spacing conflicts are blocking. The analyzer must never transpose, quantize, delete, simplify or accept a candidate on the user's behalf.
+Compatibility analysis is read-only advisory logic between editable tune data and Auto Fit. It checks the editable document currently shown in Compose, including a staged recognition candidate, against current comb/cylinder pin constraints. It reports out-of-range pitches, simultaneous starts, same-lane density and pin-spacing conflicts. Simultaneous starts are review warnings because the current model can align pins across separate tine lanes; range, density and direct pin-spacing conflicts are blocking. The analyzer never transposes, quantizes, deletes, simplifies or accepts a candidate on the user's behalf.
 
-The current exposed Customize controls do not change the fixed comb pitch set, cylinder radius or pin radius used by these tune-specific compatibility checks. Invalid overall mechanism geometry is already rejected before it becomes active. When later Customize phases expose comb/cylinder/pin variants, the live `MusicBoxConfig` must feed the same analyzer rather than creating parallel compatibility rules.
+Auto Fit is also upstream of mechanical compilation and remains non-destructive. Every transformation is off by default; the user explicitly selects octave moves, nearest-comb-note mapping, timing quantization and/or repeated-note pin-spacing simplification and then chooses `Generate fit proposal`. The resulting proposal is a derived TuneDocument plus a structured list of proposed changes and a compatibility report. It does not replace the editable source, accept a recognition candidate, regenerate pins or play audio. Editing the source, accepting/discarding recognition or changing fit options invalidates stale proposal state. Step 25 owns fitted-vs-source comparison, manual correction and explicit acceptance.
+
+Octave moves preserve pitch class and only move by 12-semitone steps when the current comb contains that pitch class. Nearest-note mapping is a separate opt-in transformation because it can change pitch class; equal-distance ties choose the lower supported pitch deterministically. Timing quantization keeps notes within `lengthBeats` with positive duration. Repeated-note simplification only removes later same-tine notes that violate the same physical pin-spacing threshold used by compatibility analysis; review-only simultaneous starts on different tines are not removed merely for being chords.
+
+The current exposed Customize controls do not change the fixed comb pitch set, cylinder radius or pin radius used by these tune-specific compatibility/fit checks. Invalid overall mechanism geometry is already rejected before it becomes active. When later Customize phases expose comb/cylinder/pin variants, the live `MusicBoxConfig` must feed the same analyzer and Auto Fit logic rather than creating parallel rules.
 
 ## Benchmark-first verification rule
 
@@ -90,7 +94,7 @@ Development does not assume high traffic or many manual tests. After the composi
 
 Mic/audio recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
 
-Compatibility fixtures now cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Later benchmark steps broaden these into a larger tune set and requirement report.
+Compatibility fixtures cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Auto Fit fixtures add octave-only fitting, nearest-note tie behavior, timing quantization/bounds, repeated-note simplification, combined transforms, source immutability and invalid option handling. Later benchmark steps broaden these into a larger tune set and requirement report.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -128,7 +132,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). Completion requires a non-destructive report for range, simultaneous starts, density and pin spacing; clear blocking-vs-review status; Compose UI visibility for normal editing and recognition candidates; EN/JA copy; unit fixtures; and desktop/mobile browser evidence. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-23 are complete on main. Step 24 Auto Fit to Music Box is active on `feat/music-box-auto-fit` / PR #32. Completion requires all fit transforms to remain explicitly opt-in, source TuneDocument/recognition state/cylinder pins to remain unchanged while generating a proposal, before/after compatibility reporting, deterministic change records, stale-proposal invalidation, EN/JA controls, focused synthetic fixtures and desktop/mobile browser evidence. After Step 24 is green and merged, proceed to Step 25 fit preview / manual correction before any fitted result can be accepted into the mechanical compiler path.
 
 ## Scope rule
 
