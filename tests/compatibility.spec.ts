@@ -38,6 +38,7 @@ test('reports current mechanism compatibility without changing the tune', async 
   await expect(panel.locator('[data-kind="simultaneous"]')).toContainText('Simultaneous starts')
   await expect(panel.getByText('Blocking conflicts:')).toBeVisible()
   await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
+  await panel.scrollIntoViewIfNeeded()
   await page.screenshot({ path: testInfo.outputPath('runtime-compatibility.png'), fullPage: true })
 })
 
