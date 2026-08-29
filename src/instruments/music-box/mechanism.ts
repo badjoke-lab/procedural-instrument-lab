@@ -36,6 +36,12 @@ export type PinTineEngagement = {
   deflection: number
 }
 
+export const TINE_REST_Y = 0.23
+export const TINE_ANCHOR_X_OFFSET = 2.23
+export const TINE_ANCHOR_X_STEP = 0.042
+export const TINE_THICKNESS = 0.055
+export const MAX_CONTACT_PHASE_STEP = 0.02
+
 export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   notes: [60, 62, 64, 65, 67, 69, 71, 72],
   cylinderCenter: [-0.7, 0, 0],
@@ -129,13 +135,43 @@ export function pinTipWorldPosition(pin: Pin, phase: number, config: MusicBoxCon
   }
 }
 
+/** Rest position of the visible free tine tip. Contact is resolved against this same point. */
 export function tineContactPoint(noteIndex: number, config: MusicBoxConfig): Point3 {
   const [cx, cy, cz] = config.cylinderCenter
   return {
     x: cx + config.cylinderRadius + config.pinLength,
-    y: cy,
+    y: cy + TINE_REST_Y,
     z: cz + (noteIndex - (config.notes.length - 1) / 2) * config.tineSpacing,
   }
+}
+
+/** Root used by the rendered tine. Keeping it here prevents render/contact geometry from diverging. */
+export function tineAnchorPoint(noteIndex: number, config: MusicBoxConfig): Point3 {
+  const [cx, cy] = config.cylinderCenter
+  const contact = tineContactPoint(noteIndex, config)
+  return {
+    x: cx + TINE_ANCHOR_X_OFFSET + noteIndex * TINE_ANCHOR_X_STEP,
+    y: cy + TINE_REST_Y,
+    z: contact.z,
+  }
+}
+
+export function tineLength(noteIndex: number, config: MusicBoxConfig) {
+  const anchor = tineAnchorPoint(noteIndex, config)
+  const contact = tineContactPoint(noteIndex, config)
+  return Math.max(0.001, anchor.x - contact.x)
+}
+
+export function tineLoadAngle(
+  noteIndex: number,
+  deflection: number,
+  motionDirection: number,
+  config: MusicBoxConfig,
+) {
+  const length = tineLength(noteIndex, config)
+  const maximumAngle = Math.asin(Math.min(0.95, config.contactTolerance / length))
+  const direction = Math.sign(motionDirection) || -1
+  return -direction * Math.max(0, Math.min(1, deflection)) * maximumAngle
 }
 
 export function distance3(a: Point3, b: Point3) {
@@ -156,4 +192,17 @@ export function pinTineEngagement(pin: Pin, phase: number, config: MusicBoxConfi
 
 export function pinTouchesTine(pin: Pin, phase: number, config: MusicBoxConfig) {
   return pinTineEngagement(pin, phase, config).engaged
+}
+
+/**
+ * Rendering can advance by a large phase delta at low FPS or during a fast manual drag.
+ * Contact/release detection samples that mechanical path rather than checking only the final frame.
+ */
+export function sampleCylinderPhaseSegment(fromPhase: number, toPhase: number, maxStep = MAX_CONTACT_PHASE_STEP) {
+  if (!Number.isFinite(fromPhase) || !Number.isFinite(toPhase)) throw new Error('phase must be finite')
+  if (!Number.isFinite(maxStep) || maxStep <= 0) throw new Error('maxStep must be positive')
+
+  const delta = toPhase - fromPhase
+  const steps = Math.max(1, Math.ceil(Math.abs(delta) / maxStep))
+  return Array.from({ length: steps }, (_, index) => fromPhase + delta * ((index + 1) / steps))
 }
