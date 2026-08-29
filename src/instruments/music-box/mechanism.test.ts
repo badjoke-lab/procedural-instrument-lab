@@ -3,16 +3,19 @@ import {
   DEFAULT_MUSIC_BOX_CONFIG,
   TINE_REST_Y,
   compileTune,
+  distance3,
   driveKinematics,
   gearRatio,
-  pinContactHalfAngle,
+  pinContactWindow,
   pinTineEngagement,
+  pinTineSurfaceContactRadius,
   pinTouchesTine,
   sampleCylinderPhaseSegment,
   tineAnchorPoint,
   tineContactPoint,
   tineLength,
   tineLoadAngle,
+  tineTipPosition,
   pinTipWorldPosition,
   validateMusicBoxConfig,
   type MusicBoxConfig,
@@ -31,24 +34,25 @@ const tune: NoteEvent[] = [
   { note: 72, start: 0.875 },
 ]
 
-function closestVisibleContactPhase(pinAngle = 0) {
-  const contact = tineContactPoint(0, config)
-  const [cx, cy] = config.cylinderCenter
-  return Math.atan2(contact.y - cy, contact.x - cx) - pinAngle
+function phaseAtWindowProgress(pinAngle: number, entryAngle: number, travelAngle: number, direction: number, progress: number) {
+  const cylinderAngle = direction < 0
+    ? entryAngle - travelAngle * progress
+    : entryAngle + travelAngle * progress
+  return cylinderAngle - pinAngle
 }
 
-function countReleases(framesPerRevolution: number) {
+function countReleases(framesPerRevolution: number, direction: -1 | 1) {
   const pins = compileTune(tune, config)
   const engaged = new Set<number>()
-  const startPhase = 0.2
+  const startPhase = 0.41
   let releases = 0
   let previousPhase = startPhase
 
   for (let frame = 1; frame <= framesPerRevolution; frame += 1) {
-    const phase = startPhase + (frame / framesPerRevolution) * Math.PI * 2
+    const phase = startPhase + direction * (frame / framesPerRevolution) * Math.PI * 2
     for (const sampledPhase of sampleCylinderPhaseSegment(previousPhase, phase)) {
       pins.forEach((pin, index) => {
-        const state = pinTineEngagement(pin, sampledPhase, config)
+        const state = pinTineEngagement(pin, sampledPhase, config, direction)
         if (state.engaged) engaged.add(index)
         if (!state.engaged && engaged.delete(index)) releases += 1
       })
@@ -60,77 +64,118 @@ function countReleases(framesPerRevolution: number) {
 }
 
 describe('music box contact geometry', () => {
-  it('resolves contact against the same visible resting tine tip instead of an abstract y=0 point', () => {
+  it('uses the rendered pin sphere and rendered tine surface as the contact pair', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const contact = tineContactPoint(pin.noteIndex, config)
     const anchor = tineAnchorPoint(pin.noteIndex, config)
-    const phase = closestVisibleContactPhase(pin.angle)
-    const tip = pinTipWorldPosition(pin, phase, config)
-    const state = pinTineEngagement(pin, phase, config)
+    const window = pinContactWindow(pin, -1, config)
+    expect(window).not.toBeNull()
+    if (!window) return
+
+    const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, 0.5)
+    const state = pinTineEngagement(pin, phase, config, -1)
+    const pinTip = pinTipWorldPosition(pin, phase, config)
+    const loadedTineTip = tineTipPosition(pin.noteIndex, state.loadAngle, config)
 
     expect(contact.y).toBeCloseTo(config.cylinderCenter[1] + TINE_REST_Y, 10)
     expect(anchor.y).toBeCloseTo(contact.y, 10)
     expect(anchor.z).toBeCloseTo(contact.z, 10)
     expect(tineLength(pin.noteIndex, config)).toBeCloseTo(anchor.x - contact.x, 10)
-    expect(Math.abs(tip.y - contact.y)).toBeLessThan(config.contactTolerance)
     expect(state.engaged).toBe(true)
-    expect(state.deflection).toBeCloseTo(0.5, 1)
-    expect(pinTouchesTine(pin, phase, config)).toBe(true)
+    expect(state.deflection).toBeGreaterThan(0)
+    expect(distance3(pinTip, loadedTineTip)).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+    expect(pinTouchesTine(pin, phase, config, -1)).toBe(true)
   })
 
-  it('does not claim contact at the old rightmost-cylinder point while the visible tine is still separated', () => {
+  it('starts at the resting visible surface and reaches configured elastic travel at release', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    expect(pinTineEngagement(pin, 0, config).engaged).toBe(false)
-  })
+    const window = pinContactWindow(pin, -1, config)
+    expect(window).not.toBeNull()
+    if (!window) return
 
-  it('keeps loading the tine monotonically until release in forward motion', () => {
-    const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    const centerPhase = closestVisibleContactPhase(pin.angle)
-    const halfAngle = pinContactHalfAngle(config)
-    const entry = pinTineEngagement(pin, centerPhase + halfAngle * 0.8, config)
-    const middle = pinTineEngagement(pin, centerPhase, config)
-    const beforeRelease = pinTineEngagement(pin, centerPhase - halfAngle * 0.8, config)
-    const entryAngle = Math.abs(tineLoadAngle(0, entry.deflection, -1, config))
-    const middleAngle = Math.abs(tineLoadAngle(0, middle.deflection, -1, config))
-    const releaseAngle = Math.abs(tineLoadAngle(0, beforeRelease.deflection, -1, config))
+    const entryPhase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, 0)
+    const nearReleasePhase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, 0.999)
+    const entry = pinTineEngagement(pin, entryPhase, config, -1)
+    const nearRelease = pinTineEngagement(pin, nearReleasePhase, config, -1)
+    const restTip = tineContactPoint(pin.noteIndex, config)
+    const loadedTip = tineTipPosition(pin.noteIndex, nearRelease.loadAngle, config)
 
     expect(entry.engaged).toBe(true)
-    expect(beforeRelease.engaged).toBe(true)
-    expect(entryAngle).toBeLessThan(middleAngle)
-    expect(middleAngle).toBeLessThan(releaseAngle)
-    expect(beforeRelease.deflection).toBeGreaterThan(0.8)
+    expect(entry.deflection).toBeLessThan(0.01)
+    expect(nearRelease.engaged).toBe(true)
+    expect(nearRelease.deflection).toBeGreaterThan(0.98)
+    expect(Math.abs(loadedTip.y - restTip.y)).toBeCloseTo(config.contactTolerance, 3)
   })
 
-  it('mirrors the loading progression when the cylinder is manually reversed', () => {
+  it('keeps the visible sphere in surface contact while the tine loads monotonically forward', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    const centerPhase = closestVisibleContactPhase(pin.angle)
-    const halfAngle = pinContactHalfAngle(config)
-    const entry = pinTineEngagement(pin, centerPhase - halfAngle * 0.8, config)
-    const middle = pinTineEngagement(pin, centerPhase, config)
-    const beforeRelease = pinTineEngagement(pin, centerPhase + halfAngle * 0.8, config)
-    const entryAngle = Math.abs(tineLoadAngle(0, entry.deflection, 1, config))
-    const middleAngle = Math.abs(tineLoadAngle(0, middle.deflection, 1, config))
-    const releaseAngle = Math.abs(tineLoadAngle(0, beforeRelease.deflection, 1, config))
+    const window = pinContactWindow(pin, -1, config)
+    expect(window).not.toBeNull()
+    if (!window) return
 
-    expect(entryAngle).toBeLessThan(middleAngle)
-    expect(middleAngle).toBeLessThan(releaseAngle)
-    expect(releaseAngle).toBeGreaterThan(entryAngle * 3)
+    const states = [0.2, 0.5, 0.8].map((progress) => {
+      const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, -1, progress)
+      const state = pinTineEngagement(pin, phase, config, -1)
+      const surfaceDistance = distance3(
+        pinTipWorldPosition(pin, phase, config),
+        tineTipPosition(pin.noteIndex, state.loadAngle, config),
+      )
+      expect(surfaceDistance).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+      return state
+    })
+
+    expect(states[0].loadAngle).toBeGreaterThan(0)
+    expect(states[0].deflection).toBeLessThan(states[1].deflection)
+    expect(states[1].deflection).toBeLessThan(states[2].deflection)
   })
 
-  it('loads the tine away from the approaching pin and scales the angle from real contact tolerance', () => {
-    const forward = tineLoadAngle(0, 0.7, -1, config)
-    const reverse = tineLoadAngle(0, 0.3, 1, config)
+  it('mirrors the same surface-contact loading when the cylinder is manually reversed', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    const window = pinContactWindow(pin, 1, config)
+    expect(window).not.toBeNull()
+    if (!window) return
+
+    const states = [0.2, 0.5, 0.8].map((progress) => {
+      const phase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, 1, progress)
+      const state = pinTineEngagement(pin, phase, config, 1)
+      const surfaceDistance = distance3(
+        pinTipWorldPosition(pin, phase, config),
+        tineTipPosition(pin.noteIndex, state.loadAngle, config),
+      )
+      expect(surfaceDistance).toBeCloseTo(pinTineSurfaceContactRadius(config), 6)
+      return state
+    })
+
+    expect(states[0].loadAngle).toBeLessThan(0)
+    expect(states[0].deflection).toBeLessThan(states[1].deflection)
+    expect(states[1].deflection).toBeLessThan(states[2].deflection)
+  })
+
+  it('releases immediately after the directional surface-contact window instead of re-engaging on the far side', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    for (const direction of [-1, 1] as const) {
+      const window = pinContactWindow(pin, direction, config)
+      expect(window).not.toBeNull()
+      if (!window) continue
+      const beforeEntryPhase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, direction, -0.1)
+      const afterReleasePhase = phaseAtWindowProgress(pin.angle, window.entryAngle, window.travelAngle, direction, 1.1)
+      expect(pinTineEngagement(pin, beforeEntryPhase, config, direction).engaged).toBe(false)
+      expect(pinTineEngagement(pin, afterReleasePhase, config, direction).engaged).toBe(false)
+    }
+  })
+
+  it('does not claim contact at the old rightmost-cylinder point while the visible surfaces are separated', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    expect(pinTineEngagement(pin, 0, config, -1).engaged).toBe(false)
+  })
+
+  it('loads the tine away from the approaching pin with symmetric maximum travel', () => {
+    const forward = tineLoadAngle(0, 1, -1, config)
+    const reverse = tineLoadAngle(0, 1, 1, config)
     expect(forward).toBeGreaterThan(0)
     expect(reverse).toBeLessThan(0)
+    expect(Math.abs(forward)).toBeCloseTo(Math.abs(reverse), 10)
     expect(Math.abs(forward)).toBeLessThan(0.1)
-    expect(Math.abs(reverse)).toBeCloseTo(Math.abs(forward), 10)
-  })
-
-  it('does not report engagement a quarter turn away', () => {
-    const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    const state = pinTineEngagement(pin, Math.PI / 2, config)
-    expect(state.engaged).toBe(false)
-    expect(state.deflection).toBe(0)
   })
 
   it('subsamples coarse phase jumps so a contact zone cannot be skipped', () => {
@@ -139,9 +184,11 @@ describe('music box contact geometry', () => {
     expect(samples.at(-1)).toBeCloseTo(0.4, 10)
   })
 
-  it('produces one release per pin across a full revolution at very different render sampling rates', () => {
-    expect(countReleases(24)).toBe(tune.length)
-    expect(countReleases(576)).toBe(tune.length)
+  it('produces one release per pin in either direction across very different render sampling rates', () => {
+    for (const direction of [-1, 1] as const) {
+      expect(countReleases(24, direction)).toBe(tune.length)
+      expect(countReleases(576, direction)).toBe(tune.length)
+    }
   })
 })
 
