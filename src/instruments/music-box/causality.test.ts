@@ -26,7 +26,7 @@ function sampleOneCylinderRevolution(frames: number) {
   const releases: number[] = []
   let sawLoadedTine = false
 
-  // cylinderPhase = -crankAngle * ratio, so this crank span advances one full cylinder turn.
+  // Decreasing crank angle advances cylinderPhase in the positive direction.
   const ratio = config.driverGearTeeth / config.cylinderGearTeeth
   const crankSpan = (Math.PI * 2) / ratio
   const startCrank = 0.37
@@ -38,7 +38,7 @@ function sampleOneCylinderRevolution(frames: number) {
 
     for (const phase of sampleCylinderPhaseSegment(previousPhase, drive.cylinderPhase)) {
       pins.forEach((pin, index) => {
-        const state = pinTineEngagement(pin, phase, config)
+        const state = pinTineEngagement(pin, phase, config, 1)
         if (state.engaged) {
           engaged.add(index)
           if (state.deflection > 0) sawLoadedTine = true
