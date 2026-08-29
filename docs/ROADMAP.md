@@ -49,7 +49,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ### Make ordinary music mechanically playable
 
-23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Active on `feat/music-box-compatibility-analyzer` / PR #30. The analyzer is non-destructive, separates blocking conflicts from review warnings and is surfaced on the Compose workflow for the currently edited or staged recognition document.**
+23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). The analyzer is non-destructive, separates blocking conflicts from review warnings and is surfaced on the Compose workflow for the currently edited or staged recognition document.**
 24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification.
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is the active lane on PR #30. The analyzer derives a read-only report from editable TuneDocument data and the current fixed comb/cylinder pin constraints. It reports out-of-range notes, simultaneous starts, same-lane density and pin-spacing conflicts; simultaneity is review-only because the present geometry can align pins across separate tine lanes, while range/density/spacing conflicts are blocking. Compose shows the report for the document currently being edited, including a staged recognition candidate without promoting it or changing cylinder pins. Browser automation must prove conflict reporting, EN/JA and responsive readability before Step 23 is complete. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-22 are complete on main. Step 23 compatibility analyzer is the active lane on PR #31 (replacement merge PR for closed draft #30). The analyzer derives a read-only report from editable TuneDocument data and the current fixed comb/cylinder pin constraints. It reports out-of-range notes, simultaneous starts, same-lane density and pin-spacing conflicts; simultaneity is review-only because the present geometry can align pins across separate tine lanes, while range/density/spacing conflicts are blocking. Compose shows the report for the document currently being edited, including a staged recognition candidate without promoting it or changing cylinder pins. Browser automation must prove conflict reporting, EN/JA and responsive readability before Step 23 is complete. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
 
 ## Mechanical causality gate
 
