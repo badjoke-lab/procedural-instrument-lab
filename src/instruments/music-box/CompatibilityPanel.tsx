@@ -3,6 +3,7 @@ import { musicBoxCompatibilityCopy } from '../../i18n/music-box-compatibility'
 import { analyzeMusicBoxCompatibility, type CompatibilityIssueKind } from './compatibility'
 import { DEFAULT_MUSIC_BOX_CONFIG } from './mechanism'
 import type { TuneDocument } from './tune-document'
+import './compatibility.css'
 
 const KIND_ORDER: CompatibilityIssueKind[] = ['range', 'simultaneous', 'density', 'pin-spacing']
 
