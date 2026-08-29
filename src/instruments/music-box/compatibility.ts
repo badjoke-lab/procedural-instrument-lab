@@ -8,6 +8,7 @@ export type CompatibilityIssue = {
   kind: CompatibilityIssueKind
   severity: CompatibilitySeverity
   noteIds: string[]
+  pitches: number[]
   detail: string
 }
 
@@ -30,7 +31,13 @@ export function analyzeMusicBoxCompatibility(
 
   for (const note of document.notes) {
     if (!supported.has(note.pitch)) {
-      issues.push({ kind: 'range', severity: 'blocking', noteIds: [note.id], detail: `MIDI ${note.pitch} is outside the current comb.` })
+      issues.push({
+        kind: 'range',
+        severity: 'blocking',
+        noteIds: [note.id],
+        pitches: [note.pitch],
+        detail: `MIDI ${note.pitch} is outside the current comb.`,
+      })
     }
   }
 
@@ -46,6 +53,7 @@ export function analyzeMusicBoxCompatibility(
         kind: 'simultaneous',
         severity: 'review',
         noteIds: notes.map((note) => note.id),
+        pitches: notes.map((note) => note.pitch),
         detail: `${notes.length} notes start together at beat ${startBeat}; the current model can align pins, but chord loading should be reviewed.`,
       })
     }
@@ -72,6 +80,7 @@ export function analyzeMusicBoxCompatibility(
         kind,
         severity: 'blocking',
         noteIds: [current.id, next.id],
+        pitches: [pitch],
         detail: `${pitch} pins are ${arcSpacing.toFixed(3)} units apart; current minimum is ${minimumSpacing.toFixed(3)}.`,
       })
     }
