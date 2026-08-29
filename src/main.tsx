@@ -8,6 +8,7 @@ import { defaultLocale, messages, type Locale } from './i18n/messages'
 import { MusicBoxAudio } from './instruments/music-box/audio'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
+  PIN_TIP_RADIUS_SCALE,
   TINE_THICKNESS,
   compileTune,
   cylinderGearRadius,
@@ -16,7 +17,6 @@ import {
   sampleCylinderPhaseSegment,
   tineAnchorPoint,
   tineLength,
-  tineLoadAngle,
   validateMusicBoxConfig,
   type MusicBoxConfig,
   type NoteEvent,
@@ -195,13 +195,10 @@ function Mechanism({
     if (Math.abs(phaseDelta) > 1e-6) {
       for (const sampledPhase of sampleCylinderPhaseSegment(previousPhase, drive.cylinderPhase)) {
         pins.forEach((pin, index) => {
-          const engagement = pinTineEngagement(pin, sampledPhase, config)
+          const engagement = pinTineEngagement(pin, sampledPhase, config, frameDirection)
           if (engagement.engaged) {
             engagedPins.current.add(index)
-            lastPinLoadAngles.current.set(
-              index,
-              tineLoadAngle(pin.noteIndex, engagement.deflection, frameDirection, config),
-            )
+            lastPinLoadAngles.current.set(index, engagement.loadAngle)
           } else if (engagedPins.current.delete(index)) {
             const releaseAngle = lastPinLoadAngles.current.get(index) ?? 0
             lastPinLoadAngles.current.delete(index)
@@ -219,10 +216,11 @@ function Mechanism({
 
     const frameLoadAngles = config.notes.map(() => 0)
     pins.forEach((pin) => {
-      const engagement = pinTineEngagement(pin, drive.cylinderPhase, config)
+      const engagement = pinTineEngagement(pin, drive.cylinderPhase, config, motionDirection.current)
       if (!engagement.engaged) return
-      const angle = tineLoadAngle(pin.noteIndex, engagement.deflection, motionDirection.current, config)
-      if (Math.abs(angle) > Math.abs(frameLoadAngles[pin.noteIndex])) frameLoadAngles[pin.noteIndex] = angle
+      if (Math.abs(engagement.loadAngle) > Math.abs(frameLoadAngles[pin.noteIndex])) {
+        frameLoadAngles[pin.noteIndex] = engagement.loadAngle
+      }
     })
 
     vibrations.current = vibrations.current.map((vibration, index) => {
@@ -293,7 +291,7 @@ function Mechanism({
                 <meshStandardMaterial {...steel} roughness={0.2} />
               </mesh>
               <mesh castShadow position={[tipX, tipY, pin.axialPosition]}>
-                <sphereGeometry args={[config.pinRadius * 1.04, 16, 12]} />
+                <sphereGeometry args={[config.pinRadius * PIN_TIP_RADIUS_SCALE, 16, 12]} />
                 <meshStandardMaterial {...steel} roughness={0.18} />
               </mesh>
             </group>
