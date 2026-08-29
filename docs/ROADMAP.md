@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md`, `docs/COMPATIBILITY_ANALYZER.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md`, `docs/COMPATIBILITY_ANALYZER.md`, `docs/AUTO_FIT.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -49,8 +49,8 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ### Make ordinary music mechanically playable
 
-23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). The analyzer is non-destructive, separates blocking conflicts from review warnings and is surfaced on the Compose workflow for the currently edited or staged recognition document.**
-24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification.
+23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Complete in PR #31, merged as `7fbaa15573ae82a2797a9fb93741f8cdc6a83361`; final verify/browser run #173 (`33233696180`) green with desktop/mobile runtime evidence reviewed.**
+24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Active on `feat/music-box-auto-fit` / PR #32. Every transform is opt-in and produces a derived fit proposal only; it does not mutate/accept the source TuneDocument or regenerate cylinder pins.**
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
 
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is the active lane on PR #31 (replacement merge PR for closed draft #30). The analyzer derives a read-only report from editable TuneDocument data and the current fixed comb/cylinder pin constraints. It reports out-of-range notes, simultaneous starts, same-lane density and pin-spacing conflicts; simultaneity is review-only because the present geometry can align pins across separate tine lanes, while range/density/spacing conflicts are blocking. Compose shows the report for the document currently being edited, including a staged recognition candidate without promoting it or changing cylinder pins. Browser automation must prove conflict reporting, EN/JA and responsive readability before Step 23 is complete. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-23 are complete on main. Step 24 Auto Fit to Music Box is active on PR #32. The current implementation derives an explicit fit proposal from the TuneDocument currently shown in Compose, including a staged recognition candidate, only after the user selects one or more transformations and presses `Generate fit proposal`. Available transforms are octave-only moves, nearest-comb-note mapping, optional timing quantization and deterministic removal of later same-tine repeats that violate the Step 23 physical pin-spacing rule. The source document, recognition acceptance state and cylinder pins remain unchanged; every proposed change is recorded for Step 25 comparison. Changing the source or options invalidates a stale proposal. Browser automation must prove source immutability, reduced blocking conflicts, stale-proposal invalidation, EN/JA and responsive readability before Step 24 is complete. After Step 24 is green and merged, proceed to Step 25 fit preview / manual correction.
 
 ## Mechanical causality gate
 
