@@ -36,10 +36,20 @@ export class MusicBoxAudio {
     return this.ctx
   }
 
+  /**
+   * Call from the Play/manual-crank user gesture so a later mechanical release
+   * never has to wait for a suspended AudioContext before it can sound.
+   */
+  async unlock() {
+    const ctx = this.ensureContext()
+    if (ctx.state === 'suspended') await ctx.resume()
+    return ctx.state === 'running'
+  }
+
   async pluck(note: number) {
     const ctx = this.ensureContext()
     if (ctx.state === 'suspended') await ctx.resume()
-    if (!this.resonator) return
+    if (ctx.state !== 'running' || !this.resonator) return
 
     const now = ctx.currentTime
     const frequency = midiToHz(note)
