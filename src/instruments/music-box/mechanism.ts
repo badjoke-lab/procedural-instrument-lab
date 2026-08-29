@@ -40,7 +40,7 @@ export const TINE_REST_Y = 0.23
 export const TINE_ANCHOR_X_OFFSET = 2.23
 export const TINE_ANCHOR_X_STEP = 0.042
 export const TINE_THICKNESS = 0.055
-export const MAX_CONTACT_PHASE_STEP = 0.02
+export const MAX_CONTACT_PHASE_STEP = 0.005
 
 export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   notes: [60, 62, 64, 65, 67, 69, 71, 72],
@@ -178,16 +178,55 @@ export function distance3(a: Point3, b: Point3) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 }
 
-export function pinTineEngagement(pin: Pin, phase: number, config: MusicBoxConfig): PinTineEngagement {
+function normalizeAngle(angle: number) {
+  let normalized = angle % (Math.PI * 2)
+  if (normalized > Math.PI) normalized -= Math.PI * 2
+  if (normalized < -Math.PI) normalized += Math.PI * 2
+  return normalized
+}
+
+/** Angular half-width of the current pin-tip contact zone around the visible resting tine tip. */
+export function pinContactHalfAngle(config: MusicBoxConfig) {
+  const pathRadius = config.cylinderRadius + config.pinLength
+  const contact = tineContactPoint(0, config)
+  const [cx, cy] = config.cylinderCenter
+  const contactRadius = Math.hypot(contact.x - cx, contact.y - cy)
+  const denominator = 2 * pathRadius * contactRadius
+  const cosine = denominator > 0
+    ? (pathRadius ** 2 + contactRadius ** 2 - config.contactTolerance ** 2) / denominator
+    : 1
+  return Math.acos(Math.max(-1, Math.min(1, cosine)))
+}
+
+/**
+ * Contact is geometric, while deflection is directional loading progress.
+ * A pin enters with deflection 0, keeps loading the tine, then reaches maximum
+ * deflection immediately before it leaves the contact zone and plucks the tine.
+ */
+export function pinTineEngagement(
+  pin: Pin,
+  phase: number,
+  config: MusicBoxConfig,
+  motionDirection = -1,
+): PinTineEngagement {
   const pinTip = pinTipWorldPosition(pin, phase, config)
   const contact = tineContactPoint(pin.noteIndex, config)
   const distance = distance3(pinTip, contact)
   const engaged = distance <= config.contactTolerance
-  const deflection = engaged
-    ? Math.max(0, Math.min(1, 1 - distance / config.contactTolerance))
-    : 0
+  if (!engaged) return { engaged: false, distance, deflection: 0 }
 
-  return { engaged, distance, deflection }
+  const [cx, cy] = config.cylinderCenter
+  const contactAngle = Math.atan2(contact.y - cy, contact.x - cx)
+  const pinAngle = pin.angle + phase
+  const angularOffset = normalizeAngle(pinAngle - contactAngle)
+  const halfAngle = Math.max(1e-9, pinContactHalfAngle(config))
+  const direction = Math.sign(motionDirection) || -1
+  const progress = direction < 0
+    ? (halfAngle - angularOffset) / (2 * halfAngle)
+    : (angularOffset + halfAngle) / (2 * halfAngle)
+  const deflection = Math.max(0, Math.min(1, progress))
+
+  return { engaged: true, distance, deflection }
 }
 
 export function pinTouchesTine(pin: Pin, phase: number, config: MusicBoxConfig) {
