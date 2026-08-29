@@ -32,6 +32,7 @@ export type DriveKinematics = {
 
 export type PinTineEngagement = {
   engaged: boolean
+  /** Distance from the rendered pin-sphere center to the rendered tine box. */
   distance: number
   deflection: number
   loadAngle: number
@@ -52,6 +53,10 @@ export const MAX_CONTACT_PHASE_STEP = 0.005
 
 const TWO_PI = Math.PI * 2
 const GEOMETRY_EPSILON = 1e-7
+const CONTACT_ROOT_SCAN_STEPS = 720
+const CONTACT_ROOT_BISECTIONS = 32
+const LOAD_ROOT_SCAN_STEPS = 24
+const contactWindowCache = new Map<string, PinContactWindow | null>()
 
 export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   notes: [60, 62, 64, 65, 67, 69, 71, 72],
@@ -82,13 +87,8 @@ export function validateMusicBoxConfig(config: MusicBoxConfig): string[] {
   if (config.driverGearRadius <= 0) issues.push('driverGearRadius must be positive')
 
   const requiredAxialSpan = Math.max(0, config.notes.length - 1) * config.tineSpacing + config.pinRadius * 2
-  if (requiredAxialSpan > config.cylinderLength) {
-    issues.push('note lanes do not fit within cylinderLength')
-  }
-
-  if (config.tineSpacing < config.pinRadius * 2.5) {
-    issues.push('tineSpacing is too small for the configured pinRadius')
-  }
+  if (requiredAxialSpan > config.cylinderLength) issues.push('note lanes do not fit within cylinderLength')
+  if (config.tineSpacing < config.pinRadius * 2.5) issues.push('tineSpacing is too small for the configured pinRadius')
 
   return issues
 }
@@ -121,7 +121,6 @@ export function driveKinematics(crankAngle: number, config: MusicBoxConfig): Dri
 
 export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] {
   assertMusicBoxConfig(config)
-
   return events
     .map((event) => {
       const noteIndex = config.notes.indexOf(event.note)
@@ -136,14 +135,16 @@ export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] 
 
 /** Center of the visible spherical pin tip. */
 export function pinTipWorldPosition(pin: Pin, phase: number, config: MusicBoxConfig): Point3 {
-  const radius = config.cylinderRadius + config.pinLength
-  const theta = pin.angle + phase
-  const [cx, cy, cz] = config.cylinderCenter
+  return pinTipWorldPositionAtAngle(pin.angle + phase, pin.axialPosition, config)
+}
 
+function pinTipWorldPositionAtAngle(angle: number, axialPosition: number, config: MusicBoxConfig): Point3 {
+  const radius = config.cylinderRadius + config.pinLength
+  const [cx, cy, cz] = config.cylinderCenter
   return {
-    x: cx + Math.cos(theta) * radius,
-    y: cy + Math.sin(theta) * radius,
-    z: cz + pin.axialPosition,
+    x: cx + Math.cos(angle) * radius,
+    y: cy + Math.sin(angle) * radius,
+    z: cz + axialPosition,
   }
 }
 
@@ -161,7 +162,7 @@ export function tineContactPoint(noteIndex: number, config: MusicBoxConfig): Poi
   }
 }
 
-/** Root used by the rendered tine. */
+/** Root used by the rendered tine group. */
 export function tineAnchorPoint(noteIndex: number, config: MusicBoxConfig): Point3 {
   const [cx, cy] = config.cylinderCenter
   const contact = tineContactPoint(noteIndex, config)
@@ -183,12 +184,7 @@ export function tineMaximumLoadAngle(noteIndex: number, config: MusicBoxConfig) 
   return Math.asin(Math.min(0.95, config.contactTolerance / length))
 }
 
-export function tineLoadAngle(
-  noteIndex: number,
-  contactProgress: number,
-  motionDirection: number,
-  config: MusicBoxConfig,
-) {
+export function tineLoadAngle(noteIndex: number, contactProgress: number, motionDirection: number, config: MusicBoxConfig) {
   const maximumAngle = tineMaximumLoadAngle(noteIndex, config)
   const direction = Math.sign(motionDirection) || -1
   const progress = Math.max(0, Math.min(1, contactProgress))
@@ -206,9 +202,29 @@ export function tineTipPosition(noteIndex: number, loadAngle: number, config: Mu
   }
 }
 
-/** Visible sphere-to-tine centerline clearance at surface contact. */
-export function pinTineSurfaceContactRadius(config: MusicBoxConfig) {
-  return visiblePinTipRadius(config) + TINE_THICKNESS / 2
+/**
+ * Exact 2D distance from a point in the pin/tine lane to the rendered tine box.
+ * The rendered box spans local x=[-length,0], y=[-TINE_THICKNESS/2,+TINE_THICKNESS/2]
+ * and is rotated around the same anchor by loadAngle.
+ */
+export function pointToTineBoxDistance(point: Point3, noteIndex: number, loadAngle: number, config: MusicBoxConfig) {
+  const anchor = tineAnchorPoint(noteIndex, config)
+  const length = tineLength(noteIndex, config)
+  const halfThickness = TINE_THICKNESS / 2
+  const dx = point.x - anchor.x
+  const dy = point.y - anchor.y
+  const cosine = Math.cos(loadAngle)
+  const sine = Math.sin(loadAngle)
+  const localX = cosine * dx + sine * dy
+  const localY = -sine * dx + cosine * dy
+  const nearestX = Math.max(-length, Math.min(0, localX))
+  const nearestY = Math.max(-halfThickness, Math.min(halfThickness, localY))
+  return Math.hypot(localX - nearestX, localY - nearestY)
+}
+
+export function pinTineSurfaceGap(pin: Pin, phase: number, loadAngle: number, config: MusicBoxConfig) {
+  const pinTip = pinTipWorldPosition(pin, phase, config)
+  return pointToTineBoxDistance(pinTip, pin.noteIndex, loadAngle, config) - visiblePinTipRadius(config)
 }
 
 export function distance3(a: Point3, b: Point3) {
@@ -220,102 +236,127 @@ function normalizePositiveAngle(angle: number) {
   return normalized < 0 ? normalized + TWO_PI : normalized
 }
 
-function normalizeSignedAngle(angle: number) {
-  let normalized = normalizePositiveAngle(angle)
-  if (normalized > Math.PI) normalized -= TWO_PI
-  return normalized
-}
-
 function directedAngularDistance(from: number, to: number, direction: number) {
   return direction < 0
     ? normalizePositiveAngle(from - to)
     : normalizePositiveAngle(to - from)
 }
 
-function circlePathAnglesThroughPoint(point: Point3, contactRadius: number, config: MusicBoxConfig) {
-  const [cx, cy] = config.cylinderCenter
-  const pathRadius = config.cylinderRadius + config.pinLength
-  const dx = point.x - cx
-  const dy = point.y - cy
-  const centerDistance = Math.hypot(dx, dy)
-  const denominator = 2 * pathRadius * centerDistance
-  if (denominator <= GEOMETRY_EPSILON) return []
-
-  const cosine = (pathRadius ** 2 + centerDistance ** 2 - contactRadius ** 2) / denominator
-  if (cosine < -1 - GEOMETRY_EPSILON || cosine > 1 + GEOMETRY_EPSILON) return []
-
-  const centerAngle = Math.atan2(dy, dx)
-  const offset = Math.acos(Math.max(-1, Math.min(1, cosine)))
-  return [normalizePositiveAngle(centerAngle + offset), normalizePositiveAngle(centerAngle - offset)]
-}
-
-function circleIntersections(
-  centerA: Point3,
-  radiusA: number,
-  centerB: Point3,
-  radiusB: number,
-): Point3[] {
-  const dx = centerB.x - centerA.x
-  const dy = centerB.y - centerA.y
-  const distance = Math.hypot(dx, dy)
-  if (distance <= GEOMETRY_EPSILON) return []
-  if (distance > radiusA + radiusB + GEOMETRY_EPSILON) return []
-  if (distance < Math.abs(radiusA - radiusB) - GEOMETRY_EPSILON) return []
-
-  const along = (radiusA ** 2 - radiusB ** 2 + distance ** 2) / (2 * distance)
-  const heightSquared = radiusA ** 2 - along ** 2
-  if (heightSquared < -GEOMETRY_EPSILON) return []
-  const height = Math.sqrt(Math.max(0, heightSquared))
-
-  const baseX = centerA.x + along * dx / distance
-  const baseY = centerA.y + along * dy / distance
-  const offsetX = -dy * height / distance
-  const offsetY = dx * height / distance
-  const z = centerA.z
-
+function contactCacheKey(noteIndex: number, direction: number, config: MusicBoxConfig) {
   return [
-    { x: baseX + offsetX, y: baseY + offsetY, z },
-    { x: baseX - offsetX, y: baseY - offsetY, z },
-  ]
+    noteIndex,
+    Math.sign(direction) || -1,
+    ...config.cylinderCenter,
+    config.cylinderRadius,
+    config.pinLength,
+    config.pinRadius,
+    config.contactTolerance,
+    config.tineSpacing,
+    config.notes.length,
+  ].join('|')
 }
 
-export function pinContactWindow(
-  pin: Pin,
-  motionDirection: number,
+function contactGapAtWorldAngle(noteIndex: number, worldAngle: number, loadAngle: number, config: MusicBoxConfig) {
+  const axialPosition = (noteIndex - (config.notes.length - 1) / 2) * config.tineSpacing
+  const pinTip = pinTipWorldPositionAtAngle(worldAngle, axialPosition, config)
+  return pointToTineBoxDistance(pinTip, noteIndex, loadAngle, config) - visiblePinTipRadius(config)
+}
+
+function bisectContactAngle(
+  noteIndex: number,
+  loadAngle: number,
   config: MusicBoxConfig,
-): PinContactWindow | null {
+  fromAngle: number,
+  toAngle: number,
+) {
+  let low = fromAngle
+  let high = toAngle
+  let lowGap = contactGapAtWorldAngle(noteIndex, low, loadAngle, config)
+  let highGap = contactGapAtWorldAngle(noteIndex, high, loadAngle, config)
+  if (Math.abs(lowGap) <= GEOMETRY_EPSILON) return normalizePositiveAngle(low)
+  if (Math.abs(highGap) <= GEOMETRY_EPSILON) return normalizePositiveAngle(high)
+
+  for (let iteration = 0; iteration < CONTACT_ROOT_BISECTIONS; iteration += 1) {
+    const middle = (low + high) / 2
+    const middleGap = contactGapAtWorldAngle(noteIndex, middle, loadAngle, config)
+    if (Math.abs(middleGap) <= GEOMETRY_EPSILON) return normalizePositiveAngle(middle)
+    if (lowGap * middleGap <= 0) {
+      high = middle
+      highGap = middleGap
+    } else {
+      low = middle
+      lowGap = middleGap
+    }
+  }
+
+  return normalizePositiveAngle((low + high) / 2)
+}
+
+function findContactAngles(noteIndex: number, loadAngle: number, config: MusicBoxConfig) {
+  const roots: number[] = []
+  const step = TWO_PI / CONTACT_ROOT_SCAN_STEPS
+  let previousAngle = 0
+  let previousGap = contactGapAtWorldAngle(noteIndex, previousAngle, loadAngle, config)
+
+  for (let index = 1; index <= CONTACT_ROOT_SCAN_STEPS; index += 1) {
+    const angle = index * step
+    const gap = contactGapAtWorldAngle(noteIndex, angle, loadAngle, config)
+    if (previousGap * gap < 0) {
+      const root = bisectContactAngle(noteIndex, loadAngle, config, previousAngle, angle)
+      if (!roots.some((existing) => Math.abs(normalizePositiveAngle(existing - root)) < 1e-5)) roots.push(root)
+    } else if (Math.abs(gap) <= GEOMETRY_EPSILON) {
+      const root = normalizePositiveAngle(angle)
+      if (!roots.some((existing) => Math.abs(normalizePositiveAngle(existing - root)) < 1e-5)) roots.push(root)
+    }
+    previousAngle = angle
+    previousGap = gap
+  }
+
+  return roots
+}
+
+export function pinContactWindow(pin: Pin, motionDirection: number, config: MusicBoxConfig): PinContactWindow | null {
   const direction = Math.sign(motionDirection) || -1
-  const contactRadius = pinTineSurfaceContactRadius(config)
-  const restTip = tineContactPoint(pin.noteIndex, config)
-  const entryCandidates = circlePathAnglesThroughPoint(restTip, contactRadius, config)
-  if (entryCandidates.length !== 2) return null
+  const key = contactCacheKey(pin.noteIndex, direction, config)
+  if (contactWindowCache.has(key)) return contactWindowCache.get(key) ?? null
 
-  const entryAngle = direction < 0
-    ? Math.max(...entryCandidates)
-    : Math.min(...entryCandidates)
-  const releaseLoadAngle = tineLoadAngle(pin.noteIndex, 1, direction, config)
-  const releaseTip = tineTipPosition(pin.noteIndex, releaseLoadAngle, config)
-  const releaseCandidates = circlePathAnglesThroughPoint(releaseTip, contactRadius, config)
-  if (releaseCandidates.length !== 2) return null
+  const restRoots = findContactAngles(pin.noteIndex, 0, config)
+  const probe = 0.001
+  const entryCandidates = restRoots.filter((root) => {
+    const before = contactGapAtWorldAngle(pin.noteIndex, root - direction * probe, 0, config)
+    const after = contactGapAtWorldAngle(pin.noteIndex, root + direction * probe, 0, config)
+    return before > 0 && after <= 0
+  })
+  const entryAngle = entryCandidates[0]
+  if (entryAngle === undefined) {
+    contactWindowCache.set(key, null)
+    return null
+  }
 
-  const releaseOptions = releaseCandidates
+  const maximumLoadAngle = tineLoadAngle(pin.noteIndex, 1, direction, config)
+  const releaseCandidates = findContactAngles(pin.noteIndex, maximumLoadAngle, config)
     .map((releaseAngle) => ({
       releaseAngle,
       travelAngle: directedAngularDistance(entryAngle, releaseAngle, direction),
     }))
-    .filter((candidate) => candidate.travelAngle > GEOMETRY_EPSILON)
+    .filter((candidate) => candidate.travelAngle > GEOMETRY_EPSILON && candidate.travelAngle < Math.PI)
     .sort((a, b) => a.travelAngle - b.travelAngle)
-  const release = releaseOptions[0]
-  if (!release || release.travelAngle >= Math.PI) return null
+  const release = releaseCandidates[0]
+  if (!release) {
+    contactWindowCache.set(key, null)
+    return null
+  }
 
-  return {
+  const window = {
     entryAngle,
     releaseAngle: release.releaseAngle,
     travelAngle: release.travelAngle,
   }
+  contactWindowCache.set(key, window)
+  return window
 }
 
-function loadAngleAtContact(
+function solveLoadAngleAtContact(
   pin: Pin,
   phase: number,
   motionDirection: number,
@@ -323,25 +364,44 @@ function loadAngleAtContact(
   fallbackProgress: number,
 ) {
   const direction = Math.sign(motionDirection) || -1
-  const expectedSign = -direction
-  const pinTip = pinTipWorldPosition(pin, phase, config)
-  const anchor = tineAnchorPoint(pin.noteIndex, config)
-  const length = tineLength(pin.noteIndex, config)
-  const contactRadius = pinTineSurfaceContactRadius(config)
-  const maximumAngle = tineMaximumLoadAngle(pin.noteIndex, config)
-  const candidates = circleIntersections(anchor, length, pinTip, contactRadius)
-    .map((tip) => normalizeSignedAngle(Math.atan2(-(tip.y - anchor.y), -(tip.x - anchor.x))))
-    .filter((angle) => angle * expectedSign >= -GEOMETRY_EPSILON)
-    .filter((angle) => Math.abs(angle) <= maximumAngle + GEOMETRY_EPSILON)
-    .sort((a, b) => Math.abs(b) - Math.abs(a))
+  const maximumLoadAngle = tineLoadAngle(pin.noteIndex, 1, direction, config)
+  const gapAt = (progress: number) => pinTineSurfaceGap(pin, phase, maximumLoadAngle * progress, config)
+  let previousProgress = 0
+  let previousGap = gapAt(0)
+  if (Math.abs(previousGap) <= GEOMETRY_EPSILON) return 0
 
-  return candidates[0] ?? tineLoadAngle(pin.noteIndex, fallbackProgress, direction, config)
+  for (let index = 1; index <= LOAD_ROOT_SCAN_STEPS; index += 1) {
+    const progress = index / LOAD_ROOT_SCAN_STEPS
+    const gap = gapAt(progress)
+    if (Math.abs(gap) <= GEOMETRY_EPSILON) return maximumLoadAngle * progress
+    if (previousGap * gap < 0) {
+      let low = previousProgress
+      let high = progress
+      let lowGap = previousGap
+      for (let iteration = 0; iteration < CONTACT_ROOT_BISECTIONS; iteration += 1) {
+        const middle = (low + high) / 2
+        const middleGap = gapAt(middle)
+        if (Math.abs(middleGap) <= GEOMETRY_EPSILON) return maximumLoadAngle * middle
+        if (lowGap * middleGap <= 0) {
+          high = middle
+        } else {
+          low = middle
+          lowGap = middleGap
+        }
+      }
+      return maximumLoadAngle * ((low + high) / 2)
+    }
+    previousProgress = progress
+    previousGap = gap
+  }
+
+  return tineLoadAngle(pin.noteIndex, fallbackProgress, direction, config)
 }
 
 /**
- * Resolve contact from the same visible pin sphere and rotated tine geometry that is rendered.
- * Contact starts when the sphere first touches the resting tine surface. It ends at the configured
- * elastic tip travel, where the pin slips off and the release/pluck event is emitted.
+ * Resolve contact against the same spherical pin tip and rectangular tine box that Three.js renders.
+ * The pin loads the rooted tine while the two rendered surfaces touch. At configured elastic travel
+ * the pin slips off; that engagement exit is the release/pluck event consumed by vibration and audio.
  */
 export function pinTineEngagement(
   pin: Pin,
@@ -350,34 +410,28 @@ export function pinTineEngagement(
   motionDirection = -1,
 ): PinTineEngagement {
   const direction = Math.sign(motionDirection) || -1
-  const pinTip = pinTipWorldPosition(pin, phase, config)
-  const restTip = tineContactPoint(pin.noteIndex, config)
-  const distance = distance3(pinTip, restTip)
   const window = pinContactWindow(pin, direction, config)
-  if (!window) return { engaged: false, distance, deflection: 0, loadAngle: 0 }
+  const restingDistance = pointToTineBoxDistance(pinTipWorldPosition(pin, phase, config), pin.noteIndex, 0, config)
+  if (!window) return { engaged: false, distance: restingDistance, deflection: 0, loadAngle: 0 }
 
   const currentAngle = normalizePositiveAngle(pin.angle + phase)
   const travel = directedAngularDistance(window.entryAngle, currentAngle, direction)
   if (travel > window.travelAngle + GEOMETRY_EPSILON) {
-    return { engaged: false, distance, deflection: 0, loadAngle: 0 }
+    return { engaged: false, distance: restingDistance, deflection: 0, loadAngle: 0 }
   }
 
   const fallbackProgress = Math.max(0, Math.min(1, travel / Math.max(window.travelAngle, GEOMETRY_EPSILON)))
-  const loadAngle = loadAngleAtContact(pin, phase, direction, config, fallbackProgress)
+  const loadAngle = solveLoadAngleAtContact(pin, phase, direction, config, fallbackProgress)
   const maximumAngle = tineMaximumLoadAngle(pin.noteIndex, config)
   const deflection = maximumAngle > GEOMETRY_EPSILON
     ? Math.max(0, Math.min(1, Math.abs(loadAngle) / maximumAngle))
     : 0
+  const distance = pointToTineBoxDistance(pinTipWorldPosition(pin, phase, config), pin.noteIndex, loadAngle, config)
 
   return { engaged: true, distance, deflection, loadAngle }
 }
 
-export function pinTouchesTine(
-  pin: Pin,
-  phase: number,
-  config: MusicBoxConfig,
-  motionDirection = -1,
-) {
+export function pinTouchesTine(pin: Pin, phase: number, config: MusicBoxConfig, motionDirection = -1) {
   return pinTineEngagement(pin, phase, config, motionDirection).engaged
 }
 
@@ -388,7 +442,6 @@ export function pinTouchesTine(
 export function sampleCylinderPhaseSegment(fromPhase: number, toPhase: number, maxStep = MAX_CONTACT_PHASE_STEP) {
   if (!Number.isFinite(fromPhase) || !Number.isFinite(toPhase)) throw new Error('phase must be finite')
   if (!Number.isFinite(maxStep) || maxStep <= 0) throw new Error('maxStep must be positive')
-
   const delta = toPhase - fromPhase
   const steps = Math.max(1, Math.ceil(Math.abs(delta) / maxStep))
   return Array.from({ length: steps }, (_, index) => fromPhase + delta * ((index + 1) / steps))
