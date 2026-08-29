@@ -9,10 +9,13 @@ This document controls development order for Procedural Instrument Lab. Read it 
 - Additional instruments are out of scope.
 - Low traffic and limited manual testing are assumed. Completion must not depend on large numbers of user-submitted tunes or repeated human device tests.
 - Automated browser checks, synthetic tune/audio fixtures and benchmark reports must carry most repeatable verification work.
+- A user-visible mismatch between pin contact, tine loading/release/vibration and sound is a blocking mechanical-causality defect and overrides feature-sequence work until corrected.
 
 ## Completed foundation
 
 Repository foundation, deterministic drive state, geometry-derived pin/tine engagement, tine deflection, release-driven vibration/audio, direct crank manipulation, initial Customize controls, EN/JA, responsive information architecture, the first geometry/material realism pass, browser gates and GitHub Pages publication are merged on main.
+
+The initial causality implementation later proved insufficient under close real-runtime inspection: its invisible contact reference did not match the rendered free-tine tip, render-frame-only contact sampling could skip narrow contact windows, and first-release audio could wait for Web Audio startup. Those are defects in the foundation rather than later polish and must be repaired before feature progression resumes.
 
 ## Authoritative development order
 
@@ -49,10 +52,25 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ### Make ordinary music mechanically playable
 
-23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). The analyzer is non-destructive, separates blocking conflicts from review warnings and is surfaced on the Compose workflow for the currently edited or staged recognition document.**
-24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification.
+23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Complete in PR #31, merged as `7fbaa15573ae82a2797a9fb93741f8cdc6a83361`; final verify/browser run #173 was green.**
+24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation is open in PR #32 but feature progression is blocked by the mechanical-causality hotfix below. PR #32 must not merge until the hotfix is merged and #32 is rebased/reverified.**
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
+
+### Blocking mechanical-causality hotfix
+
+Before Step 24 can complete, `fix/music-box-causality-sync` / PR #33 must restore the already-required runtime invariant:
+
+- the contact resolver and renderer share the same resting free-tine tip and anchor geometry; no hidden y/position offset may define contact,
+- tine loading angle is derived from the same contact geometry rather than an unrelated visual amplitude,
+- cylinder motion is traversed across each phase segment so high speed, low FPS or a large manual drag cannot skip pin/tine engagement or delay release by a render frame,
+- free vibration begins continuously from the actual release deflection,
+- the same release transition starts audible pluck output,
+- Play/manual-crank gestures prime Web Audio before later release events so first-release sound does not wait on AudioContext startup,
+- configuration changes clear stale engagement/vibration state,
+- coarse-sampling unit coverage plus desktop/mobile runtime inspection must pass before merge.
+
+This hotfix is not a new roadmap feature. It repairs a violated acceptance condition that was previously treated as complete.
 
 ### User-volume-independent benchmark lane
 
@@ -119,7 +137,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is the active lane on PR #31 (replacement merge PR for closed draft #30). The analyzer derives a read-only report from editable TuneDocument data and the current fixed comb/cylinder pin constraints. It reports out-of-range notes, simultaneous starts, same-lane density and pin-spacing conflicts; simultaneity is review-only because the present geometry can align pins across separate tine lanes, while range/density/spacing conflicts are blocking. Compose shows the report for the document currently being edited, including a staged recognition candidate without promoting it or changing cylinder pins. Browser automation must prove conflict reporting, EN/JA and responsive readability before Step 23 is complete. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-23 are complete on main. PR #32 contains Step 24 Auto Fit work but is explicitly blocked. The active lane is the mechanical-causality repair in PR #33 because real runtime inspection found material visible/audio timing divergence in the supposedly completed foundation. Feature work resumes only after PR #33 passes automated coarse-sampling/contact invariants, desktop/mobile runtime inspection and merge, then PR #32 is rebased and reverified against the corrected mechanism.
 
 ## Mechanical causality gate
 
@@ -128,6 +146,8 @@ At every stage the authoritative chain remains:
 `tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
 
 Composition/import, Auto Fit, customization, rendering and exports must feed or consume this chain. They must not introduce an independent scheduler that decides note timing separately.
+
+Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model.
 
 ## Privacy / rights boundary
 
