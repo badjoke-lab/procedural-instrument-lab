@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md`, `docs/COMPATIBILITY_ANALYZER.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -45,11 +45,11 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 19. **Mic -> melody extraction** — detect pitch/timing into editable TuneDocument notes, initially optimized for monophonic material. **Complete in PR #26, merged as `8f2251cb7ea9c7dcbcd60cfecd2609d56a0847ac`; final branch run #145 green with desktop/mobile evidence reviewed.**
 20. **Audio-file import** — accept practical browser-decodable formats such as WAV/MP3/M4A where supported, without silently uploading source media. **Complete in PR #27, merged as `4b60f7dba885e175196b4c9eca0454b6b086384b`; final branch run #147 green with desktop/mobile evidence reviewed.**
 21. **Audio -> melody extraction** — derive candidate note data rather than replaying the source file as the music box. **Complete in PR #28, merged as `7abfd82ca8421c9fbb396d5942689226587de5b1`; final branch run #150 green with desktop/mobile evidence reviewed.**
-22. **Recognition correction UI** — show recognized notes in the piano roll and allow correction before mechanical compilation. **In progress on `feat/music-box-recognition-correction`. Recognition results are staged as a candidate TuneDocument; the existing piano roll edits that candidate while the previously accepted tune continues to drive cylinder pins until explicit acceptance.**
+22. **Recognition correction UI** — show recognized notes in the piano roll and allow correction before mechanical compilation. **Complete in PR #29, merged as `350fea30bdabd8cfa8e8aa5ce2b1bd7af28650ca`; final branch run #155 green with desktop/mobile recognition-review evidence reviewed. Recognition results remain staged until explicit acceptance.**
 
 ### Make ordinary music mechanically playable
 
-23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts.
+23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Active on `feat/music-box-compatibility-analyzer` / PR #30. The analyzer is non-destructive, separates blocking conflicts from review warnings and is surfaced on the Compose workflow for the currently edited or staged recognition document.**
 24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification.
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
@@ -119,7 +119,7 @@ Repository foundation, deterministic drive state, geometry-derived pin/tine enga
 
 ## Current position
 
-Steps 1-21 are complete on main. Step 22 recognition correction UI is the active lane. Successful microphone/audio recognition now enters a review candidate rather than immediately becoming the accepted TuneDocument. The candidate is displayed and corrected through the existing piano roll, while the currently accepted tune remains the only composition allowed to regenerate cylinder pins. `Accept recognized melody` explicitly promotes the corrected candidate; `Discard candidate` restores the accepted tune unchanged. Recognition failure remains non-destructive. Browser automation must prove correction, discard, acceptance and EN/JA behavior before Step 22 is complete. After Step 22 is green and merged, proceed to Step 23 compatibility analyzer.
+Steps 1-22 are complete on main. Step 23 compatibility analyzer is the active lane on PR #30. The analyzer derives a read-only report from editable TuneDocument data and the current fixed comb/cylinder pin constraints. It reports out-of-range notes, simultaneous starts, same-lane density and pin-spacing conflicts; simultaneity is review-only because the present geometry can align pins across separate tine lanes, while range/density/spacing conflicts are blocking. Compose shows the report for the document currently being edited, including a staged recognition candidate without promoting it or changing cylinder pins. Browser automation must prove conflict reporting, EN/JA and responsive readability before Step 23 is complete. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
 
 ## Mechanical causality gate
 
