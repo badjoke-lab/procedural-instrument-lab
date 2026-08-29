@@ -1,0 +1,15 @@
+.compatibility-panel { margin-bottom: 14px; }
+.compatibility-panel .screen-keyboard-heading { margin-bottom: 8px; }
+.compatibility-panel .screen-keyboard-recording { margin: 0; max-width: 240px; text-align: right; line-height: 1.35; }
+.compatibility-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; color: #bcbcc5; font-size: 12px; line-height: 1.5; }
+.compatibility-summary strong { color: #f2f2f4; font-variant-numeric: tabular-nums; }
+.compatibility-issues { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.compatibility-issues li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid #303036; border-radius: 7px; background: #101014; font-size: 12px; }
+.compatibility-issues li > span { color: #d5d5db; }
+.compatibility-issues li > strong { font-variant-numeric: tabular-nums; }
+.compatibility-issues li > small { color: #9999a2; }
+@media (max-width: 760px) {
+  .compatibility-panel .screen-keyboard-recording { display: block; margin-top: 8px; max-width: none; text-align: left; }
+  .compatibility-issues li { grid-template-columns: 1fr auto; }
+  .compatibility-issues li > small { grid-column: 1 / -1; }
+}
