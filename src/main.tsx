@@ -8,11 +8,15 @@ import { defaultLocale, messages, type Locale } from './i18n/messages'
 import { MusicBoxAudio } from './instruments/music-box/audio'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
+  TINE_THICKNESS,
   compileTune,
   cylinderGearRadius,
   driveKinematics,
   pinTineEngagement,
-  tineContactPoint,
+  sampleCylinderPhaseSegment,
+  tineAnchorPoint,
+  tineLength,
+  tineLoadAngle,
   validateMusicBoxConfig,
   type MusicBoxConfig,
   type NoteEvent,
@@ -24,14 +28,15 @@ import { tuneDocumentToNoteEvents, type TuneDocument } from './instruments/music
 
 const audio = new MusicBoxAudio()
 const inspirationUrl = 'https://x.com/McGreenBeats/status/2092243021777580466'
-const TINE_LOAD_ANGLE = 0.15
-const TINE_VIBRATION_ANGLE = 0.095
+const TINE_VIBRATION_FREQUENCY = 55
+const TINE_VIBRATION_DAMPING = 2.8
 
 const brass = { color: '#c4a05b', metalness: 0.74, roughness: 0.28 }
 const steel = { color: '#d9dde1', metalness: 0.78, roughness: 0.24 }
 const darkSteel = { color: '#747b82', metalness: 0.72, roughness: 0.28 }
 
 type RuntimeTune = { id: string; events: NoteEvent[] }
+type TineVibrationState = { amplitude: number; sign: number; elapsed: number }
 
 function Gear({ radius, teeth }: { radius: number; teeth: number }) {
   const toothDepth = radius * 0.12
@@ -96,6 +101,10 @@ function BearingStand({ x, z }: { x: number; z: number }) {
   )
 }
 
+function emptyVibrations(config: MusicBoxConfig): TineVibrationState[] {
+  return config.notes.map(() => ({ amplitude: 0, sign: 1, elapsed: 0 }))
+}
+
 function Mechanism({
   running,
   speed,
@@ -118,8 +127,9 @@ function Mechanism({
   const tineRefs = useRef<(THREE.Group | null)[]>([])
   const driveAngle = useRef(0.08)
   const engagedPins = useRef(new Set<number>())
-  const vibrations = useRef(config.notes.map(() => 0))
-  const lastCylinderPhase = useRef(0)
+  const lastPinLoadAngles = useRef(new Map<number, number>())
+  const vibrations = useRef<TineVibrationState[]>(emptyVibrations(config))
+  const lastCylinderPhase = useRef(driveKinematics(0.08, config).cylinderPhase)
   const motionDirection = useRef(-1)
   const lastPointerX = useRef<number | null>(null)
   const pins = useMemo(() => compileTune(tune.events, config), [tune, config])
@@ -132,6 +142,16 @@ function Mechanism({
     config.cylinderCenter[1],
     gearZ,
   ]
+
+  useEffect(() => {
+    engagedPins.current.clear()
+    lastPinLoadAngles.current.clear()
+    vibrations.current = emptyVibrations(config)
+    lastCylinderPhase.current = driveKinematics(driveAngle.current, config).cylinderPhase
+    tineRefs.current.forEach((tine) => {
+      if (tine) tine.rotation.z = 0
+    })
+  }, [config])
 
   const beginManualCrank = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation()
@@ -162,38 +182,65 @@ function Mechanism({
   useFrame((_, dt) => {
     if (running) driveAngle.current += dt * speed
     const drive = driveKinematics(driveAngle.current, config)
-    const phaseDelta = drive.cylinderPhase - lastCylinderPhase.current
-    if (Math.abs(phaseDelta) > 1e-6) motionDirection.current = Math.sign(phaseDelta)
-    lastCylinderPhase.current = drive.cylinderPhase
+    const previousPhase = lastCylinderPhase.current
+    const phaseDelta = drive.cylinderPhase - previousPhase
+    const frameDirection = Math.abs(phaseDelta) > 1e-6 ? Math.sign(phaseDelta) : motionDirection.current
+    if (Math.abs(phaseDelta) > 1e-6) motionDirection.current = frameDirection
 
     if (crank.current) crank.current.rotation.z = drive.crankAngle
     if (driverGear.current) driverGear.current.rotation.z = drive.driverGearAngle
     if (drivenGear.current) drivenGear.current.rotation.z = drive.cylinderGearAngle
     if (cylinder.current) cylinder.current.rotation.z = drive.cylinderPhase
 
-    const frameDeflections = config.notes.map(() => 0)
-
-    pins.forEach((pin, index) => {
-      const engagement = pinTineEngagement(pin, drive.cylinderPhase, config)
-      if (engagement.engaged) {
-        engagedPins.current.add(index)
-        frameDeflections[pin.noteIndex] = Math.max(frameDeflections[pin.noteIndex], engagement.deflection)
-      } else if (engagedPins.current.has(index)) {
-        engagedPins.current.delete(index)
-        vibrations.current[pin.noteIndex] = 1
-        void audio.pluck(config.notes[pin.noteIndex])
+    if (Math.abs(phaseDelta) > 1e-6) {
+      for (const sampledPhase of sampleCylinderPhaseSegment(previousPhase, drive.cylinderPhase)) {
+        pins.forEach((pin, index) => {
+          const engagement = pinTineEngagement(pin, sampledPhase, config)
+          if (engagement.engaged) {
+            engagedPins.current.add(index)
+            lastPinLoadAngles.current.set(
+              index,
+              tineLoadAngle(pin.noteIndex, engagement.deflection, frameDirection, config),
+            )
+          } else if (engagedPins.current.delete(index)) {
+            const releaseAngle = lastPinLoadAngles.current.get(index) ?? 0
+            lastPinLoadAngles.current.delete(index)
+            vibrations.current[pin.noteIndex] = {
+              amplitude: Math.abs(releaseAngle),
+              sign: Math.sign(releaseAngle) || -frameDirection || 1,
+              elapsed: 0,
+            }
+            void audio.pluck(config.notes[pin.noteIndex])
+          }
+        })
       }
+    }
+    lastCylinderPhase.current = drive.cylinderPhase
+
+    const frameLoadAngles = config.notes.map(() => 0)
+    pins.forEach((pin) => {
+      const engagement = pinTineEngagement(pin, drive.cylinderPhase, config)
+      if (!engagement.engaged) return
+      const angle = tineLoadAngle(pin.noteIndex, engagement.deflection, motionDirection.current, config)
+      if (Math.abs(angle) > Math.abs(frameLoadAngles[pin.noteIndex])) frameLoadAngles[pin.noteIndex] = angle
     })
 
-    vibrations.current = vibrations.current.map((value, index) => {
-      const next = Math.max(0, value - dt * 2.3)
+    vibrations.current = vibrations.current.map((vibration, index) => {
       const tine = tineRefs.current[index]
-      if (tine) {
-        const loaded = frameDeflections[index]
-        const loadAngle = motionDirection.current * loaded * TINE_LOAD_ANGLE
-        const vibrationAngle = loaded > 0 ? 0 : Math.sin((1 - next) * 55) * next * TINE_VIBRATION_ANGLE
-        tine.rotation.z = loadAngle + vibrationAngle
+      const loadAngle = frameLoadAngles[index]
+      let vibrationAngle = 0
+      let next = vibration
+
+      if (loadAngle === 0 && vibration.amplitude > 0) {
+        const envelope = Math.exp(-vibration.elapsed * TINE_VIBRATION_DAMPING)
+        vibrationAngle = vibration.sign * vibration.amplitude * Math.cos(vibration.elapsed * TINE_VIBRATION_FREQUENCY) * envelope
+        const elapsed = vibration.elapsed + dt
+        next = envelope < 0.01
+          ? { amplitude: 0, sign: vibration.sign, elapsed }
+          : { ...vibration, elapsed }
       }
+
+      if (tine) tine.rotation.z = loadAngle !== 0 ? loadAngle : vibrationAngle
       return next
     })
   })
@@ -268,15 +315,14 @@ function Mechanism({
           </mesh>
         ))}
         {config.notes.map((note, index) => {
-          const contact = tineContactPoint(index, config)
-          const anchorX = 1.53 + index * 0.042
-          const length = anchorX - contact.x
+          const anchor = tineAnchorPoint(index, config)
+          const length = tineLength(index, config)
           const tineWidth = 0.16 - index * 0.005
           return (
             <group key={note}>
-              <group ref={(group) => { tineRefs.current[index] = group }} position={[anchorX, 0.23, contact.z]}>
+              <group ref={(group) => { tineRefs.current[index] = group }} position={[anchor.x, anchor.y, anchor.z]}>
                 <mesh castShadow position={[-length / 2, 0, 0]}>
-                  <boxGeometry args={[length, 0.055, Math.max(0.105, tineWidth)]} />
+                  <boxGeometry args={[length, TINE_THICKNESS, Math.max(0.105, tineWidth)]} />
                   <meshStandardMaterial color="#eef1f3" metalness={0.8} roughness={0.24} />
                 </mesh>
                 <mesh castShadow position={[-0.08, -0.035, 0]}>
@@ -453,6 +499,11 @@ function App() {
     setEditorRevision((value) => value + 1)
   }
 
+  const toggleRunning = () => {
+    if (!running) void audio.unlock()
+    setRunning((value) => !value)
+  }
+
   if (page) return <InfoPage page={page} locale={locale} setLocale={setLocale} />
 
   return (
@@ -460,7 +511,7 @@ function App() {
       <header>
         <div className="brand"><strong>{t.productName}</strong><span>{t.productSummary}</span></div>
         <div className="controls">
-          <button aria-pressed={running} onClick={() => setRunning((value) => !value)}>{running ? t.stop : t.play}</button>
+          <button aria-pressed={running} onClick={toggleRunning}>{running ? t.stop : t.play}</button>
           <label htmlFor="tune-select">
             {t.tune}
             <select id="tune-select" value={selectedTuneId} onChange={(event) => selectTune(event.target.value)}>
@@ -544,7 +595,7 @@ function App() {
               speed={speed}
               config={config}
               tune={runtimeTune}
-              onManualStart={() => { setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
+              onManualStart={() => { void audio.unlock(); setRunning(false); setOrbitEnabled(false); document.body.style.cursor = 'grabbing' }}
               onManualEnd={() => { setOrbitEnabled(true); document.body.style.cursor = '' }}
             />
             <ContactShadows position={[0, -1.98, 0]} opacity={0.24} scale={10} blur={2.5} far={4.5} />
