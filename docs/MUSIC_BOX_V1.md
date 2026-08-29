@@ -14,6 +14,8 @@ The primary page must be understandable to a first-time user who does not alread
 
 Rendering and audio do not decide note timing independently. A selected tune is compiled into physical pin positions; only the resulting mechanical release/pluck event may start audible output.
 
+The visible free-tine tip used by rendering is also the contact reference used by the mechanism. A separate invisible contact position or timing offset is forbidden. Rendering may amplify a mechanically derived motion only when it preserves the same contact/release timing.
+
 ## v1 tune behavior
 
 - The hard-coded scale is replaced by `TunePreset` data.
@@ -29,13 +31,19 @@ Rendering and audio do not decide note timing independently. A selected tune is 
 - tune events generate physical pin positions,
 - cylinder phase is authoritative playback state,
 - engagement is derived from explicit geometry,
+- contact resolution uses the same visible resting tine-tip and tine-anchor geometry rendered in the scene,
 - the affected rooted tine visibly deflects while engaged,
+- tine loading magnitude/direction is derived from contact geometry rather than an unrelated visual animation constant,
+- cylinder motion between render frames is traversed finely enough that supported high speed, coarse FPS or a large manual crank move cannot skip a contact window,
 - engagement exit emits exactly one release/pluck event for the pin pass,
 - the same release/pluck event starts visible free vibration and audible output,
+- free vibration starts from the actual release deflection rather than resetting to an unrelated phase/amplitude,
+- Play/manual-crank user gestures prepare Web Audio before later release events so audible onset does not wait on AudioContext startup,
 - one full revolution produces one release per configured pin across materially different sampling rates,
 - crank, gears and cylinder derive from one drive state,
 - manual crank uses the same contact/deflection/release/audio path as autoplay,
-- speed changes do not separate mechanism, vibration and sound.
+- speed changes do not separate mechanism, vibration and sound,
+- a user-visible or audible mismatch between pin contact, tine motion and sound is blocking even when abstract event-count tests pass.
 
 ## Information architecture
 
@@ -66,9 +74,9 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction and recognition correction are merged. Compatibility analysis is the active lane, followed by Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit is implemented in open PR #32 but is paused until the blocking mechanical-causality hotfix in PR #33 is complete.
 
-MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer now reports those preserved notes as blocking range conflicts; Step 24 Auto Fit will offer explicit transformations rather than changing them automatically.
+MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer reports those preserved notes as blocking range conflicts; Step 24 Auto Fit offers explicit transformations rather than changing them automatically.
 
 MIDI export is a derived interchange view of the accepted TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
 
@@ -84,13 +92,27 @@ Compatibility analysis is read-only advisory logic between editable tune data an
 
 The current exposed Customize controls do not change the fixed comb pitch set, cylinder radius or pin radius used by these tune-specific compatibility checks. Invalid overall mechanism geometry is already rejected before it becomes active. When later Customize phases expose comb/cylinder/pin variants, the live `MusicBoxConfig` must feed the same analyzer rather than creating parallel compatibility rules.
 
+## Mechanical synchronization contract
+
+The mechanism must not have one geometry for computation and another for presentation.
+
+- `tineContactPoint` represents the resting visible free-tine tip.
+- the rendered tine anchor and length are derived from the same mechanism helpers as contact resolution,
+- contact/release logic samples the cylinder phase path between rendered frames instead of assuming the final frame position tells the complete mechanical story,
+- a release transition carries the last mechanically derived tine-load angle into free vibration so the motion is continuous,
+- that same transition calls music-box pluck audio; there is no note timer,
+- Web Audio context startup is requested from Play/manual-crank user gestures before a later release event,
+- changing mechanism geometry clears stale engagement/load/vibration state before new contact is resolved.
+
+The hotfix was required because the previous runtime violated these rules despite passing event-count tests: the computed contact point was at y=0 while rendered tine tips rested at y=0.23, and release detection observed only one final phase per render frame. Close runtime inspection therefore remains a required acceptance layer in addition to deterministic unit tests.
+
 ## Benchmark-first verification rule
 
 Development does not assume high traffic or many manual tests. After the composition/import path exists, maintain synthetic tune and controlled synthetic-audio fixtures covering range, density, timing, simultaneous notes, known-invalid cases and recognition conditions.
 
 Mic/audio recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
 
-Compatibility fixtures now cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Later benchmark steps broaden these into a larger tune set and requirement report.
+Compatibility fixtures cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Mechanical causality fixtures must additionally cover coarse cylinder sampling so contact/release counts are stable across materially different render rates.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -112,10 +134,13 @@ The first realism pass exposes connected comb/cylinder/gear/crank relationships 
 
 That pass will improve machining detail, wood/brass/steel response, fasteners, bearings, comb/tine construction, enclosure presentation, lighting and camera while preserving the same causal timing model.
 
+Visual quality can never override mechanical causality: if a visually plausible motion does not occur at the same contact/release event used by the mechanism, it is a defect rather than polish.
+
 ## Audio quality scope
 
 - every audible tine sound is triggered by release/pluck,
 - no independent scheduler decides when preset or user-composed notes sound,
+- Web Audio should already be running from the initiating user gesture before a later mechanical release whenever browser policy permits,
 - compact procedural synthesis is acceptable until later resonance work,
 - future material/resonance changes affect timbre only through an explicit model,
 - future audio/video exports render or record the same mechanically driven result rather than a detached rendition.
@@ -128,7 +153,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-22 are complete on main. Step 23 compatibility analyzer is active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). Completion requires a non-destructive report for range, simultaneous starts, density and pin spacing; clear blocking-vs-review status; Compose UI visibility for normal editing and recognition candidates; EN/JA copy; unit fixtures; and desktop/mobile browser evidence. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
+Steps 1-23 are complete on main through PR #31 (`7fbaa15573ae82a2797a9fb93741f8cdc6a83361`). Step 24 Auto Fit exists in PR #32 but is blocked. PR #33 on `fix/music-box-causality-sync` is the active lane and must pass geometry/contact/release/audio regression tests plus desktop/mobile close runtime inspection before Step 24 resumes. After the hotfix merges, PR #32 must be rebased onto corrected main and fully reverified before it can merge.
 
 ## Scope rule
 
