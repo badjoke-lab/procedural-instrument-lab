@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { AudioFileImport } from './AudioFileImport'
 import { AudioMelodyExtractor } from './AudioMelodyExtractor'
 import { MusicBoxAudio } from './audio'
+import { AutoFitPanel } from './AutoFitPanel'
+import type { AutoFitResult } from './auto-fit'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
@@ -37,6 +39,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [recognitionCandidate, setRecognitionCandidate] = useState<PianoRollDraft | null>(null)
+  const [fitProposal, setFitProposal] = useState<AutoFitResult | null>(null)
   const workingDocument = recognitionCandidate ?? document
   const selected = workingDocument.notes.find((note) => note.id === selectedNoteId) ?? workingDocument.notes[0]
   const columns = Math.max(1, Math.ceil(workingDocument.lengthBeats))
@@ -56,10 +59,12 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
 
   useEffect(() => {
     setRecognitionCandidate(null)
+    setFitProposal(null)
     setSelectedNoteId(document.notes[0]?.id ?? '')
   }, [document.id])
 
   const updateWorkingDocument = (next: PianoRollDraft) => {
+    setFitProposal(null)
     if (recognitionCandidate) setRecognitionCandidate(next)
     else onChange(next)
   }
@@ -88,11 +93,13 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   }
 
   const stageRecognizedTune = (next: PianoRollDraft) => {
+    setFitProposal(null)
     setRecognitionCandidate(next)
     setSelectedNoteId(next.notes[0]?.id ?? '')
   }
 
   const importMidi = (next: PianoRollDraft) => {
+    setFitProposal(null)
     setRecognitionCandidate(null)
     setSelectedNoteId(next.notes[0]?.id ?? '')
     onChange(next)
@@ -101,12 +108,14 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const acceptRecognition = () => {
     if (!recognitionCandidate) return
     const next = recognitionCandidate
+    setFitProposal(null)
     setRecognitionCandidate(null)
     onChange(next)
     setSelectedNoteId(next.notes[0]?.id ?? '')
   }
 
   const discardRecognition = () => {
+    setFitProposal(null)
     setRecognitionCandidate(null)
     setSelectedNoteId(document.notes[0]?.id ?? '')
   }
@@ -187,6 +196,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       </div>}
 
       <CompatibilityPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} />
+      <AutoFitPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} proposal={fitProposal} onProposal={setFitProposal} />
 
       <ScreenKeyboard document={workingDocument} onChange={updateWorkingDocument} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
