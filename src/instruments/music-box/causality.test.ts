@@ -4,6 +4,7 @@ import {
   compileTune,
   driveKinematics,
   pinTineEngagement,
+  sampleCylinderPhaseSegment,
   type NoteEvent,
 } from './mechanism'
 
@@ -25,24 +26,29 @@ function sampleOneCylinderRevolution(frames: number) {
   const releases: number[] = []
   let sawLoadedTine = false
 
-  // cylinderPhase = -crankAngle * ratio, so this crank span advances one full cylinder turn.
+  // Decreasing crank angle advances cylinderPhase in the positive direction.
   const ratio = config.driverGearTeeth / config.cylinderGearTeeth
   const crankSpan = (Math.PI * 2) / ratio
   const startCrank = 0.37
+  let previousPhase = driveKinematics(startCrank, config).cylinderPhase
 
-  for (let frame = 0; frame <= frames; frame += 1) {
+  for (let frame = 1; frame <= frames; frame += 1) {
     const crankAngle = startCrank - (frame / frames) * crankSpan
     const drive = driveKinematics(crankAngle, config)
 
-    pins.forEach((pin, index) => {
-      const state = pinTineEngagement(pin, drive.cylinderPhase, config)
-      if (state.engaged) {
-        engaged.add(index)
-        if (state.deflection > 0) sawLoadedTine = true
-      } else if (engaged.delete(index)) {
-        releases.push(pin.noteIndex)
-      }
-    })
+    for (const phase of sampleCylinderPhaseSegment(previousPhase, drive.cylinderPhase)) {
+      pins.forEach((pin, index) => {
+        const state = pinTineEngagement(pin, phase, config, 1)
+        if (state.engaged) {
+          engaged.add(index)
+          if (state.deflection > 0) sawLoadedTine = true
+        } else if (engaged.delete(index)) {
+          releases.push(pin.noteIndex)
+        }
+      })
+    }
+
+    previousPhase = drive.cylinderPhase
   }
 
   return { releases, sawLoadedTine }
@@ -56,8 +62,8 @@ describe('music box mechanical causality', () => {
     expect(drive.cylinderPhase).toBe(drive.cylinderGearAngle)
   })
 
-  it('loads a tine before release and produces exactly one release per pin per cylinder revolution', () => {
-    const coarse = sampleOneCylinderRevolution(360)
+  it('loads a tine before release and produces exactly one release per pin even at coarse render sampling', () => {
+    const coarse = sampleOneCylinderRevolution(24)
     const fine = sampleOneCylinderRevolution(1440)
 
     expect(coarse.sawLoadedTine).toBe(true)
