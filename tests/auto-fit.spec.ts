@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 function conflictMidiFixture(): Buffer {
   const track = [
@@ -16,7 +16,7 @@ function conflictMidiFixture(): Buffer {
   ])
 }
 
-async function importConflictMidi(page: Parameters<typeof test>[0] extends never ? never : any) {
+async function importConflictMidi(page: Page) {
   const importer = page.getByRole('region', { name: 'Import MIDI' })
   await importer.locator('input[type="file"]').setInputFiles({
     name: 'auto-fit-conflict.mid',
