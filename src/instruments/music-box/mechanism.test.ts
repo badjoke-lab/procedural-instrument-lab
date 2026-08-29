@@ -5,6 +5,7 @@ import {
   compileTune,
   driveKinematics,
   gearRatio,
+  pinContactHalfAngle,
   pinTineEngagement,
   pinTouchesTine,
   sampleCylinderPhaseSegment,
@@ -73,7 +74,7 @@ describe('music box contact geometry', () => {
     expect(tineLength(pin.noteIndex, config)).toBeCloseTo(anchor.x - contact.x, 10)
     expect(Math.abs(tip.y - contact.y)).toBeLessThan(config.contactTolerance)
     expect(state.engaged).toBe(true)
-    expect(state.deflection).toBeGreaterThan(0)
+    expect(state.deflection).toBeCloseTo(0.5, 1)
     expect(pinTouchesTine(pin, phase, config)).toBe(true)
   })
 
@@ -82,15 +83,32 @@ describe('music box contact geometry', () => {
     expect(pinTineEngagement(pin, 0, config).engaged).toBe(false)
   })
 
-  it('derives progressively smaller loading toward the visible contact edge', () => {
+  it('keeps loading the tine monotonically until release in forward motion', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
     const centerPhase = closestVisibleContactPhase(pin.angle)
-    const centered = pinTineEngagement(pin, centerPhase, config)
-    const nearEdge = pinTineEngagement(pin, centerPhase + 0.04, config)
+    const halfAngle = pinContactHalfAngle(config)
+    const entry = pinTineEngagement(pin, centerPhase + halfAngle * 0.8, config, -1)
+    const middle = pinTineEngagement(pin, centerPhase, config, -1)
+    const beforeRelease = pinTineEngagement(pin, centerPhase - halfAngle * 0.8, config, -1)
 
-    expect(nearEdge.engaged).toBe(true)
-    expect(nearEdge.deflection).toBeGreaterThan(0)
-    expect(nearEdge.deflection).toBeLessThan(centered.deflection)
+    expect(entry.engaged).toBe(true)
+    expect(beforeRelease.engaged).toBe(true)
+    expect(entry.deflection).toBeLessThan(middle.deflection)
+    expect(middle.deflection).toBeLessThan(beforeRelease.deflection)
+    expect(beforeRelease.deflection).toBeGreaterThan(0.8)
+  })
+
+  it('mirrors the loading progression when the cylinder is manually reversed', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    const centerPhase = closestVisibleContactPhase(pin.angle)
+    const halfAngle = pinContactHalfAngle(config)
+    const entry = pinTineEngagement(pin, centerPhase - halfAngle * 0.8, config, 1)
+    const middle = pinTineEngagement(pin, centerPhase, config, 1)
+    const beforeRelease = pinTineEngagement(pin, centerPhase + halfAngle * 0.8, config, 1)
+
+    expect(entry.deflection).toBeLessThan(middle.deflection)
+    expect(middle.deflection).toBeLessThan(beforeRelease.deflection)
+    expect(beforeRelease.deflection).toBeGreaterThan(0.8)
   })
 
   it('loads the tine away from the approaching pin and scales the angle from real contact tolerance', () => {
@@ -111,7 +129,7 @@ describe('music box contact geometry', () => {
 
   it('subsamples coarse phase jumps so a contact zone cannot be skipped', () => {
     const samples = sampleCylinderPhaseSegment(0, 0.4)
-    expect(samples.length).toBeGreaterThan(10)
+    expect(samples.length).toBeGreaterThan(50)
     expect(samples.at(-1)).toBeCloseTo(0.4, 10)
   })
 
