@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
+  TINE_REST_Y,
   compileTune,
   driveKinematics,
   gearRatio,
   pinTineEngagement,
   pinTouchesTine,
+  sampleCylinderPhaseSegment,
+  tineAnchorPoint,
   tineContactPoint,
+  tineLength,
+  tineLoadAngle,
   pinTipWorldPosition,
   validateMusicBoxConfig,
   type MusicBoxConfig,
@@ -25,63 +30,76 @@ const tune: NoteEvent[] = [
   { note: 72, start: 0.875 },
 ]
 
+function closestVisibleContactPhase(pinAngle = 0) {
+  const contact = tineContactPoint(0, config)
+  const [cx, cy] = config.cylinderCenter
+  return Math.atan2(contact.y - cy, contact.x - cx) - pinAngle
+}
+
 function countReleases(framesPerRevolution: number) {
   const pins = compileTune(tune, config)
   const engaged = new Set<number>()
   const startPhase = 0.2
   let releases = 0
+  let previousPhase = startPhase
 
-  for (let frame = 0; frame < framesPerRevolution; frame += 1) {
+  for (let frame = 1; frame <= framesPerRevolution; frame += 1) {
     const phase = startPhase + (frame / framesPerRevolution) * Math.PI * 2
-
-    pins.forEach((pin, index) => {
-      const state = pinTineEngagement(pin, phase, config)
-      if (state.engaged) engaged.add(index)
-      if (!state.engaged && engaged.has(index)) {
-        engaged.delete(index)
-        releases += 1
-      }
-    })
+    for (const sampledPhase of sampleCylinderPhaseSegment(previousPhase, phase)) {
+      pins.forEach((pin, index) => {
+        const state = pinTineEngagement(pin, sampledPhase, config)
+        if (state.engaged) engaged.add(index)
+        if (!state.engaged && engaged.delete(index)) releases += 1
+      })
+    }
+    previousPhase = phase
   }
 
   return releases
 }
 
 describe('music box contact geometry', () => {
-  it('places a pin tip on its tine contact point at the matching phase', () => {
+  it('resolves contact against the same visible resting tine tip instead of an abstract y=0 point', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    const tip = pinTipWorldPosition(pin, 0, config)
     const contact = tineContactPoint(pin.noteIndex, config)
-    const state = pinTineEngagement(pin, 0, config)
+    const anchor = tineAnchorPoint(pin.noteIndex, config)
+    const phase = closestVisibleContactPhase(pin.angle)
+    const tip = pinTipWorldPosition(pin, phase, config)
+    const state = pinTineEngagement(pin, phase, config)
 
-    expect(tip.x).toBeCloseTo(contact.x, 10)
-    expect(tip.y).toBeCloseTo(contact.y, 10)
-    expect(tip.z).toBeCloseTo(contact.z, 10)
+    expect(contact.y).toBeCloseTo(config.cylinderCenter[1] + TINE_REST_Y, 10)
+    expect(anchor.y).toBeCloseTo(contact.y, 10)
+    expect(anchor.z).toBeCloseTo(contact.z, 10)
+    expect(tineLength(pin.noteIndex, config)).toBeCloseTo(anchor.x - contact.x, 10)
+    expect(Math.abs(tip.y - contact.y)).toBeLessThan(config.contactTolerance)
     expect(state.engaged).toBe(true)
-    expect(state.deflection).toBeCloseTo(1, 10)
-    expect(pinTouchesTine(pin, 0, config)).toBe(true)
+    expect(state.deflection).toBeGreaterThan(0)
+    expect(pinTouchesTine(pin, phase, config)).toBe(true)
   })
 
-  it('matches contact geometry to the same cylinder phase used by rendering', () => {
-    const [pin] = compileTune([{ note: 64, start: 0.25 }], config)
-    const renderedContactPhase = -pin.angle
-    const tip = pinTipWorldPosition(pin, renderedContactPhase, config)
-    const contact = tineContactPoint(pin.noteIndex, config)
-
-    expect(tip.x).toBeCloseTo(contact.x, 10)
-    expect(tip.y).toBeCloseTo(contact.y, 10)
-    expect(tip.z).toBeCloseTo(contact.z, 10)
-    expect(pinTineEngagement(pin, renderedContactPhase, config).engaged).toBe(true)
-  })
-
-  it('derives progressively smaller deflection toward the edge of engagement', () => {
+  it('does not claim contact at the old rightmost-cylinder point while the visible tine is still separated', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    const centered = pinTineEngagement(pin, 0, config)
-    const nearEdge = pinTineEngagement(pin, config.contactTolerance / (config.cylinderRadius + config.pinLength) * 0.75, config)
+    expect(pinTineEngagement(pin, 0, config).engaged).toBe(false)
+  })
+
+  it('derives progressively smaller loading toward the visible contact edge', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    const centerPhase = closestVisibleContactPhase(pin.angle)
+    const centered = pinTineEngagement(pin, centerPhase, config)
+    const nearEdge = pinTineEngagement(pin, centerPhase + 0.04, config)
 
     expect(nearEdge.engaged).toBe(true)
     expect(nearEdge.deflection).toBeGreaterThan(0)
     expect(nearEdge.deflection).toBeLessThan(centered.deflection)
+  })
+
+  it('loads the tine away from the approaching pin and scales the angle from real contact tolerance', () => {
+    const forward = tineLoadAngle(0, 0.7, -1, config)
+    const reverse = tineLoadAngle(0, 0.7, 1, config)
+    expect(forward).toBeGreaterThan(0)
+    expect(reverse).toBeLessThan(0)
+    expect(Math.abs(forward)).toBeLessThan(0.1)
+    expect(Math.abs(reverse)).toBeCloseTo(Math.abs(forward), 10)
   })
 
   it('does not report engagement a quarter turn away', () => {
@@ -91,8 +109,14 @@ describe('music box contact geometry', () => {
     expect(state.deflection).toBe(0)
   })
 
-  it('produces one release per pin across a full revolution at different sampling rates', () => {
-    expect(countReleases(240)).toBe(tune.length)
+  it('subsamples coarse phase jumps so a contact zone cannot be skipped', () => {
+    const samples = sampleCylinderPhaseSegment(0, 0.4)
+    expect(samples.length).toBeGreaterThan(10)
+    expect(samples.at(-1)).toBeCloseTo(0.4, 10)
+  })
+
+  it('produces one release per pin across a full revolution at very different render sampling rates', () => {
+    expect(countReleases(24)).toBe(tune.length)
     expect(countReleases(576)).toBe(tune.length)
   })
 })
