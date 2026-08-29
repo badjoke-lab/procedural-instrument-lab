@@ -309,8 +309,8 @@ export function pinContactWindow(
   if (!release || release.travelAngle >= Math.PI) return null
 
   return {
-    entryAngle: normalizePositiveAngle(entryAngle - pin.angle + pin.angle),
-    releaseAngle: normalizePositiveAngle(release.releaseAngle - pin.angle + pin.angle),
+    entryAngle,
+    releaseAngle: release.releaseAngle,
     travelAngle: release.travelAngle,
   }
 }
@@ -339,20 +339,16 @@ function loadAngleAtContact(
 }
 
 /**
- * Resolve pin/tine contact from the same visible pin sphere and rotated tine geometry that is rendered.
- * The contact window starts when the sphere first touches the resting tine surface and ends when the
- * configured elastic tip travel is reached; the pin then slips off and emits the release/pluck event.
+ * Resolve contact from the same visible pin sphere and rotated tine geometry that is rendered.
+ * Contact starts when the sphere first touches the resting tine surface. It ends at the configured
+ * elastic tip travel, where the pin slips off and the release/pluck event is emitted.
  */
 export function pinTineEngagement(
   pin: Pin,
   phase: number,
-  motionDirectionOrConfig: number | MusicBoxConfig,
-  maybeConfig?: MusicBoxConfig,
+  config: MusicBoxConfig,
+  motionDirection = -1,
 ): PinTineEngagement {
-  const motionDirection = typeof motionDirectionOrConfig === 'number' ? motionDirectionOrConfig : -1
-  const config = typeof motionDirectionOrConfig === 'number' ? maybeConfig : motionDirectionOrConfig
-  if (!config) throw new Error('MusicBoxConfig is required')
-
   const direction = Math.sign(motionDirection) || -1
   const pinTip = pinTipWorldPosition(pin, phase, config)
   const restTip = tineContactPoint(pin.noteIndex, config)
@@ -379,10 +375,10 @@ export function pinTineEngagement(
 export function pinTouchesTine(
   pin: Pin,
   phase: number,
-  motionDirectionOrConfig: number | MusicBoxConfig,
-  maybeConfig?: MusicBoxConfig,
+  config: MusicBoxConfig,
+  motionDirection = -1,
 ) {
-  return pinTineEngagement(pin, phase, motionDirectionOrConfig as number, maybeConfig as MusicBoxConfig).engaged
+  return pinTineEngagement(pin, phase, config, motionDirection).engaged
 }
 
 /**
