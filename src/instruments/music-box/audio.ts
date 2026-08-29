@@ -36,20 +36,20 @@ export class MusicBoxAudio {
     return this.ctx
   }
 
-  /**
-   * Call from the Play/manual-crank user gesture so a later mechanical release
-   * never has to wait for a suspended AudioContext before it can sound.
-   */
+  /** Prepare audio from a user gesture before any mechanism movement is allowed to release a tine. */
   async unlock() {
     const ctx = this.ensureContext()
     if (ctx.state === 'suspended') await ctx.resume()
     return ctx.state === 'running'
   }
 
-  async pluck(note: number) {
-    const ctx = this.ensureContext()
-    if (ctx.state === 'suspended') await ctx.resume()
-    if (ctx.state !== 'running' || !this.resonator) return
+  /**
+   * Release-time audio is deliberately synchronous with the mechanical event.
+   * Never resume/create audio here: doing so can turn one release into a visibly late sound.
+   */
+  pluck(note: number) {
+    const ctx = this.ctx
+    if (!ctx || ctx.state !== 'running' || !this.resonator) return false
 
     const now = ctx.currentTime
     const frequency = midiToHz(note)
@@ -71,6 +71,7 @@ export class MusicBoxAudio {
     }
 
     this.contactClick(now)
+    return true
   }
 
   private contactClick(now: number) {
