@@ -66,9 +66,9 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import and audio-file melody extraction are merged. Recognition correction UI is the active lane, followed by compatibility analysis and Auto Fit to Music Box.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction and recognition correction are merged. Compatibility analysis is the active lane, followed by Auto Fit to Music Box.
 
-MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. Until Compatibility/Auto Fit exists, the current physical preview only generates pins for notes supported by the current comb and the UI must disclose any preserved out-of-range notes.
+MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer now reports those preserved notes as blocking range conflicts; Step 24 Auto Fit will offer explicit transformations rather than changing them automatically.
 
 MIDI export is a derived interchange view of the accepted TuneDocument, not an alternate source of runtime timing. The first exporter writes Standard MIDI File format 0 at 480 PPQ and preserves pitch, beat timing, duration and the current single TuneDocument tempo. Valid pitches outside the current physical comb remain in the exported file.
 
@@ -80,11 +80,17 @@ Audio-file import follows the same source-media boundary. A user explicitly sele
 
 Recognition correction is a staging boundary between recognition and mechanical compilation. A candidate TuneDocument is shown in the existing piano roll and can be corrected using pitch, start, duration, add/remove and keyboard editing. The previously accepted TuneDocument remains the only source allowed to regenerate cylinder pins until the user chooses `Accept recognized melody`. `Discard candidate` restores the accepted tune unchanged. MIDI export continues to export only the accepted tune.
 
+Compatibility analysis is read-only advisory logic between editable tune data and later Auto Fit. It checks the editable document currently shown in Compose, including a staged recognition candidate, against current comb/cylinder pin constraints. It reports out-of-range pitches, simultaneous starts, same-lane density and pin-spacing conflicts. Simultaneous starts are review warnings because the current model can align pins across separate tine lanes; range, density and direct pin-spacing conflicts are blocking. The analyzer must never transpose, quantize, delete, simplify or accept a candidate on the user's behalf.
+
+The current exposed Customize controls do not change the fixed comb pitch set, cylinder radius or pin radius used by these tune-specific compatibility checks. Invalid overall mechanism geometry is already rejected before it becomes active. When later Customize phases expose comb/cylinder/pin variants, the live `MusicBoxConfig` must feed the same analyzer rather than creating parallel compatibility rules.
+
 ## Benchmark-first verification rule
 
 Development does not assume high traffic or many manual tests. After the composition/import path exists, maintain synthetic tune and controlled synthetic-audio fixtures covering range, density, timing, simultaneous notes, known-invalid cases and recognition conditions.
 
 Mic/audio recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
+
+Compatibility fixtures now cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Later benchmark steps broaden these into a larger tune set and requirement report.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -122,7 +128,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-21 are complete on main. Step 22 recognition correction UI is active on `feat/music-box-recognition-correction`. Completion requires recognition candidates to remain staged until explicit acceptance, correction through the existing piano roll, discard without accepted-tune mutation, accepted-tune-only MIDI export/mechanical compilation, EN/JA review controls and desktop/mobile browser evidence. After Step 22 is green and merged, proceed to Step 23 compatibility analyzer.
+Steps 1-22 are complete on main. Step 23 compatibility analyzer is active on `feat/music-box-compatibility-analyzer` / PR #31 (replacement merge PR for closed draft #30). Completion requires a non-destructive report for range, simultaneous starts, density and pin spacing; clear blocking-vs-review status; Compose UI visibility for normal editing and recognition candidates; EN/JA copy; unit fixtures; and desktop/mobile browser evidence. After Step 23 is green and merged, proceed to Step 24 Auto Fit to Music Box.
 
 ## Scope rule
 

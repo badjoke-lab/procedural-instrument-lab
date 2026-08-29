@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { AudioFileImport } from './AudioFileImport'
 import { AudioMelodyExtractor } from './AudioMelodyExtractor'
 import { MusicBoxAudio } from './audio'
+import { CompatibilityPanel } from './CompatibilityPanel'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
 import { MidiExport } from './MidiExport'
@@ -184,6 +185,8 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
           <button type="button" onClick={discardRecognition}>{japanese ? '候補を破棄' : 'Discard candidate'}</button>
         </div>
       </div>}
+
+      <CompatibilityPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} />
 
       <ScreenKeyboard document={workingDocument} onChange={updateWorkingDocument} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
