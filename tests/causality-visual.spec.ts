@@ -58,7 +58,10 @@ async function saveContactCrop(page: Page, path: string) {
 }
 
 async function reduceTuneToOneC4AtBeatZero(page: Page) {
-  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  const compose = page.locator('#compose')
+  await compose.locator('summary').click()
+  await expect(compose).toHaveAttribute('open', '')
+
   const notes = page.locator('.piano-roll-note')
   const remove = page.getByRole('button', { name: 'Remove note' })
   const initialCount = await notes.count()
@@ -76,8 +79,8 @@ async function reduceTuneToOneC4AtBeatZero(page: Page) {
   await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
 
   // Close Compose again so the retained canvas evidence has the normal mechanism framing.
-  await page.locator('#compose > summary').click()
-  await expect(page.locator('#compose')).not.toHaveAttribute('open', '')
+  await compose.locator('summary').click()
+  await expect(compose).not.toHaveAttribute('open', '')
 }
 
 test('retain frozen single-pin loading and release evidence from the real contact window', async ({ page }, testInfo) => {
