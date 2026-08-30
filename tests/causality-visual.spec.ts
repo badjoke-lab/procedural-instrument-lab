@@ -39,7 +39,6 @@ async function runForAndFreeze(page: Page, transport: Locator, durationMs: numbe
   await page.waitForTimeout(Math.max(0, durationMs - activationDelay))
   await transport.click()
   await expect(transport).toHaveText('Play')
-  // Allow React/R3F to render the stopped drive state before taking the retained frame.
   await page.waitForTimeout(34)
 }
 
@@ -58,12 +57,36 @@ async function saveContactCrop(page: Page, path: string) {
   })
 }
 
-test('retain frozen pin tine loading and release evidence from the real contact window', async ({ page }, testInfo) => {
+async function reduceTuneToOneC4AtBeatZero(page: Page) {
+  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  const notes = page.locator('.piano-roll-note')
+  const remove = page.getByRole('button', { name: 'Remove note' })
+  const initialCount = await notes.count()
+  expect(initialCount).toBeGreaterThan(1)
+
+  for (let count = initialCount; count > 1; count -= 1) {
+    await remove.click()
+    await expect(notes).toHaveCount(count - 1)
+  }
+
+  const inspector = page.locator('.piano-roll-inspector')
+  await inspector.locator('select').selectOption('60')
+  await inspector.locator('input[type="number"]').first().fill('0')
+  await expect(notes).toHaveCount(1)
+  await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
+
+  // Close Compose again so the retained canvas evidence has the normal mechanism framing.
+  await page.locator('#compose > summary').click()
+  await expect(page.locator('#compose')).not.toHaveAttribute('open', '')
+}
+
+test('retain frozen single-pin loading and release evidence from the real contact window', async ({ page }, testInfo) => {
   test.setTimeout(120_000)
   await page.goto('/')
 
   const canvas = page.locator('canvas')
   await expect(canvas).toBeVisible()
+  await reduceTuneToOneC4AtBeatZero(page)
 
   const speed = page.locator('#speed-control')
   await speed.focus()
@@ -75,8 +98,6 @@ test('retain frozen pin tine loading and release evidence from the real contact 
   const loadingBAt = millisecondsFromRunStart(0.82)
   const releaseAt = millisecondsFromRunStart(1.03)
 
-  // Freeze the cylinder before every screenshot. Screenshot/encoding time must never advance
-  // the mechanism between evidence phases.
   await runForAndFreeze(page, transport, loadingAAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-a.png'))
 
