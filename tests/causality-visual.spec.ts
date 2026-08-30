@@ -63,7 +63,7 @@ async function reduceTuneToOneC4AtBeatZero(page: Page) {
   await expect(compose).toHaveAttribute('open', '')
 
   const notes = page.locator('.piano-roll-note')
-  const remove = page.getByRole('button', { name: 'Remove note' })
+  const remove = compose.getByRole('button', { name: 'Remove', exact: true })
   const initialCount = await notes.count()
   expect(initialCount).toBeGreaterThan(1)
 
