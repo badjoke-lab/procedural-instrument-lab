@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
@@ -30,6 +30,19 @@ function millisecondsFromRunStart(progress: number) {
   return ((targetDriveAngle - INITIAL_DRIVE_ANGLE) / EVIDENCE_SPEED) * 1000
 }
 
+async function runForAndFreeze(page: Page, transport: Locator, durationMs: number) {
+  const activationStartedAt = Date.now()
+  await transport.click()
+  await expect(transport).toHaveText('Stop')
+  const activationDelay = Date.now() - activationStartedAt
+
+  await page.waitForTimeout(Math.max(0, durationMs - activationDelay))
+  await transport.click()
+  await expect(transport).toHaveText('Play')
+  // Allow React/R3F to render the stopped drive state before taking the retained frame.
+  await page.waitForTimeout(34)
+}
+
 async function saveContactCrop(page: Page, path: string) {
   const canvas = page.locator('canvas')
   const box = await canvas.boundingBox()
@@ -45,7 +58,7 @@ async function saveContactCrop(page: Page, path: string) {
   })
 }
 
-test('retain close pin tine loading and release evidence from the real contact window', async ({ page }, testInfo) => {
+test('retain frozen pin tine loading and release evidence from the real contact window', async ({ page }, testInfo) => {
   test.setTimeout(120_000)
   await page.goto('/')
 
@@ -58,24 +71,20 @@ test('retain close pin tine loading and release evidence from the real contact w
   await expect(speed).toHaveValue(String(EVIDENCE_SPEED))
 
   const transport = page.locator('header .controls > button').first()
-  const clickStartedAt = Date.now()
-  await transport.click()
-  await expect(transport).toHaveText('Stop')
-  const activationDelay = Date.now() - clickStartedAt
-
   const loadingAAt = millisecondsFromRunStart(0.2)
   const loadingBAt = millisecondsFromRunStart(0.82)
-  const releaseAt = millisecondsFromRunStart(1.08)
+  const releaseAt = millisecondsFromRunStart(1.03)
 
-  await page.waitForTimeout(Math.max(0, loadingAAt - activationDelay))
+  // Freeze the cylinder before every screenshot. Screenshot/encoding time must never advance
+  // the mechanism between evidence phases.
+  await runForAndFreeze(page, transport, loadingAAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-a.png'))
 
-  await page.waitForTimeout(Math.max(0, loadingBAt - loadingAAt))
+  await runForAndFreeze(page, transport, loadingBAt - loadingAAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-b.png'))
 
-  await page.waitForTimeout(Math.max(0, releaseAt - loadingBAt))
+  await runForAndFreeze(page, transport, releaseAt - loadingBAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-release.png'))
 
-  await transport.click()
   await expect(transport).toHaveText('Play')
 })
