@@ -1,0 +1,16 @@
+.auto-fit-panel { margin-bottom: 14px; }
+.auto-fit-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.auto-fit-option { align-items: flex-start; gap: 8px; padding: 9px; border: 1px solid #303036; border-radius: 8px; background: #101014; }
+.auto-fit-option input { margin-top: 3px; accent-color: #d6bb72; }
+.auto-fit-option span { min-width: 0; }
+.auto-fit-option strong { display: block; color: #e4e4e8; font-size: 12px; line-height: 1.35; }
+.auto-fit-option small { display: block; margin-top: 4px; color: #9999a2; font-size: 11px; line-height: 1.4; }
+.auto-fit-quantize { justify-content: space-between; padding: 9px; border: 1px solid #303036; border-radius: 8px; background: #101014; }
+.auto-fit-quantize > span { color: #e4e4e8; }
+.auto-fit-result { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; padding: 9px; border: 1px solid #635b3e; border-radius: 8px; background: #1c1a13; color: #cfcfd6; font-size: 12px; line-height: 1.45; }
+.auto-fit-result > strong { color: #f0d58a; }
+.auto-fit-result > small { flex-basis: 100%; color: #aaaab2; }
+@media (max-width: 760px) {
+  .auto-fit-options { grid-template-columns: 1fr; }
+  .auto-fit-quantize { align-items: center; }
+}
