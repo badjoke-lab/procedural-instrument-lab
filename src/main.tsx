@@ -166,8 +166,8 @@ function Mechanism({
     manualTargetPending.current = false
     manualAudioReady.current = false
     void audio.unlock()
-      .catch(() => false)
-      .finally(() => { manualAudioReady.current = true })
+      .then((ready) => { manualAudioReady.current = ready })
+      .catch(() => { manualAudioReady.current = false })
     const target = event.target as HTMLElement
     target.setPointerCapture?.(event.pointerId)
     onManualStart()
@@ -558,10 +558,10 @@ function App() {
     setAudioStarting(true)
     void audio.unlock()
       .catch(() => false)
-      .then(() => {
+      .then((ready) => {
         if (playRequest.current !== request) return
         setAudioStarting(false)
-        setRunning(true)
+        if (ready) setRunning(true)
       })
   }
 
