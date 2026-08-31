@@ -33,11 +33,13 @@ Before Phase 5 completion, confirm all of the following:
 - that same release/pluck event starts free tine vibration and audible output,
 - free vibration starts continuously from the actual release deflection rather than snapping to an unrelated amplitude/phase,
 - free vibration visibly decays after release,
-- visual amplification, if used, changes only displayed amplitude and not contact/release timing,
-- contact/release traversal remains correct at maximum supported speed and coarse render sampling; a contact window must not be skipped between frames,
+- visual amplification, if used, must remain a mechanically valid shared state rather than a detached animation or timer,
+- if one requested render step would enter and leave a complete pin/tine contact before either endpoint can be presented, the whole drive state (crank, gears and cylinder) must first present a real solver-derived engaged phase before release is allowed,
+- contact/release traversal remains correct at maximum supported speed and coarse render sampling; event subsampling alone is insufficient if the visible mechanism can still skip the entire engagement,
 - autoplay and manual crank use the same engagement/deflection/release path,
 - reverse/manual motion does not create detached audio scheduling,
-- Play/manual-crank user gestures make Web Audio ready before later mechanical release events so first-release sound does not wait on context startup.
+- Play/manual-crank user gestures must make Web Audio actually reach a running state before mechanical motion is allowed; requesting resume without success is not sufficient,
+- first-release sound must not wait on AudioContext startup after the visible release.
 
 ## Geometry / visual realism
 
