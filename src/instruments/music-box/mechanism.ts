@@ -66,7 +66,7 @@ export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   pinLength: 0.18,
   pinRadius: 0.045,
   tineSpacing: 0.34,
-  contactTolerance: 0.23,
+  contactTolerance: 0.065,
   driverGearTeeth: 40,
   cylinderGearTeeth: 20,
   driverGearRadius: 0.62,
