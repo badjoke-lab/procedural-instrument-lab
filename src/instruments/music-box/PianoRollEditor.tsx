@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { AudioFileImport } from './AudioFileImport'
 import { AudioMelodyExtractor } from './AudioMelodyExtractor'
 import { MusicBoxAudio } from './audio'
+import { AutoFitPanel } from './AutoFitPanel'
+import type { AutoFitResult } from './auto-fit'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
@@ -37,6 +39,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [recognitionCandidate, setRecognitionCandidate] = useState<PianoRollDraft | null>(null)
+  const [fitProposal, setFitProposal] = useState<AutoFitResult | null>(null)
   const workingDocument = recognitionCandidate ?? document
   const selected = workingDocument.notes.find((note) => note.id === selectedNoteId) ?? workingDocument.notes[0]
   const columns = Math.max(1, Math.ceil(workingDocument.lengthBeats))
@@ -56,10 +59,12 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
 
   useEffect(() => {
     setRecognitionCandidate(null)
+    setFitProposal(null)
     setSelectedNoteId(document.notes[0]?.id ?? '')
   }, [document.id])
 
   const updateWorkingDocument = (next: PianoRollDraft) => {
+    setFitProposal(null)
     if (recognitionCandidate) setRecognitionCandidate(next)
     else onChange(next)
   }
@@ -88,11 +93,13 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   }
 
   const stageRecognizedTune = (next: PianoRollDraft) => {
+    setFitProposal(null)
     setRecognitionCandidate(next)
     setSelectedNoteId(next.notes[0]?.id ?? '')
   }
 
   const importMidi = (next: PianoRollDraft) => {
+    setFitProposal(null)
     setRecognitionCandidate(null)
     setSelectedNoteId(next.notes[0]?.id ?? '')
     onChange(next)
@@ -101,12 +108,14 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const acceptRecognition = () => {
     if (!recognitionCandidate) return
     const next = recognitionCandidate
+    setFitProposal(null)
     setRecognitionCandidate(null)
     onChange(next)
     setSelectedNoteId(next.notes[0]?.id ?? '')
   }
 
   const discardRecognition = () => {
+    setFitProposal(null)
     setRecognitionCandidate(null)
     setSelectedNoteId(document.notes[0]?.id ?? '')
   }
@@ -134,59 +143,36 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       }} />
 
       <MicrophoneRecorder onClipChange={setMicrophoneClip} copy={japanese ? {
-        title: 'マイクで録音',
-        intro: '端末のマイクを使って音声を録音します。録音はこのブラウザ内にだけ保持され、単旋律として解析できます。',
-        start: '録音を開始', stop: '録音を停止', discard: '録音を破棄', recording: '録音中です。', ready: '録音しました。ここで試聴できます。', unsupported: 'このブラウザではマイク録音を利用できません。', denied: 'マイクを開始できませんでした。権限を確認してください。', preview: '録音した音声',
+        title: 'マイクで録音', intro: '端末のマイクを使って音声を録音します。録音はこのブラウザ内にだけ保持され、単旋律として解析できます。', start: '録音を開始', stop: '録音を停止', discard: '録音を破棄', recording: '録音中です。', ready: '録音しました。ここで試聴できます。', unsupported: 'このブラウザではマイク録音を利用できません。', denied: 'マイクを開始できませんでした。権限を確認してください。', preview: '録音した音声',
       } : {
-        title: 'Record microphone',
-        intro: 'Capture audio from this device. The recording stays in this browser and can be analyzed as a monophonic melody.',
-        start: 'Start recording', stop: 'Stop recording', discard: 'Discard recording', recording: 'Recording…', ready: 'Recording ready. You can preview it here.', unsupported: 'Microphone recording is not supported in this browser.', denied: 'Could not start the microphone. Check permission and try again.', preview: 'Recorded audio',
+        title: 'Record microphone', intro: 'Capture audio from this device. The recording stays in this browser and can be analyzed as a monophonic melody.', start: 'Start recording', stop: 'Stop recording', discard: 'Discard recording', recording: 'Recording…', ready: 'Recording ready. You can preview it here.', unsupported: 'Microphone recording is not supported in this browser.', denied: 'Could not start the microphone. Check permission and try again.', preview: 'Recorded audio',
       }} />
 
-      <MicMelodyExtractor
-        clip={microphoneClip}
-        tempoBpm={document.tempoBpm}
-        onExtract={stageRecognizedTune}
-        copy={japanese ? {
-          analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
-        } : {
-          analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
-        }}
-      />
+      <MicMelodyExtractor clip={microphoneClip} tempoBpm={document.tempoBpm} onExtract={stageRecognizedTune} copy={japanese ? {
+        analyze: 'メロディーを抽出', analyzing: 'メロディーを解析中…', ready: 'メロディー候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。録り直すか、より明瞭な単音で試してください。',
+      } : {
+        analyze: 'Extract melody', analyzing: 'Analyzing melody…', ready: 'Melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try recording again with a clearer single-note source.',
+      }} />
 
       <AudioFileImport onFileChange={setAudioFile} copy={japanese ? {
-        title: '音声ファイルを読み込む',
-        intro: '端末内の音声ファイルをブラウザ内だけで開きます。対応する単旋律なら、そのまま編集可能な音へ解析できます。',
-        choose: '音声ファイルを選ぶ', ready: '音声ファイルを読み込みました。ここで試聴できます。', discard: 'ファイルを破棄', unsupported: '対応する音声ファイルを選んでください。', preview: '読み込んだ音声',
+        title: '音声ファイルを読み込む', intro: '端末内の音声ファイルをブラウザ内だけで開きます。対応する単旋律なら、そのまま編集可能な音へ解析できます。', choose: '音声ファイルを選ぶ', ready: '音声ファイルを読み込みました。ここで試聴できます。', discard: 'ファイルを破棄', unsupported: '対応する音声ファイルを選んでください。', preview: '読み込んだ音声',
       } : {
-        title: 'Import audio file',
-        intro: 'Open an audio file locally in your browser. Supported monophonic material can then be analyzed into editable notes.',
-        choose: 'Choose audio file', ready: 'Audio file loaded. You can preview it here.', discard: 'Discard file', unsupported: 'Choose a supported audio file.', preview: 'Imported audio',
+        title: 'Import audio file', intro: 'Open an audio file locally in your browser. Supported monophonic material can then be analyzed into editable notes.', choose: 'Choose audio file', ready: 'Audio file loaded. You can preview it here.', discard: 'Discard file', unsupported: 'Choose a supported audio file.', preview: 'Imported audio',
       }} />
 
-      <AudioMelodyExtractor
-        file={audioFile}
-        tempoBpm={document.tempoBpm}
-        onExtract={stageRecognizedTune}
-        copy={japanese ? {
-          analyze: '音声からメロディーを抽出', analyzing: '音声を解析中…', ready: '音声から抽出した候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。より明瞭な単音の音声ファイルを試してください。',
-        } : {
-          analyze: 'Extract melody from audio', analyzing: 'Analyzing audio…', ready: 'Audio melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try a clearer single-note audio file.',
-        }}
-      />
+      <AudioMelodyExtractor file={audioFile} tempoBpm={document.tempoBpm} onExtract={stageRecognizedTune} copy={japanese ? {
+        analyze: '音声からメロディーを抽出', analyzing: '音声を解析中…', ready: '音声から抽出した候補を下のピアノロールに表示しました。確認・修正してから確定してください。', failed: '安定した単旋律を抽出できませんでした。より明瞭な単音の音声ファイルを試してください。',
+      } : {
+        analyze: 'Extract melody from audio', analyzing: 'Analyzing audio…', ready: 'Audio melody candidates are shown in the piano roll below. Review or correct them before accepting.', failed: 'Could not extract a stable monophonic melody. Try a clearer single-note audio file.',
+      }} />
 
       {recognitionCandidate && <div className="piano-roll-heading" role="region" aria-label={japanese ? '認識結果の確認' : 'Review recognized melody'}>
-        <div>
-          <strong>{japanese ? '認識結果を確認' : 'Review recognized melody'}</strong>
-          <span>{japanese ? '下のピアノロールはまだ候補です。音程・開始拍・長さを修正し、よければ確定してください。確定するまでシリンダーのピン配置は変わりません。' : 'The piano roll below is still a candidate. Correct pitch, start beat or duration, then accept it. Cylinder pins do not change until you accept.'}</span>
-        </div>
-        <div className="piano-roll-actions">
-          <button type="button" onClick={acceptRecognition}>{japanese ? '認識結果を確定' : 'Accept recognized melody'}</button>
-          <button type="button" onClick={discardRecognition}>{japanese ? '候補を破棄' : 'Discard candidate'}</button>
-        </div>
+        <div><strong>{japanese ? '認識結果を確認' : 'Review recognized melody'}</strong><span>{japanese ? '下のピアノロールはまだ候補です。音程・開始拍・長さを修正し、よければ確定してください。確定するまでシリンダーのピン配置は変わりません。' : 'The piano roll below is still a candidate. Correct pitch, start beat or duration, then accept it. Cylinder pins do not change until you accept.'}</span></div>
+        <div className="piano-roll-actions"><button type="button" onClick={acceptRecognition}>{japanese ? '認識結果を確定' : 'Accept recognized melody'}</button><button type="button" onClick={discardRecognition}>{japanese ? '候補を破棄' : 'Discard candidate'}</button></div>
       </div>}
 
       <CompatibilityPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} />
+      <AutoFitPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} proposal={fitProposal} onProposal={setFitProposal} />
 
       <ScreenKeyboard document={workingDocument} onChange={updateWorkingDocument} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
@@ -195,10 +181,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       }} />
 
       <div className="piano-roll-scroll"><div className="piano-roll-grid" style={gridStyle}>
-        {PITCHES.map((pitch) => <div className="piano-roll-row" key={pitch}>
-          <span className="piano-roll-key">{PITCH_NAMES[pitch]}</span>
-          <div className="piano-roll-lane">{workingDocument.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / workingDocument.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / workingDocument.lengthBeats) * 100)}%` }} />)}</div>
-        </div>)}
+        {PITCHES.map((pitch) => <div className="piano-roll-row" key={pitch}><span className="piano-roll-key">{PITCH_NAMES[pitch]}</span><div className="piano-roll-lane">{workingDocument.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / workingDocument.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / workingDocument.lengthBeats) * 100)}%` }} />)}</div></div>)}
       </div></div>
 
       {selected ? <div className="piano-roll-inspector">
