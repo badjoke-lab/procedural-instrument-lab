@@ -44,6 +44,12 @@ export type PinContactWindow = {
   travelAngle: number
 }
 
+export type PinRenderGeometry = {
+  stemCenter: Point3
+  tipCenter: Point3
+  rotationZ: number
+}
+
 export const TINE_REST_Y = 0.23
 export const TINE_ANCHOR_X_OFFSET = 2.23
 export const TINE_ANCHOR_X_STEP = 0.042
@@ -66,7 +72,7 @@ export const DEFAULT_MUSIC_BOX_CONFIG: MusicBoxConfig = {
   pinLength: 0.18,
   pinRadius: 0.045,
   tineSpacing: 0.34,
-  contactTolerance: 0.065,
+  contactTolerance: 0.25,
   driverGearTeeth: 40,
   cylinderGearTeeth: 20,
   driverGearRadius: 0.62,
@@ -133,18 +139,35 @@ export function compileTune(events: NoteEvent[], config: MusicBoxConfig): Pin[] 
     .filter((pin) => pin.noteIndex >= 0)
 }
 
+function radialPoint(angle: number, radius: number, axialPosition: number): Point3 {
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    z: axialPosition,
+  }
+}
+
+/** Local pin geometry consumed by the renderer before the cylinder group's phase rotation. */
+export function pinRenderGeometry(pin: Pin, config: MusicBoxConfig): PinRenderGeometry {
+  return {
+    stemCenter: radialPoint(pin.angle, config.cylinderRadius + config.pinLength / 2, pin.axialPosition),
+    tipCenter: radialPoint(pin.angle, config.cylinderRadius + config.pinLength, pin.axialPosition),
+    rotationZ: pin.angle - Math.PI / 2,
+  }
+}
+
 /** Center of the visible spherical pin tip. */
 export function pinTipWorldPosition(pin: Pin, phase: number, config: MusicBoxConfig): Point3 {
   return pinTipWorldPositionAtAngle(pin.angle + phase, pin.axialPosition, config)
 }
 
 function pinTipWorldPositionAtAngle(angle: number, axialPosition: number, config: MusicBoxConfig): Point3 {
-  const radius = config.cylinderRadius + config.pinLength
+  const local = radialPoint(angle, config.cylinderRadius + config.pinLength, axialPosition)
   const [cx, cy, cz] = config.cylinderCenter
   return {
-    x: cx + Math.cos(angle) * radius,
-    y: cy + Math.sin(angle) * radius,
-    z: cz + axialPosition,
+    x: cx + local.x,
+    y: cy + local.y,
+    z: cz + local.z,
   }
 }
 
