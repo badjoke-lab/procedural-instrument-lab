@@ -13,6 +13,7 @@ import {
   compileTune,
   cylinderGearRadius,
   driveKinematics,
+  pinRenderGeometry,
   pinTineEngagement,
   sampleCylinderPhaseSegment,
   tineAnchorPoint,
@@ -288,19 +289,18 @@ function Mechanism({
           </group>
         ))}
         {pins.map((pin, index) => {
-          const radius = config.cylinderRadius + config.pinLength / 2
-          const x = Math.cos(pin.angle) * radius
-          const y = Math.sin(pin.angle) * radius
-          const tipRadius = config.cylinderRadius + config.pinLength
-          const tipX = Math.cos(pin.angle) * tipRadius
-          const tipY = Math.sin(pin.angle) * tipRadius
+          const geometry = pinRenderGeometry(pin, config)
           return (
             <group key={index}>
-              <mesh castShadow position={[x, y, pin.axialPosition]} rotation={[0, 0, pin.angle - Math.PI / 2]}>
+              <mesh
+                castShadow
+                position={[geometry.stemCenter.x, geometry.stemCenter.y, geometry.stemCenter.z]}
+                rotation={[0, 0, geometry.rotationZ]}
+              >
                 <cylinderGeometry args={[config.pinRadius, config.pinRadius * 0.92, config.pinLength, 16]} />
                 <meshStandardMaterial {...steel} roughness={0.2} />
               </mesh>
-              <mesh castShadow position={[tipX, tipY, pin.axialPosition]}>
+              <mesh castShadow position={[geometry.tipCenter.x, geometry.tipCenter.y, geometry.tipCenter.z]}>
                 <sphereGeometry args={[config.pinRadius * PIN_TIP_RADIUS_SCALE, 16, 12]} />
                 <meshStandardMaterial {...steel} roughness={0.18} />
               </mesh>
