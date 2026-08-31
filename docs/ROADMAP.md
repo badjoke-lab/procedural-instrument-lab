@@ -15,7 +15,7 @@ This document controls development order for Procedural Instrument Lab. Read it 
 
 Repository foundation, deterministic drive state, geometry-derived pin/tine engagement, tine deflection, release-driven vibration/audio, direct crank manipulation, initial Customize controls, EN/JA, responsive information architecture, the first geometry/material realism pass, browser gates and GitHub Pages publication are merged on main.
 
-The initial causality implementation later proved insufficient under close real-runtime inspection: its invisible contact reference did not match the rendered free-tine tip, render-frame-only contact sampling could skip narrow contact windows, and first-release audio could wait for Web Audio startup. Those are defects in the foundation rather than later polish and must be repaired before feature progression resumes.
+PR #34 (`c8e066dd36eba1d57d825d2519e00fe05adc5bf7`) is the current merged causality baseline: it aligned rendered pin/tine contact geometry with the solver, traversed coarse phase movement, carried release deflection into vibration and removed release-time Web Audio startup. PR #37 (`2412a3a9363748ba34167d9f5788e44b4495efb6`) then removed duplicated renderer-side pin placement math so rendered pin stem/tip positions and contact-side pin-tip positions share the mechanism geometry source. Neither change closes Issue #10: the user-visible pin/tine/release synchronization defect remains unresolved and continues to block feature progression.
 
 ## Authoritative development order
 
@@ -53,24 +53,24 @@ The initial causality implementation later proved insufficient under close real-
 ### Make ordinary music mechanically playable
 
 23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Complete in PR #31, merged as `7fbaa15573ae82a2797a9fb93741f8cdc6a83361`; final verify/browser run #173 was green.**
-24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation is open in PR #32 but feature progression is blocked by the mechanical-causality hotfix below. PR #32 must not merge until the hotfix is merged and #32 is rebased/reverified.**
+24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation remains open in BLOCKED PR #32. It must not merge until Issue #10's mechanical-causality defect is actually resolved and #32 is rebased/reverified against the accepted mechanism.**
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
 
-### Blocking mechanical-causality hotfix
+### Blocking mechanical-causality repair lane
 
-Before Step 24 can complete, `fix/music-box-causality-sync` / PR #33 must restore the already-required runtime invariant:
+The foundation is partially repaired but still blocked by Issue #10. The active repair rules are:
 
-- the contact resolver and renderer share the same resting free-tine tip and anchor geometry; no hidden y/position offset may define contact,
-- tine loading angle is derived from the same contact geometry rather than an unrelated visual amplitude,
-- cylinder motion is traversed across each phase segment so high speed, low FPS or a large manual drag cannot skip pin/tine engagement or delay release by a render frame,
-- free vibration begins continuously from the actual release deflection,
-- the same release transition starts audible pluck output,
-- Play/manual-crank gestures prime Web Audio before later release events so first-release sound does not wait on AudioContext startup,
-- configuration changes clear stale engagement/vibration state,
-- coarse-sampling unit coverage plus desktop/mobile runtime inspection must pass before merge.
+- PR #34 is the merged baseline for exact pin-sphere / rotated-tine-box contact, coarse phase traversal, release-continuous vibration and synchronous release-driven pluck,
+- PR #37 is merged and makes renderer pin stem/tip placement consume the same mechanism geometry source as contact-side pin-tip placement,
+- Play and manual crank may not begin merely because `AudioContext.resume()` was attempted or resolved; `audio.unlock()` must confirm that the context actually reached `running`,
+- contact resolver and renderer must continue sharing the same resting tine geometry; no hidden y/position offset may define contact,
+- tine loading angle remains derived from contact geometry rather than an unrelated visual amplitude,
+- configuration changes must clear stale engagement/vibration state,
+- the user-visible pin/tine/release synchronization problem remains unresolved until product behavior is actually corrected,
+- automated tests are regression gates, but assistant-side screenshot/artifact judgement is not acceptance evidence for closing Issue #10.
 
-This hotfix is not a new roadmap feature. It repairs a violated acceptance condition that was previously treated as complete.
+This repair lane is not a new roadmap feature. It repairs violated acceptance conditions in the supposedly completed foundation.
 
 ### User-volume-independent benchmark lane
 
@@ -137,7 +137,7 @@ This hotfix is not a new roadmap feature. It repairs a violated acceptance condi
 
 ## Current position
 
-Steps 1-23 are complete on main. PR #32 contains Step 24 Auto Fit work but is explicitly blocked. The active lane is the mechanical-causality repair in PR #33 because real runtime inspection found material visible/audio timing divergence in the supposedly completed foundation. Feature work resumes only after PR #33 passes automated coarse-sampling/contact invariants, desktop/mobile runtime inspection and merge, then PR #32 is rebased and reverified against the corrected mechanism.
+Steps 1-23 are complete on main. PR #34 is the merged causality baseline. PR #37 has merged the shared pin render/contact geometry boundary. Issue #10 remains open because the user-visible pin/tine/release synchronization defect is not accepted as solved. The current immediate repair closes the separate false-start condition where Web Audio resume could settle without reaching `running`. PR #32 / Step 24 remains blocked until the mechanical foundation itself is accepted and then must be rebased/reverified.
 
 ## Mechanical causality gate
 
@@ -147,7 +147,7 @@ At every stage the authoritative chain remains:
 
 Composition/import, Auto Fit, customization, rendering and exports must feed or consume this chain. They must not introduce an independent scheduler that decides note timing separately.
 
-Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model.
+Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model. Likewise, an attempted Web Audio resume is insufficient: mechanism motion must not start until the audio context is actually ready.
 
 ## Privacy / rights boundary
 
