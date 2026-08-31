@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
@@ -8,6 +8,8 @@ import {
 
 const INITIAL_DRIVE_ANGLE = 0.08
 const EVIDENCE_SPEED = 0.25
+const PRE_ENTRY_LEAD_MS = 180
+const EVIDENCE_FRAME_COUNT = 12
 
 function midiFixture(): Buffer {
   const track = [
@@ -44,18 +46,6 @@ function millisecondsFromRunStart(progress: number) {
   return ((targetDriveAngle - INITIAL_DRIVE_ANGLE) / EVIDENCE_SPEED) * 1000
 }
 
-async function runForAndFreeze(page: Page, transport: Locator, durationMs: number) {
-  const activationStartedAt = Date.now()
-  await transport.click()
-  await expect(transport).toHaveText('Stop')
-  const activationDelay = Date.now() - activationStartedAt
-
-  await page.waitForTimeout(Math.max(0, durationMs - activationDelay))
-  await transport.click()
-  await expect(transport).toHaveText('Play')
-  await page.waitForTimeout(34)
-}
-
 async function saveContactCrop(page: Page, path: string) {
   const canvas = page.locator('canvas')
   const box = await canvas.boundingBox()
@@ -63,10 +53,10 @@ async function saveContactCrop(page: Page, path: string) {
   await page.screenshot({
     path,
     clip: {
-      x: box.x + box.width * 0.15,
-      y: box.y + box.height * 0.24,
-      width: box.width * 0.56,
-      height: box.height * 0.5,
+      x: box.x + box.width * 0.28,
+      y: box.y + box.height * 0.3,
+      width: box.width * 0.36,
+      height: box.height * 0.32,
     },
   })
 }
@@ -96,7 +86,7 @@ async function importSinglePinTune(page: Page) {
   await expect(compose).not.toHaveAttribute('open', '')
 }
 
-test('retain frozen single-pin loading and release evidence from the real contact window', async ({ page }, testInfo) => {
+test('retain a continuous single-pin frame sequence across the real contact and release window', async ({ page }, testInfo) => {
   test.setTimeout(120_000)
   await page.goto('/')
 
@@ -110,18 +100,21 @@ test('retain frozen single-pin loading and release evidence from the real contac
   await expect(speed).toHaveValue(String(EVIDENCE_SPEED))
 
   const transport = page.locator('header .controls > button').first()
-  const loadingAAt = millisecondsFromRunStart(0.2)
-  const loadingBAt = millisecondsFromRunStart(0.82)
-  const releaseAt = millisecondsFromRunStart(1.03)
+  const entryAt = millisecondsFromRunStart(0)
+  const activationStartedAt = Date.now()
+  await transport.click()
+  await expect(transport).toHaveText('Stop')
+  const activationDelay = Date.now() - activationStartedAt
 
-  await runForAndFreeze(page, transport, loadingAAt)
-  await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-a.png'))
+  // Do not stop/restart inside the contact window. A stop at a presentation-held phase leaves
+  // requested-drive debt that is intentionally consumed on resume and would corrupt visual evidence.
+  // Instead capture a continuous burst beginning shortly before the geometry-derived entry time.
+  await page.waitForTimeout(Math.max(0, entryAt - PRE_ENTRY_LEAD_MS - activationDelay))
+  for (let index = 0; index < EVIDENCE_FRAME_COUNT; index += 1) {
+    await saveContactCrop(page, testInfo.outputPath(`causality-contact-sequence-${String(index).padStart(2, '0')}.png`))
+    await page.waitForTimeout(16)
+  }
 
-  await runForAndFreeze(page, transport, loadingBAt - loadingAAt)
-  await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-b.png'))
-
-  await runForAndFreeze(page, transport, releaseAt - loadingBAt)
-  await saveContactCrop(page, testInfo.outputPath('causality-contact-release.png'))
-
+  await transport.click()
   await expect(transport).toHaveText('Play')
 })
