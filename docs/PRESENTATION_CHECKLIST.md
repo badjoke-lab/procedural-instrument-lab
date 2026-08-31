@@ -18,7 +18,7 @@ Use this checklist before declaring Roadmap Phase 5 complete. It combines automa
 - EN/JA switching and document `lang` work with no horizontal overflow,
 - browser console/page errors are absent.
 
-CI retains `browser-runtime-evidence` screenshots for desktop/mobile and EN/JA.
+CI retains `browser-runtime-evidence` screenshots for desktop/mobile and EN/JA. These artifacts are regression evidence only; assistant-side screenshot interpretation is not sufficient to declare the mechanical contact/release defect fixed.
 
 ## Mechanical motion quality
 
@@ -26,6 +26,7 @@ Before Phase 5 completion, confirm all of the following:
 
 - a pin entering the contact zone produces a nonzero mechanically derived engagement/deflection state for the matching tine,
 - the contact resolver uses the same resting free-tine tip and anchor geometry that is rendered; a separate invisible contact point is forbidden,
+- rendered pin stem/tip placement and contact-side pin-tip placement come from the same mechanism geometry source,
 - at close inspection, tine loading begins only when the visible pin tip reaches the visible tine tip; no obvious air gap, early loading or pin-through-tine behavior is acceptable,
 - the matching tine visibly deflects while engaged instead of remaining static while the pin passes it,
 - the tine is rooted/pivoted at the comb side so the visible motion reads as bending rather than a floating bar rotating around its center,
@@ -37,7 +38,8 @@ Before Phase 5 completion, confirm all of the following:
 - contact/release traversal remains correct at maximum supported speed and coarse render sampling; a contact window must not be skipped between frames,
 - autoplay and manual crank use the same engagement/deflection/release path,
 - reverse/manual motion does not create detached audio scheduling,
-- Play/manual-crank user gestures make Web Audio ready before later mechanical release events so first-release sound does not wait on context startup.
+- Play/manual-crank motion must remain stopped unless `audio.unlock()` confirms that the AudioContext is actually `running`; a resolved resume attempt that leaves it suspended is not readiness,
+- first-release sound must not wait on AudioContext startup after mechanical motion has begun.
 
 ## Geometry / visual realism
 
@@ -77,7 +79,7 @@ Before Phase 5 completion, confirm all of the following:
 - pin/tine deflection and release vibration remain visible at mobile scale,
 - crank touch capture is not stolen by page/camera gestures,
 - orbit interaction resumes after crank release,
-- Web Audio begins after a valid user gesture,
+- Web Audio begins after a valid user gesture and must reach `running` before mechanism motion is accepted,
 - first audible release after Play/manual crank does not have an obvious startup delay relative to visual release,
 - no obvious frame-rate collapse occurs during playback/orbit/customization.
 
@@ -102,4 +104,4 @@ Phase 5 may be marked complete only when:
 6. touch/mobile checks pass on at least one real device,
 7. material defects are fixed or explicitly deferred outside v1.
 
-A user-visible mismatch between pin contact, tine loading/release/vibration and sound is always blocking and cannot be deferred merely because unit/CI counts are green.
+A user-visible mismatch between pin contact, tine loading/release/vibration and sound is always blocking and cannot be deferred merely because unit/CI counts are green. Issue #10 remains open until that product defect is actually resolved; assistant-side artifact judgement does not close it.

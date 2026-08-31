@@ -38,7 +38,7 @@ The visible free-tine tip used by rendering is also the contact reference used b
 - engagement exit emits exactly one release/pluck event for the pin pass,
 - the same release/pluck event starts visible free vibration and audible output,
 - free vibration starts from the actual release deflection rather than resetting to an unrelated phase/amplitude,
-- Play/manual-crank user gestures prepare Web Audio before later release events so audible onset does not wait on AudioContext startup,
+- Play/manual-crank motion begins only after `audio.unlock()` confirms that Web Audio is actually running; a failed or still-suspended unlock leaves the mechanism stopped,
 - one full revolution produces one release per configured pin across materially different sampling rates,
 - crank, gears and cylinder derive from one drive state,
 - manual crank uses the same contact/deflection/release/audio path as autoplay,
@@ -74,7 +74,7 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit is implemented in open PR #32 but is paused until the blocking mechanical-causality hotfix in PR #33 is complete.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit is implemented in open PR #32 but remains blocked while the unresolved mechanical-causality defect tracked in Issue #10 is repaired. PR #34 is the current merged causality baseline, and PR #37 only unified pin render/contact geometry sources; neither closes Issue #10.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer reports those preserved notes as blocking range conflicts; Step 24 Auto Fit offers explicit transformations rather than changing them automatically.
 
@@ -98,13 +98,14 @@ The mechanism must not have one geometry for computation and another for present
 
 - `tineContactPoint` represents the resting visible free-tine tip.
 - the rendered tine anchor and length are derived from the same mechanism helpers as contact resolution,
+- rendered pin stem/tip placement and contact-side pin-tip placement derive from the shared mechanism geometry boundary introduced in PR #37,
 - contact/release logic samples the cylinder phase path between rendered frames instead of assuming the final frame position tells the complete mechanical story,
 - a release transition carries the last mechanically derived tine-load angle into free vibration so the motion is continuous,
 - that same transition calls music-box pluck audio; there is no note timer,
-- Web Audio context startup is requested from Play/manual-crank user gestures before a later release event,
+- Play/manual-crank requests must not move the mechanism until `audio.unlock()` reports an actually running AudioContext,
 - changing mechanism geometry clears stale engagement/load/vibration state before new contact is resolved.
 
-The hotfix was required because the previous runtime violated these rules despite passing event-count tests: the computed contact point was at y=0 while rendered tine tips rested at y=0.23, and release detection observed only one final phase per render frame. Close runtime inspection therefore remains a required acceptance layer in addition to deterministic unit tests.
+PR #34 repaired hidden contact-position, coarse traversal and release-time audio-startup defects. PR #37 subsequently removed duplicated renderer-side pin placement math. Issue #10 remains open because the user-visible pin/tine/release synchronization defect is not considered solved. Automated regression tests remain useful, but assistant-side screenshot or artifact interpretation is not acceptance evidence for closing that defect.
 
 ## Benchmark-first verification rule
 
@@ -140,7 +141,7 @@ Visual quality can never override mechanical causality: if a visually plausible 
 
 - every audible tine sound is triggered by release/pluck,
 - no independent scheduler decides when preset or user-composed notes sound,
-- Web Audio should already be running from the initiating user gesture before a later mechanical release whenever browser policy permits,
+- Play/manual-crank motion is gated on Web Audio actually reaching `running`; resolving a resume attempt while the context remains suspended is not sufficient,
 - compact procedural synthesis is acceptable until later resonance work,
 - future material/resonance changes affect timbre only through an explicit model,
 - future audio/video exports render or record the same mechanically driven result rather than a detached rendition.
@@ -153,7 +154,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-23 are complete on main through PR #31 (`7fbaa15573ae82a2797a9fb93741f8cdc6a83361`). Step 24 Auto Fit exists in PR #32 but is blocked. PR #33 on `fix/music-box-causality-sync` is the active lane and must pass geometry/contact/release/audio regression tests plus desktop/mobile close runtime inspection before Step 24 resumes. After the hotfix merges, PR #32 must be rebased onto corrected main and fully reverified before it can merge.
+Steps 1-23 are complete. PR #34 is the merged mechanical-causality baseline and PR #37 unifies renderer/contact pin geometry sources. Issue #10 remains open for the unresolved perceptual pin/tine/release synchronization defect. Step 24 Auto Fit exists in blocked PR #32 and must not merge until the mechanical foundation is accepted without relying on assistant-side screenshot/artifact judgement.
 
 ## Scope rule
 
