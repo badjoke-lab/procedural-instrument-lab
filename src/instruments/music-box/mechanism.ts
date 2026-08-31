@@ -50,7 +50,7 @@ export type PinRenderGeometry = {
   rotationZ: number
 }
 
-export const TINE_REST_Y = 0.23
+export const TINE_REST_Y = 0
 export const TINE_ANCHOR_X_OFFSET = 2.23
 export const TINE_ANCHOR_X_STEP = 0.042
 export const TINE_THICKNESS = 0.055
@@ -389,22 +389,33 @@ function solveLoadAngleAtContact(
   const direction = Math.sign(motionDirection) || -1
   const maximumLoadAngle = tineLoadAngle(pin.noteIndex, 1, direction, config)
   const gapAt = (progress: number) => pinTineSurfaceGap(pin, phase, maximumLoadAngle * progress, config)
+  const roots: number[] = []
+  const addRoot = (progress: number) => {
+    const clamped = Math.max(0, Math.min(1, progress))
+    if (!roots.some((existing) => Math.abs(existing - clamped) < 1e-5)) roots.push(clamped)
+  }
+
   let previousProgress = 0
   let previousGap = gapAt(0)
-  if (Math.abs(previousGap) <= GEOMETRY_EPSILON) return 0
+  if (Math.abs(previousGap) <= GEOMETRY_EPSILON) addRoot(0)
 
   for (let index = 1; index <= LOAD_ROOT_SCAN_STEPS; index += 1) {
     const progress = index / LOAD_ROOT_SCAN_STEPS
     const gap = gapAt(progress)
-    if (Math.abs(gap) <= GEOMETRY_EPSILON) return maximumLoadAngle * progress
-    if (previousGap * gap < 0) {
+    if (Math.abs(gap) <= GEOMETRY_EPSILON) {
+      addRoot(progress)
+    } else if (previousGap * gap < 0) {
       let low = previousProgress
       let high = progress
       let lowGap = previousGap
       for (let iteration = 0; iteration < CONTACT_ROOT_BISECTIONS; iteration += 1) {
         const middle = (low + high) / 2
         const middleGap = gapAt(middle)
-        if (Math.abs(middleGap) <= GEOMETRY_EPSILON) return maximumLoadAngle * middle
+        if (Math.abs(middleGap) <= GEOMETRY_EPSILON) {
+          low = middle
+          high = middle
+          break
+        }
         if (lowGap * middleGap <= 0) {
           high = middle
         } else {
@@ -412,13 +423,17 @@ function solveLoadAngleAtContact(
           lowGap = middleGap
         }
       }
-      return maximumLoadAngle * ((low + high) / 2)
+      addRoot((low + high) / 2)
     }
     previousProgress = progress
     previousGap = gap
   }
 
-  return tineLoadAngle(pin.noteIndex, fallbackProgress, direction, config)
+  if (roots.length === 0) return tineLoadAngle(pin.noteIndex, fallbackProgress, direction, config)
+  const closestProgress = roots.reduce((closest, candidate) => (
+    Math.abs(candidate - fallbackProgress) < Math.abs(closest - fallbackProgress) ? candidate : closest
+  ))
+  return maximumLoadAngle * closestProgress
 }
 
 /**
