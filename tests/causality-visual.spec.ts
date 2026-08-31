@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   DEFAULT_MUSIC_BOX_CONFIG,
   compileTune,
@@ -44,16 +44,8 @@ function millisecondsFromRunStart(progress: number) {
   return ((targetDriveAngle - INITIAL_DRIVE_ANGLE) / EVIDENCE_SPEED) * 1000
 }
 
-async function runForAndFreeze(page: Page, transport: Locator, durationMs: number) {
-  const activationStartedAt = Date.now()
-  await transport.click()
-  await expect(transport).toHaveText('Stop')
-  const activationDelay = Date.now() - activationStartedAt
-
-  await page.waitForTimeout(Math.max(0, durationMs - activationDelay))
-  await transport.click()
-  await expect(transport).toHaveText('Play')
-  await page.waitForTimeout(34)
+async function waitUntilRunElapsed(page: Page, startedAt: number, targetMs: number) {
+  await page.waitForTimeout(Math.max(0, startedAt + targetMs - Date.now()))
 }
 
 async function saveContactCrop(page: Page, path: string) {
@@ -63,10 +55,10 @@ async function saveContactCrop(page: Page, path: string) {
   await page.screenshot({
     path,
     clip: {
-      x: box.x + box.width * 0.15,
-      y: box.y + box.height * 0.24,
-      width: box.width * 0.56,
-      height: box.height * 0.5,
+      x: box.x + box.width * 0.24,
+      y: box.y + box.height * 0.28,
+      width: box.width * 0.38,
+      height: box.height * 0.36,
     },
   })
 }
@@ -96,7 +88,7 @@ async function importSinglePinTune(page: Page) {
   await expect(compose).not.toHaveAttribute('open', '')
 }
 
-test('retain frozen single-pin loading and release evidence from the real contact window', async ({ page }, testInfo) => {
+test('retain moving single-pin loading and release evidence from the real contact window', async ({ page }, testInfo) => {
   test.setTimeout(120_000)
   await page.goto('/')
 
@@ -114,14 +106,19 @@ test('retain frozen single-pin loading and release evidence from the real contac
   const loadingBAt = millisecondsFromRunStart(0.82)
   const releaseAt = millisecondsFromRunStart(1.03)
 
-  await runForAndFreeze(page, transport, loadingAAt)
+  await transport.click()
+  await expect(transport).toHaveText('Stop')
+  const runStartedAt = Date.now()
+
+  await waitUntilRunElapsed(page, runStartedAt, loadingAAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-a.png'))
 
-  await runForAndFreeze(page, transport, loadingBAt - loadingAAt)
+  await waitUntilRunElapsed(page, runStartedAt, loadingBAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-loading-b.png'))
 
-  await runForAndFreeze(page, transport, releaseAt - loadingBAt)
+  await waitUntilRunElapsed(page, runStartedAt, releaseAt)
   await saveContactCrop(page, testInfo.outputPath('causality-contact-release.png'))
 
+  await transport.click()
   await expect(transport).toHaveText('Play')
 })
