@@ -6,6 +6,7 @@ import {
   driveKinematics,
   gearRatio,
   pinContactWindow,
+  pinRenderGeometry,
   pinTineEngagement,
   pinTineSurfaceGap,
   pinTouchesTine,
@@ -81,6 +82,27 @@ describe('music box contact geometry', () => {
     expect(state.deflection).toBeGreaterThan(0)
     expect(Math.abs(pinTineSurfaceGap(pin, phase, state.loadAngle, config))).toBeLessThan(1e-5)
     expect(pinTouchesTine(pin, phase, config, -1)).toBe(true)
+  })
+
+  it('derives renderer pin stem and tip geometry from the same polar source as contact resolution', () => {
+    const [pin] = compileTune([{ note: 60, start: 0.25 }], config)
+    const rendered = pinRenderGeometry(pin, config)
+
+    expect(rendered.stemCenter.x).toBeCloseTo(Math.cos(pin.angle) * (config.cylinderRadius + config.pinLength / 2), 10)
+    expect(rendered.stemCenter.y).toBeCloseTo(Math.sin(pin.angle) * (config.cylinderRadius + config.pinLength / 2), 10)
+    expect(rendered.tipCenter.x).toBeCloseTo(Math.cos(pin.angle) * (config.cylinderRadius + config.pinLength), 10)
+    expect(rendered.tipCenter.y).toBeCloseTo(Math.sin(pin.angle) * (config.cylinderRadius + config.pinLength), 10)
+    expect(rendered.tipCenter.z).toBe(pin.axialPosition)
+  })
+
+  it('keeps the default physical contact window long enough to remain visibly inspectable', () => {
+    const [pin] = compileTune([{ note: 60, start: 0 }], config)
+    const window = pinContactWindow(pin, -1, config)
+    expect(window).not.toBeNull()
+    if (!window) return
+
+    expect(window.travelAngle).toBeGreaterThan(0.18)
+    expect(window.travelAngle).toBeLessThan(0.3)
   })
 
   it('starts at the resting visible surface and reaches configured elastic travel at release', () => {
@@ -164,7 +186,8 @@ describe('music box contact geometry', () => {
     expect(forward).toBeGreaterThan(0)
     expect(reverse).toBeLessThan(0)
     expect(Math.abs(forward)).toBeCloseTo(Math.abs(reverse), 10)
-    expect(Math.abs(forward)).toBeLessThan(0.1)
+    expect(Math.abs(forward)).toBeGreaterThan(0.2)
+    expect(Math.abs(forward)).toBeLessThan(0.35)
   })
 
   it('subsamples coarse phase jumps so a contact zone cannot be skipped', () => {
