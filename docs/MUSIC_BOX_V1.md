@@ -10,11 +10,11 @@ The primary page must be understandable to a first-time user who does not alread
 
 ## Runtime causal chain
 
-`tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
+`tune/configuration -> pin geometry -> requested drive target -> presented drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
 
 Rendering and audio do not decide note timing independently. A selected tune is compiled into physical pin positions; only the resulting mechanical release/pluck event may start audible output.
 
-The visible free-tine tip used by rendering is also the contact reference used by the mechanism. A separate invisible contact position or timing offset is forbidden. Rendering may amplify a mechanically derived motion only when it preserves the same contact/release timing.
+The visible free-tine tip used by rendering is also the contact reference used by the mechanism. A separate invisible contact position or timing offset is forbidden. If a requested drive step would enter and leave a complete contact before either endpoint can be presented, the whole drive train first presents a solver-derived engaged phase. The next mechanical advance continues toward the requested target and may then produce release/vibration/audio.
 
 ## v1 tune behavior
 
@@ -29,18 +29,19 @@ The visible free-tine tip used by rendering is also the contact reference used b
 
 - base, crank, cylinder, pins and comb/tines are generated in code,
 - tune events generate physical pin positions,
-- cylinder phase is authoritative playback state,
+- the presented cylinder phase is authoritative for visible contact/release state,
 - engagement is derived from explicit geometry,
 - contact resolution uses the same visible resting tine-tip and tine-anchor geometry rendered in the scene,
 - the affected rooted tine visibly deflects while engaged,
 - tine loading magnitude/direction is derived from contact geometry rather than an unrelated visual animation constant,
 - cylinder motion between render frames is traversed finely enough that supported high speed, coarse FPS or a large manual crank move cannot skip a contact window,
-- engagement exit emits exactly one release/pluck event for the pin pass,
+- if a requested frame would enter and leave a complete engagement, `choosePresentedCylinderPhase` first returns a real engaged phase from the same solver and the crank/gears/cylinder/tines all consume that presented drive state,
+- release is not emitted on that held contact advance; only a later advance out of engagement emits the release/pluck event,
 - the same release/pluck event starts visible free vibration and audible output,
 - free vibration starts from the actual release deflection rather than resetting to an unrelated phase/amplitude,
 - Play/manual-crank motion begins only after `audio.unlock()` confirms that Web Audio is actually running; a failed or still-suspended unlock leaves the mechanism stopped,
 - one full revolution produces one release per configured pin across materially different sampling rates,
-- crank, gears and cylinder derive from one drive state,
+- crank, gears and cylinder derive from one presented drive state,
 - manual crank uses the same contact/deflection/release/audio path as autoplay,
 - speed changes do not separate mechanism, vibration and sound,
 - a user-visible or audible mismatch between pin contact, tine motion and sound is blocking even when abstract event-count tests pass.
@@ -74,7 +75,7 @@ All inputs converge before mechanical compilation:
 
 Microphone/audio import must produce editable note candidates; imported source media must not become an independent player or scheduler.
 
-Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit is implemented in open PR #32 but remains blocked while the unresolved mechanical-causality defect tracked in Issue #10 is repaired. PR #34 is the current merged causality baseline, and PR #37 only unified pin render/contact geometry sources; neither closes Issue #10.
+Piano-roll editing, on-screen keyboard recording, computer-keyboard recording, MIDI import/export, microphone recording, mic melody extraction, local audio-file import, audio-file melody extraction, recognition correction and compatibility analysis are merged. Auto Fit is implemented in open PR #32 but remains blocked while the unresolved mechanical-causality defect tracked in Issue #10 is repaired. PR #34 is the merged causality baseline, PR #37 unified pin render/contact geometry sources, and PR #38 requires confirmed Web Audio readiness; Issue #10 remains open until the remaining presented pin/tine/release behavior is accepted.
 
 MIDI import preserves valid source pitches and beat timing in TuneDocument. Notes outside the current C4-C5 comb are not silently transposed or discarded. The compatibility analyzer reports those preserved notes as blocking range conflicts; Step 24 Auto Fit offers explicit transformations rather than changing them automatically.
 
@@ -94,18 +95,20 @@ The current exposed Customize controls do not change the fixed comb pitch set, c
 
 ## Mechanical synchronization contract
 
-The mechanism must not have one geometry for computation and another for presentation.
+The mechanism must not have one geometry or timeline for computation and another for presentation.
 
-- `tineContactPoint` represents the resting visible free-tine tip.
+- `tineContactPoint` represents the resting visible free-tine tip,
 - the rendered tine anchor and length are derived from the same mechanism helpers as contact resolution,
 - rendered pin stem/tip placement and contact-side pin-tip placement derive from the shared mechanism geometry boundary introduced in PR #37,
-- contact/release logic samples the cylinder phase path between rendered frames instead of assuming the final frame position tells the complete mechanical story,
-- a release transition carries the last mechanically derived tine-load angle into free vibration so the motion is continuous,
+- contact/release logic samples the cylinder phase path between rendered frames instead of assuming the requested final frame position tells the complete mechanical story,
+- `choosePresentedCylinderPhase` preserves the requested drive target while selecting a solver-derived engaged phase when a complete contact would otherwise be skipped between presented endpoints,
+- crank, gears, cylinder, pins and tine load all consume that same presented drive state; it is not a tine-only visual pause,
+- the contact-presenting advance cannot emit release; the next mechanical advance out of that engagement carries the last mechanically derived tine-load angle into free vibration,
 - that same transition calls music-box pluck audio; there is no note timer,
 - Play/manual-crank requests must not move the mechanism until `audio.unlock()` reports an actually running AudioContext,
-- changing mechanism geometry clears stale engagement/load/vibration state before new contact is resolved.
+- changing mechanism geometry clears stale engagement/load/vibration and requested/presented state before new contact is resolved.
 
-PR #34 repaired hidden contact-position, coarse traversal and release-time audio-startup defects. PR #37 subsequently removed duplicated renderer-side pin placement math. Issue #10 remains open because the user-visible pin/tine/release synchronization defect is not considered solved. Automated regression tests remain useful, but assistant-side screenshot or artifact interpretation is not acceptance evidence for closing that defect.
+PR #34 repaired hidden contact-position, coarse traversal and release-time audio-startup defects. PR #37 removed duplicated renderer-side pin placement math and PR #38 removed the Web Audio false-start path. The current repair additionally prevents a complete contact from being detected and released wholly between two presented mechanical states. Issue #10 remains open until the user-visible pin/tine/release synchronization is actually accepted; assistant-side screenshot or artifact interpretation is not acceptance evidence.
 
 ## Benchmark-first verification rule
 
@@ -113,7 +116,7 @@ Development does not assume high traffic or many manual tests. After the composi
 
 Mic/audio recognition begins with known-frequency synthetic PCM fixtures so pitch/timing logic is repeatable without repeated human humming tests. Broader synthetic-audio variants are still expanded in the dedicated benchmark steps.
 
-Compatibility fixtures cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Mechanical causality fixtures must additionally cover coarse cylinder sampling so contact/release counts are stable across materially different render rates.
+Compatibility fixtures cover in-range melodies, preserved out-of-range notes, simultaneous starts, dense same-lane events and direct pin-spacing conflicts. Mechanical causality fixtures must additionally cover coarse cylinder sampling so contact/release counts are stable across materially different render rates, and must prove that a coarse step crossing a complete contact produces an engaged presented phase before the release transition.
 
 Benchmarks must report which current mechanism constraints prevent successful conversion. Those reports, combined with real music-box research, drive advanced Customize priorities.
 
@@ -142,6 +145,7 @@ Visual quality can never override mechanical causality: if a visually plausible 
 - every audible tine sound is triggered by release/pluck,
 - no independent scheduler decides when preset or user-composed notes sound,
 - Play/manual-crank motion is gated on Web Audio actually reaching `running`; resolving a resume attempt while the context remains suspended is not sufficient,
+- release cannot be emitted from a contact that has not yet existed in the presented mechanical state,
 - compact procedural synthesis is acceptable until later resonance work,
 - future material/resonance changes affect timbre only through an explicit model,
 - future audio/video exports render or record the same mechanically driven result rather than a detached rendition.
@@ -154,7 +158,7 @@ English is default and Japanese is the first additional locale. Tune, compositio
 
 The authoritative benchmark-first 65-step schedule is in `docs/ROADMAP.md`.
 
-Steps 1-23 are complete. PR #34 is the merged mechanical-causality baseline and PR #37 unifies renderer/contact pin geometry sources. Issue #10 remains open for the unresolved perceptual pin/tine/release synchronization defect. Step 24 Auto Fit exists in blocked PR #32 and must not merge until the mechanical foundation is accepted without relying on assistant-side screenshot/artifact judgement.
+Steps 1-23 are complete. PR #34 is the merged mechanical-causality baseline, PR #37 unifies renderer/contact pin geometry sources, and PR #38 requires confirmed Web Audio readiness. Issue #10 remains open for the remaining presented pin/tine/release synchronization defect. Step 24 Auto Fit exists in blocked PR #32 and must not merge until the mechanical foundation is accepted without relying on assistant-side screenshot/artifact judgement.
 
 ## Scope rule
 
