@@ -15,7 +15,7 @@ This document controls development order for Procedural Instrument Lab. Read it 
 
 Repository foundation, deterministic drive state, geometry-derived pin/tine engagement, tine deflection, release-driven vibration/audio, direct crank manipulation, initial Customize controls, EN/JA, responsive information architecture, the first geometry/material realism pass, browser gates and GitHub Pages publication are merged on main.
 
-The initial causality implementation later proved insufficient under close real-runtime inspection: its invisible contact reference did not match the rendered free-tine tip, render-frame-only contact sampling could skip narrow contact windows, and first-release audio could wait for Web Audio startup. Those are defects in the foundation rather than later polish and must be repaired before feature progression resumes.
+The first close-runtime causality repair is merged as PR #34 (`c8e066dd36eba1d57d825d2519e00fe05adc5bf7`). It aligned the rendered pin sphere and tine box with the contact solver, traversed coarse phase movement, carried release deflection into free vibration and removed release-time AudioContext startup. Subsequent retained single-pin evidence still exposed a second defect: a complete narrow contact could occur between two presented render frames, so event subsampling could detect contact/release/audio while the browser showed only the pre-contact and post-release endpoints. PR #35 is the active blocking follow-up for that presentation/runtime defect.
 
 ## Authoritative development order
 
@@ -53,24 +53,24 @@ The initial causality implementation later proved insufficient under close real-
 ### Make ordinary music mechanically playable
 
 23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Complete in PR #31, merged as `7fbaa15573ae82a2797a9fb93741f8cdc6a83361`; final verify/browser run #173 was green.**
-24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation is open in PR #32 but feature progression is blocked by the mechanical-causality hotfix below. PR #32 must not merge until the hotfix is merged and #32 is rebased/reverified.**
+24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation is open in PR #32 but remains blocked until the mechanical presentation follow-up in PR #35 is merged and #32 is rebased/reverified.**
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
 
-### Blocking mechanical-causality hotfix
+### Blocking mechanical-causality follow-up
 
-Before Step 24 can complete, `fix/music-box-causality-sync` / PR #33 must restore the already-required runtime invariant:
+PR #34 repaired the geometry/contact/release/audio foundation, but Step 24 still cannot complete until PR #35 closes the remaining presented-frame invariant:
 
-- the contact resolver and renderer share the same resting free-tine tip and anchor geometry; no hidden y/position offset may define contact,
-- tine loading angle is derived from the same contact geometry rather than an unrelated visual amplitude,
-- cylinder motion is traversed across each phase segment so high speed, low FPS or a large manual drag cannot skip pin/tine engagement or delay release by a render frame,
-- free vibration begins continuously from the actual release deflection,
-- the same release transition starts audible pluck output,
-- Play/manual-crank gestures prime Web Audio before later release events so first-release sound does not wait on AudioContext startup,
-- configuration changes clear stale engagement/vibration state,
-- coarse-sampling unit coverage plus desktop/mobile runtime inspection must pass before merge.
+- contact computation remains the existing rendered pin-sphere / rotated tine-box geometry; the physical `contactTolerance` must not be widened merely to make a test pass,
+- phase traversal still detects narrow contact/release windows at coarse FPS or large manual movement,
+- if a requested frame would enter and release a pin entirely between presented endpoints, the requested drive target is retained while the whole presented drive state is held for one frame at a real solver-derived engaged phase,
+- crank, both gears, cylinder, pin geometry and tine deflection must therefore share the same presented mechanical phase; no tine-only or pin-only visual pause is allowed,
+- the next mechanical advance continues from that visible engaged phase, and only its engagement exit may start both free vibration and audible pluck,
+- Play and manual crank may not start motion merely because `AudioContext.resume()` was requested; `audio.unlock()` must report a genuinely running context first,
+- forward/autoplay and reverse/manual motion use the same presented-phase rule,
+- deterministic tests plus retained single-pin desktop/mobile runtime evidence must pass before merge.
 
-This hotfix is not a new roadmap feature. It repairs a violated acceptance condition that was previously treated as complete.
+This remains a repair of an already-required acceptance condition, not a new roadmap feature.
 
 ### User-volume-independent benchmark lane
 
@@ -137,17 +137,19 @@ This hotfix is not a new roadmap feature. It repairs a violated acceptance condi
 
 ## Current position
 
-Steps 1-23 are complete on main. PR #32 contains Step 24 Auto Fit work but is explicitly blocked. The active lane is the mechanical-causality repair in PR #33 because real runtime inspection found material visible/audio timing divergence in the supposedly completed foundation. Feature work resumes only after PR #33 passes automated coarse-sampling/contact invariants, desktop/mobile runtime inspection and merge, then PR #32 is rebased and reverified against the corrected mechanism.
+Steps 1-23 are complete on main. PR #34 is merged as the first mechanical-causality repair. PR #32 contains Step 24 Auto Fit work but is explicitly blocked. The active lane is PR #35, which prevents a complete solver-detected contact/release from occurring between two presented render frames and tightens the audio-ready gate. Feature work resumes only after PR #35 passes deterministic tests, desktop/mobile retained evidence and merge; then PR #32 is rebased and fully reverified against the corrected runtime.
 
 ## Mechanical causality gate
 
 At every stage the authoritative chain remains:
 
-`tune/configuration -> pin geometry -> drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
+`tune/configuration -> pin geometry -> requested drive state -> presented mechanical drive/cylinder state -> pin/tine engagement -> tine deflection -> release/pluck event -> tine vibration + audio`
+
+The requested drive target may be temporarily ahead only when necessary to present a real intervening engagement that would otherwise be skipped. The presented crank, gears, cylinder, contact state and release event must still be one mechanical state; there is no independent visual scheduler.
 
 Composition/import, Auto Fit, customization, rendering and exports must feed or consume this chain. They must not introduce an independent scheduler that decides note timing separately.
 
-Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model.
+Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model, and a sub-frame contact cannot be considered complete until at least one mechanically valid engaged state has actually been presented.
 
 ## Privacy / rights boundary
 
