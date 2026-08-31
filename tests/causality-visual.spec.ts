@@ -9,6 +9,20 @@ import {
 const INITIAL_DRIVE_ANGLE = 0.08
 const EVIDENCE_SPEED = 0.25
 
+function midiFixture(): Buffer {
+  const track = [
+    0x00, 0xff, 0x51, 0x03, 0x07, 0xa1, 0x20,
+    0x00, 0x90, 60, 100,
+    0x60, 0x80, 60, 0,
+    0x00, 0xff, 0x2f, 0x00,
+  ]
+  return Buffer.from([
+    0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96,
+    0x4d, 0x54, 0x72, 0x6b, 0, 0, 0, track.length,
+    ...track,
+  ])
+}
+
 function nextUnwrappedEntryPhase(entryAngle: number, initialPhase: number) {
   let entry = entryAngle
   while (entry > initialPhase) entry -= Math.PI * 2
@@ -57,26 +71,25 @@ async function saveContactCrop(page: Page, path: string) {
   })
 }
 
-async function reduceTuneToOneC4AtBeatZero(page: Page) {
+async function importSinglePinTune(page: Page) {
   const compose = page.locator('#compose')
   await compose.locator('summary').click()
   await expect(compose).toHaveAttribute('open', '')
 
-  const notes = page.locator('.piano-roll-note')
-  const remove = compose.getByRole('button', { name: 'Remove', exact: true })
-  const initialCount = await notes.count()
-  expect(initialCount).toBeGreaterThan(1)
-
-  for (let count = initialCount; count > 1; count -= 1) {
-    await remove.click()
-    await expect(notes).toHaveCount(count - 1)
-  }
+  const importer = compose.getByRole('region', { name: 'Import MIDI' })
+  await expect(importer).toBeVisible()
+  await importer.locator('input[type="file"]').setInputFiles({
+    name: 'single-c4.mid',
+    mimeType: 'audio/midi',
+    buffer: midiFixture(),
+  })
+  await expect(importer.getByRole('status')).toContainText('MIDI imported')
+  await expect(page.locator('.piano-roll-note')).toHaveCount(1)
+  await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
 
   const inspector = page.locator('.piano-roll-inspector')
-  await inspector.locator('select').selectOption('60')
-  await inspector.locator('input[type="number"]').first().fill('0')
-  await expect(notes).toHaveCount(1)
-  await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
+  await expect(inspector.locator('select')).toHaveValue('60')
+  await expect(inspector.locator('input[type="number"]').first()).toHaveValue('0')
 
   // Close Compose again so the retained canvas evidence has the normal mechanism framing.
   await compose.locator('summary').click()
@@ -89,7 +102,7 @@ test('retain frozen single-pin loading and release evidence from the real contac
 
   const canvas = page.locator('canvas')
   await expect(canvas).toBeVisible()
-  await reduceTuneToOneC4AtBeatZero(page)
+  await importSinglePinTune(page)
 
   const speed = page.locator('#speed-control')
   await speed.focus()
