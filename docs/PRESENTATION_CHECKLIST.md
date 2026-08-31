@@ -30,12 +30,14 @@ Before Phase 5 completion, confirm all of the following:
 - at close inspection, tine loading begins only when the visible pin tip reaches the visible tine tip; no obvious air gap, early loading or pin-through-tine behavior is acceptable,
 - the matching tine visibly deflects while engaged instead of remaining static while the pin passes it,
 - the tine is rooted/pivoted at the comb side so the visible motion reads as bending rather than a floating bar rotating around its center,
-- one release/pluck event occurs when the pin leaves engagement,
+- if one requested render step would enter and leave a complete contact before either endpoint is presented, the whole drive train must first use a solver-derived engaged phase as its presented state,
+- crank, gears, cylinder, pin placement and tine loading must all consume that same presented phase; a tine-only animation or detached timer is forbidden,
+- the contact-presenting advance must emit zero releases; only the following mechanical advance out of engagement may emit the release/pluck event,
 - that same release/pluck event starts free tine vibration and audible output,
 - free vibration starts continuously from the actual release deflection rather than snapping to an unrelated amplitude/phase,
 - free vibration visibly decays after release,
 - visual amplification, if used, changes only displayed amplitude and not contact/release timing,
-- contact/release traversal remains correct at maximum supported speed and coarse render sampling; a contact window must not be skipped between frames,
+- contact/release traversal remains correct at maximum supported speed and coarse render sampling; event subsampling is insufficient if a complete contact can still occur between presented mechanical states,
 - autoplay and manual crank use the same engagement/deflection/release path,
 - reverse/manual motion does not create detached audio scheduling,
 - Play/manual-crank motion must remain stopped unless `audio.unlock()` confirms that the AudioContext is actually `running`; a resolved resume attempt that leaves it suspended is not readiness,
@@ -98,10 +100,11 @@ Phase 5 may be marked complete only when:
 
 1. typecheck, unit tests, production build and automated browser gate are green on main,
 2. engagement -> deflection -> release -> vibration/audio is visibly and audibly derived from one shared mechanical state with no material timing mismatch,
-3. geometry/material presentation reads as a connected music-box mechanism,
-4. information-architecture/mobile Customize checks pass,
-5. desktop manual interaction checks pass,
-6. touch/mobile checks pass on at least one real device,
-7. material defects are fixed or explicitly deferred outside v1.
+3. coarse or fast movement cannot cause release/audio before an engaged mechanical state has actually been presented,
+4. geometry/material presentation reads as a connected music-box mechanism,
+5. information-architecture/mobile Customize checks pass,
+6. desktop manual interaction checks pass,
+7. touch/mobile checks pass on at least one real device,
+8. material defects are fixed or explicitly deferred outside v1.
 
 A user-visible mismatch between pin contact, tine loading/release/vibration and sound is always blocking and cannot be deferred merely because unit/CI counts are green. Issue #10 remains open until that product defect is actually resolved; assistant-side artifact judgement does not close it.
