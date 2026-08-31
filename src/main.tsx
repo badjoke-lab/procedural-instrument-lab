@@ -22,6 +22,7 @@ import {
   type MusicBoxConfig,
   type NoteEvent,
 } from './instruments/music-box/mechanism'
+import { choosePresentedCylinderPhase } from './instruments/music-box/presentation'
 import { DEFAULT_TUNE_ID, TUNE_PRESETS, getTunePreset } from './instruments/music-box/tunes'
 import { PianoRollEditor } from './instruments/music-box/PianoRollEditor'
 import { cloneTuneDocument } from './instruments/music-box/piano-roll-model'
@@ -127,6 +128,7 @@ function Mechanism({
   const drivenGear = useRef<THREE.Group>(null)
   const tineRefs = useRef<(THREE.Group | null)[]>([])
   const driveAngle = useRef(0.08)
+  const requestedDriveAngle = useRef(0.08)
   const engagedPins = useRef(new Set<number>())
   const lastPinLoadAngles = useRef(new Map<number, number>())
   const vibrations = useRef<TineVibrationState[]>(emptyVibrations(config))
@@ -134,6 +136,7 @@ function Mechanism({
   const motionDirection = useRef(-1)
   const lastPointerX = useRef<number | null>(null)
   const manualAudioReady = useRef(false)
+  const manualTargetPending = useRef(false)
   const pins = useMemo(() => compileTune(tune.events, config), [tune, config])
   const drivenRadius = cylinderGearRadius(config)
   const gearZ = -config.cylinderLength / 2 - 0.22
@@ -146,6 +149,8 @@ function Mechanism({
   ]
 
   useEffect(() => {
+    requestedDriveAngle.current = driveAngle.current
+    manualTargetPending.current = false
     engagedPins.current.clear()
     lastPinLoadAngles.current.clear()
     vibrations.current = emptyVibrations(config)
@@ -158,6 +163,8 @@ function Mechanism({
   const beginManualCrank = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation()
     lastPointerX.current = event.nativeEvent.clientX
+    requestedDriveAngle.current = driveAngle.current
+    manualTargetPending.current = false
     manualAudioReady.current = false
     void audio.unlock()
       .then((ready) => { manualAudioReady.current = ready })
@@ -177,7 +184,8 @@ function Mechanism({
     }
     const deltaX = nextX - lastPointerX.current
     lastPointerX.current = nextX
-    driveAngle.current += deltaX * 0.018
+    requestedDriveAngle.current += deltaX * 0.018
+    if (Math.abs(deltaX) > 0) manualTargetPending.current = true
   }
 
   const endManualCrank = (event: ThreeEvent<PointerEvent>) => {
@@ -191,12 +199,31 @@ function Mechanism({
   }
 
   useFrame((_, dt) => {
-    if (running) driveAngle.current += dt * speed
-    const drive = driveKinematics(driveAngle.current, config)
+    if (running) requestedDriveAngle.current += dt * speed
+    if (!running && lastPointerX.current === null && !manualTargetPending.current) {
+      requestedDriveAngle.current = driveAngle.current
+    }
+
     const previousPhase = lastCylinderPhase.current
+    const requestedDrive = driveKinematics(requestedDriveAngle.current, config)
+    const requestedPhaseDelta = requestedDrive.cylinderPhase - previousPhase
+    const frameDirection = Math.abs(requestedPhaseDelta) > 1e-6 ? Math.sign(requestedPhaseDelta) : motionDirection.current
+    if (Math.abs(requestedPhaseDelta) > 1e-6) motionDirection.current = frameDirection
+
+    const presented = choosePresentedCylinderPhase(
+      previousPhase,
+      requestedDrive.cylinderPhase,
+      pins,
+      config,
+      frameDirection,
+    )
+    driveAngle.current = -presented.phase / requestedDrive.ratio
+    const drive = driveKinematics(driveAngle.current, config)
     const phaseDelta = drive.cylinderPhase - previousPhase
-    const frameDirection = Math.abs(phaseDelta) > 1e-6 ? Math.sign(phaseDelta) : motionDirection.current
-    if (Math.abs(phaseDelta) > 1e-6) motionDirection.current = frameDirection
+
+    if (Math.abs(requestedDriveAngle.current - driveAngle.current) <= 1e-6) {
+      manualTargetPending.current = false
+    }
 
     if (crank.current) crank.current.rotation.z = drive.crankAngle
     if (driverGear.current) driverGear.current.rotation.z = drive.driverGearAngle
