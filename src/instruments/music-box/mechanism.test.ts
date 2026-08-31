@@ -175,9 +175,12 @@ describe('music box contact geometry', () => {
     }
   })
 
-  it('does not claim contact at the old rightmost-cylinder point while the visible surfaces are separated', () => {
+  it('reports real surface contact at phase zero after aligning the tine with the cylinder centerline', () => {
     const [pin] = compileTune([{ note: 60, start: 0 }], config)
-    expect(pinTineEngagement(pin, 0, config, -1).engaged).toBe(false)
+    const state = pinTineEngagement(pin, 0, config, -1)
+    expect(state.engaged).toBe(true)
+    expect(state.deflection).toBeGreaterThan(0)
+    expect(Math.abs(pinTineSurfaceGap(pin, 0, state.loadAngle, config))).toBeLessThan(1e-5)
   })
 
   it('loads the tine away from the approaching pin with symmetric maximum travel', () => {
