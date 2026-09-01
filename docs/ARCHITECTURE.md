@@ -56,6 +56,10 @@ All composition input paths converge before mechanical compilation:
 
 This ensures microphone or file analysis does not become an alternate player. Imported/recognized notes remain editable before the cylinder is generated.
 
+Auto Fit is an upstream, non-destructive proposal stage inside this composition path. It may transform a derived TuneDocument proposal for compatibility analysis, but it must not mutate the source document, accept staged recognition, regenerate pins or schedule playback until a later explicit acceptance step promotes a fitted result.
+
+Mechanical-quality issues that remain explicitly tracked do not automatically halt unrelated upstream composition/import/fit work. A feature may proceed when it does not alter, bypass or conceal the affected mechanical behavior. Assistant-side perceptual judgement is not an architecture gate.
+
 The project-data representation should carry stable schema/version metadata, tune note/timing data, user-facing metadata and only the music-box configuration needed to recreate the project. Source microphone/audio files are not automatically embedded in project data.
 
 ## Export boundary
