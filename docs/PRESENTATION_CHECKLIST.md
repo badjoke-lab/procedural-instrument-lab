@@ -104,4 +104,4 @@ Phase 5 may be marked complete only when:
 6. touch/mobile checks pass on at least one real device,
 7. material defects are fixed or explicitly deferred outside v1.
 
-A user-visible mismatch between pin contact, tine loading/release/vibration and sound is always blocking and cannot be deferred merely because unit/CI counts are green. Issue #10 remains open until that product defect is actually resolved; assistant-side artifact judgement does not close it.
+A user-visible mismatch between pin contact, tine loading/release/vibration and sound remains a final Phase 5 / v1 acceptance defect. Issue #10 therefore stays open until that product defect is actually resolved. However, assistant-side artifact judgement is neither acceptance evidence nor an intermediate merge gate for unrelated upstream creator features such as Auto Fit.
