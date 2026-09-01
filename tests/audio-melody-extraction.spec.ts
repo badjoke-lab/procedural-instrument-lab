@@ -29,7 +29,8 @@ test('recognized audio stays a correctable candidate until explicitly accepted',
   await expect(page.locator('.piano-roll-note[title^="A4"]')).toHaveCount(1)
   await expect(page.getByText('Edited tune')).toHaveCount(0)
 
-  await page.getByLabel('Pitch', { exact: true }).selectOption('67')
+  const inspector = page.locator('.piano-roll-inspector')
+  await inspector.locator('select').selectOption('67')
   await expect(page.locator('.piano-roll-note[title^="G4"]')).toHaveCount(1)
   await expect(page.getByText('Edited tune')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('runtime-recognition-review.png'), fullPage: true })
