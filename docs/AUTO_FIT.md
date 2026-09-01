@@ -1,12 +1,12 @@
 # Auto Fit to Music Box
 
-Roadmap Step 24 turns an editable melody into an explicit **fit proposal** for the current music-box mechanism. It does not silently rewrite the source TuneDocument and it does not regenerate cylinder pins.
+Roadmap Step 24 turns an editable melody into an explicit **fit proposal** for the current music-box mechanism. Step 25 then previews that proposal in the existing piano roll, allows manual correction and requires explicit acceptance before the fitted result can replace the editable working tune. Neither step silently rewrites the source TuneDocument or regenerates cylinder pins.
 
 The boundary is:
 
-`editable/candidate TuneDocument -> explicit fit options -> derived fit proposal -> compatibility report`
+`editable/candidate TuneDocument -> explicit fit options -> derived fit proposal -> preview/manual correction -> explicit acceptance -> editable TuneDocument`
 
-The source document remains unchanged. Step 25 owns candidate-vs-fitted comparison, manual correction and explicit acceptance. Until that later acceptance happens, the fitted proposal is never a mechanical runtime source of truth.
+The source document remains unchanged while a proposal is being reviewed. The fitted proposal becomes the piano-roll working document only for preview/correction; it is not accepted merely because it is visible or edited.
 
 ## Explicit transformations
 
@@ -40,7 +40,7 @@ All transformations are off by default. The user chooses one or more options and
 - Deterministically keeps the earlier note and removes later colliding repeats; the first/last wrap-around gap is also checked.
 - It does not remove review-only chords merely because multiple different pitches begin together.
 
-## Change record
+## Change record and fit preview
 
 Every proposed transformation is recorded as a structured change:
 
@@ -49,23 +49,27 @@ Every proposed transformation is recorded as a structured change:
 - timing quantization,
 - repeated-note removal.
 
-This change list is intended for the Step 25 fit-preview comparison. It must not be treated as permission to accept the proposal automatically.
+After generation, Compose keeps the original source separately and shows the fitted proposal through the same piano-roll editor used for ordinary tune editing. The Auto Fit panel shows source/fitted note counts and compatibility change, while pitch, start, duration, add-note and remove-note operations edit only the proposal.
+
+`Use fitted result` explicitly accepts the currently corrected proposal into the editable working tune. `Discard fit proposal` removes the proposal and restores the unchanged source view. Merely generating, viewing or editing a proposal is never acceptance.
 
 ## Compatibility reuse
 
-Auto Fit reuses `analyzeMusicBoxCompatibility` before/after proposal generation. It does not duplicate range or pin-spacing rules. A proposal can still contain review warnings such as simultaneous starts even when all blocking conflicts are removed.
+Auto Fit reuses `analyzeMusicBoxCompatibility` before/after proposal generation. It does not duplicate range or pin-spacing rules. While previewing a proposal, the compatibility panel describes that fitted working document. A proposal can still contain review warnings such as simultaneous starts even when all blocking conflicts are removed.
 
 ## Recognition candidates
 
-When microphone/audio recognition is under review, Compose passes that staged candidate into Auto Fit because it is the document currently being edited. Generating a fit proposal does not accept the recognition candidate. Editing, accepting or discarding the recognition candidate invalidates any stale fit proposal.
+When microphone/audio recognition is under review, Compose passes that staged candidate into Auto Fit because it is the document currently being edited. Generating or manually correcting a fit proposal does not accept the recognition candidate. If `Use fitted result` is chosen while recognition is staged, the corrected fitted result replaces the staged recognition candidate only; the separate `Accept recognized melody` action is still required before the accepted TuneDocument changes.
+
+Editing, accepting or discarding the recognition candidate invalidates stale fit-proposal state.
 
 ## Mechanical causality
 
-Step 24 remains upstream of mechanical compilation:
+Steps 24-25 remain upstream of mechanical compilation:
 
-`tune/candidate -> fit proposal -> later explicit acceptance -> pin geometry -> mechanical runtime`
+`tune/candidate -> fit proposal -> preview/manual correction -> explicit acceptance -> pin geometry -> mechanical runtime`
 
-No Auto Fit option plays audio, schedules notes independently, writes cylinder pins directly or modifies the mechanism. Issue #10 therefore remains a separate mechanical-quality defect rather than an assistant-validation prerequisite for Step 24.
+No Auto Fit or fit-preview action plays audio, schedules notes independently or writes cylinder pins directly. Step 26 owns explicit TuneDocument-to-cylinder generation. Issue #10 therefore remains a separate mechanical-quality defect rather than an assistant-validation prerequisite for these upstream creator features.
 
 ## Verification
 
@@ -78,6 +82,6 @@ Unit fixtures cover:
 - combined transforms with source immutability,
 - invalid quantization input.
 
-Browser coverage verifies that a conflicting imported tune can produce a proposal with fewer blocking compatibility conflicts while the original editable tune and compatibility report remain unchanged. It also verifies stale-proposal invalidation and EN/JA controls on desktop/mobile Chromium.
+Browser coverage verifies on desktop/mobile Chromium that a conflicting imported tune can generate and preview a proposal, manually correct it, explicitly accept the corrected fit, or discard it and recover the unchanged source. It also covers EN/JA Auto Fit controls.
 
-These checks are regression/feature gates for Auto Fit itself. They do not claim to visually or audibly close Issue #10.
+These checks are regression/feature gates for Auto Fit and fit preview. They do not claim to visually or audibly close Issue #10.
