@@ -21,12 +21,17 @@ export type MusicBoxAutoFitCopy = {
   nearestCount: string
   quantizeCount: string
   removedCount: string
+  sourceNotes: string
+  fittedNotes: string
+  manualCorrection: string
+  acceptProposal: string
+  discardProposal: string
 }
 
 export const musicBoxAutoFitCopy: Record<Locale, MusicBoxAutoFitCopy> = {
   en: {
     title: 'Auto Fit to Music Box',
-    intro: 'Choose transformations, then generate a fit proposal. The proposal does not change the editable melody or cylinder until a later acceptance step.',
+    intro: 'Choose transformations, then generate a fit proposal. The proposal stays separate until you explicitly accept it.',
     octaveMoves: 'Move pitches by octaves where possible',
     octaveHelp: 'Keeps the pitch class and moves only by 12-semitone octaves to a note on the current comb.',
     nearestNote: 'Map remaining pitches to nearest comb note',
@@ -45,10 +50,15 @@ export const musicBoxAutoFitCopy: Record<Locale, MusicBoxAutoFitCopy> = {
     nearestCount: 'Nearest-note mappings',
     quantizeCount: 'Timing changes',
     removedCount: 'Removed notes',
+    sourceNotes: 'Source notes',
+    fittedNotes: 'Fitted notes',
+    manualCorrection: 'The piano roll below is now editing the fitted proposal. Correct pitch, timing, duration, add or remove notes before accepting it.',
+    acceptProposal: 'Use fitted result',
+    discardProposal: 'Discard fit proposal',
   },
   ja: {
     title: 'オルゴールにAuto Fit',
-    intro: '変換方法を選んでフィット候補を生成します。この段階では編集データやシリンダーを変更せず、採用は後の確認工程で行います。',
+    intro: '変換方法を選んでフィット候補を生成します。明示的に採用するまでは元の編集データと分離して保持します。',
     octaveMoves: '可能な音はオクターブ移動する',
     octaveHelp: '音名を保ったまま12半音単位で移動し、現在の櫛歯にある音へ合わせます。',
     nearestNote: '残った音を最も近い櫛歯の音へ合わせる',
@@ -67,5 +77,10 @@ export const musicBoxAutoFitCopy: Record<Locale, MusicBoxAutoFitCopy> = {
     nearestCount: '近い音への移動',
     quantizeCount: 'タイミング変更',
     removedCount: '削除した音',
+    sourceNotes: '元の音数',
+    fittedNotes: '候補の音数',
+    manualCorrection: '下のピアノロールは現在フィット候補を編集しています。採用前に音程・開始拍・長さを修正し、音の追加・削除もできます。',
+    acceptProposal: 'フィット結果を採用',
+    discardProposal: 'フィット候補を破棄',
   },
 }
