@@ -47,7 +47,7 @@ test('previews a fit proposal without accepting it', async ({ page }) => {
   await expect(result).toContainText('Blocking conflicts: 1 → 0')
   await expect(result).toContainText('Octave moves: 1')
   await expect(result).toContainText('Source notes: 2 · Fitted notes: 2')
-  await expect(compatibility.getByRole('status')).toHaveText('Fits the current music box')
+  await expect(compatibility.getByRole('status')).toHaveText('Fits current mechanism')
   await expect(page.locator('.piano-roll-note[title^="B4"]')).toHaveCount(1)
   await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
 })
