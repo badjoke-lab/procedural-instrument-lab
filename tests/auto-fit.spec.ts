@@ -26,46 +26,60 @@ async function importConflictMidi(page: Page) {
   await expect(importer.getByRole('status')).toContainText('MIDI imported')
 }
 
-test('generates a fit proposal without changing the editable melody', async ({ page }) => {
+async function generateOctaveFit(page: Page) {
+  const autoFit = page.getByRole('region', { name: 'Auto Fit to Music Box' })
+  await autoFit.getByLabel('Move pitches by octaves where possible').check()
+  await autoFit.getByRole('button', { name: 'Generate fit proposal' }).click()
+  await expect(autoFit.getByRole('status')).toContainText('Fit proposal ready')
+  return autoFit
+}
+
+test('previews a fit proposal without accepting it', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Compose', exact: true }).click()
   await importConflictMidi(page)
 
   const compatibility = page.getByRole('region', { name: 'Music box compatibility' })
   await expect(compatibility.getByRole('status')).toHaveText('Needs fitting before reliable mechanical playback')
-  await expect(compatibility.locator('[data-kind="range"]')).toContainText('MIDI 59')
-
-  const autoFit = page.getByRole('region', { name: 'Auto Fit to Music Box' })
-  await expect(autoFit).toBeVisible()
-  const generate = autoFit.getByRole('button', { name: 'Generate fit proposal' })
-  await expect(generate).toBeDisabled()
-
-  await autoFit.getByLabel('Move pitches by octaves where possible').check()
-  await expect(generate).toBeEnabled()
-  await generate.click()
+  const autoFit = await generateOctaveFit(page)
 
   const result = autoFit.getByRole('status')
-  await expect(result).toContainText('Fit proposal ready')
   await expect(result).toContainText('Blocking conflicts: 1 → 0')
   await expect(result).toContainText('Octave moves: 1')
-
-  await expect(compatibility.getByRole('status')).toHaveText('Needs fitting before reliable mechanical playback')
-  await expect(compatibility.locator('[data-kind="range"]')).toContainText('MIDI 59')
+  await expect(result).toContainText('Source notes: 2 · Fitted notes: 2')
+  await expect(compatibility.getByRole('status')).toHaveText('Fits the current music box')
+  await expect(page.locator('.piano-roll-note[title^="B4"]')).toHaveCount(1)
   await expect(page.getByText('Edited tune', { exact: true })).toBeVisible()
 })
 
-test('changing the editable source invalidates a stale fit proposal', async ({ page }) => {
+test('manually corrects the fitted proposal before acceptance', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Compose', exact: true }).click()
   await importConflictMidi(page)
+  const autoFit = await generateOctaveFit(page)
 
-  const autoFit = page.getByRole('region', { name: 'Auto Fit to Music Box' })
-  await autoFit.getByLabel('Move pitches by octaves where possible').check()
-  await autoFit.getByRole('button', { name: 'Generate fit proposal' }).click()
+  const inspector = page.locator('.piano-roll-inspector')
+  await page.locator('.piano-roll-note[title^="B4"]').click()
+  await inspector.locator('select').selectOption('67')
+  await expect(page.locator('.piano-roll-note[title^="G4"]')).toHaveCount(1)
   await expect(autoFit.getByRole('status')).toContainText('Fit proposal ready')
 
-  await page.getByRole('button', { name: 'Add note' }).click()
+  await autoFit.getByRole('button', { name: 'Use fitted result' }).click()
   await expect(autoFit.getByRole('status')).toHaveCount(0)
+  await expect(page.locator('.piano-roll-note[title^="G4"]')).toHaveCount(1)
+})
+
+test('discarding the fit proposal restores the unchanged source', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Compose', exact: true }).click()
+  await importConflictMidi(page)
+  const autoFit = await generateOctaveFit(page)
+
+  await expect(page.locator('.piano-roll-note[title^="B4"]')).toHaveCount(1)
+  await autoFit.getByRole('button', { name: 'Discard fit proposal' }).click()
+  await expect(page.locator('.piano-roll-note[title^="B4"]')).toHaveCount(0)
+  const compatibility = page.getByRole('region', { name: 'Music box compatibility' })
+  await expect(compatibility.locator('[data-kind="range"]')).toContainText('MIDI 59')
 })
 
 test('Auto Fit controls localize to Japanese', async ({ page }) => {
