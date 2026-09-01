@@ -11,11 +11,13 @@ export function AutoFitPanel({
   locale,
   proposal,
   onProposal,
+  onAcceptProposal,
 }: {
   document: TuneDocument
   locale: Locale
   proposal: AutoFitResult | null
   onProposal: (proposal: AutoFitResult | null) => void
+  onAcceptProposal: () => void
 }) {
   const copy = musicBoxAutoFitCopy[locale]
   const [octaveMoves, setOctaveMoves] = useState(false)
@@ -103,9 +105,15 @@ export function AutoFitPanel({
       {proposal && counts && afterBlocking !== null && (
         <div className="auto-fit-result" role="status">
           <strong>{copy.proposalReady}</strong>
+          <span>{copy.sourceNotes}: {document.notes.length} · {copy.fittedNotes}: {proposal.document.notes.length}</span>
           <span>{copy.changes}: {proposal.changes.length}</span>
           <span>{copy.blocking}: {beforeBlocking} → {afterBlocking}</span>
           <small>{copy.octaveCount}: {counts.octave} · {copy.nearestCount}: {counts.nearest} · {copy.quantizeCount}: {counts.quantize} · {copy.removedCount}: {counts.remove}</small>
+          <small>{copy.manualCorrection}</small>
+          <div className="piano-roll-actions">
+            <button type="button" onClick={onAcceptProposal}>{copy.acceptProposal}</button>
+            <button type="button" onClick={() => onProposal(null)}>{copy.discardProposal}</button>
+          </div>
         </div>
       )}
     </section>
