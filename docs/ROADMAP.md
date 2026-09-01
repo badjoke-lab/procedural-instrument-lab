@@ -1,6 +1,6 @@
 # Roadmap
 
-This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md`, `docs/COMPATIBILITY_ANALYZER.md` and `AGENTS.md`.
+This document controls development order for Procedural Instrument Lab. Read it together with `docs/ARCHITECTURE.md`, `docs/MUSIC_BOX_V1.md`, `docs/PRESENTATION_CHECKLIST.md`, `docs/TUNE_DOCUMENT.md`, `docs/PIANO_ROLL.md`, `docs/SCREEN_KEYBOARD.md`, `docs/COMPUTER_KEYBOARD.md`, `docs/MIDI_IMPORT.md`, `docs/MIDI_EXPORT.md`, `docs/MICROPHONE_RECORDING.md`, `docs/MIC_MELODY_EXTRACTION.md`, `docs/AUDIO_FILE_IMPORT.md`, `docs/AUDIO_MELODY_EXTRACTION.md`, `docs/RECOGNITION_CORRECTION.md`, `docs/COMPATIBILITY_ANALYZER.md`, `docs/AUTO_FIT.md` and `AGENTS.md`.
 
 ## Current product decision
 
@@ -9,13 +9,13 @@ This document controls development order for Procedural Instrument Lab. Read it 
 - Additional instruments are out of scope.
 - Low traffic and limited manual testing are assumed. Completion must not depend on large numbers of user-submitted tunes or repeated human device tests.
 - Automated browser checks, synthetic tune/audio fixtures and benchmark reports must carry most repeatable verification work.
-- A user-visible mismatch between pin contact, tine loading/release/vibration and sound is a blocking mechanical-causality defect and overrides feature-sequence work until corrected.
+- A user-visible mismatch between pin contact, tine loading/release/vibration and sound remains a mechanical-causality defect, but assistant-side visual/audio acceptance is not a feature-progression gate. Unrelated roadmap work may continue when it does not alter or conceal that mechanism defect.
 
 ## Completed foundation
 
 Repository foundation, deterministic drive state, geometry-derived pin/tine engagement, tine deflection, release-driven vibration/audio, direct crank manipulation, initial Customize controls, EN/JA, responsive information architecture, the first geometry/material realism pass, browser gates and GitHub Pages publication are merged on main.
 
-PR #34 (`c8e066dd36eba1d57d825d2519e00fe05adc5bf7`) is the current merged causality baseline: it aligned rendered pin/tine contact geometry with the solver, traversed coarse phase movement, carried release deflection into vibration and removed release-time Web Audio startup. PR #37 (`2412a3a9363748ba34167d9f5788e44b4495efb6`) then removed duplicated renderer-side pin placement math so rendered pin stem/tip positions and contact-side pin-tip positions share the mechanism geometry source. Neither change closes Issue #10: the user-visible pin/tine/release synchronization defect remains unresolved and continues to block feature progression.
+PR #34 (`c8e066dd36eba1d57d825d2519e00fe05adc5bf7`) is the current merged causality baseline: it aligned rendered pin/tine contact geometry with the solver, traversed coarse phase movement, carried release deflection into vibration and removed release-time Web Audio startup. PR #37 (`2412a3a9363748ba34167d9f5788e44b4495efb6`) then removed duplicated renderer-side pin placement math so rendered pin stem/tip positions and contact-side pin-tip positions share the mechanism geometry source. PR #38 (`cebfb5a0f944e877bb192af149f4945f9fa42a59`) requires Web Audio to reach `running` before autoplay or manual-crank motion begins. Issue #10 remains open for user-visible pin/tine/release synchronization, but it no longer blocks unrelated creator-feature progression solely because assistant-side acceptance is unavailable.
 
 ## Authoritative development order
 
@@ -53,24 +53,24 @@ PR #34 (`c8e066dd36eba1d57d825d2519e00fe05adc5bf7`) is the current merged causal
 ### Make ordinary music mechanically playable
 
 23. **Compatibility analyzer** — report note-range, simultaneous-note, density, pin-spacing and current-mechanism conflicts. **Complete in PR #31, merged as `7fbaa15573ae82a2797a9fb93741f8cdc6a83361`; final verify/browser run #173 was green.**
-24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Implementation remains open in BLOCKED PR #32. It must not merge until Issue #10's mechanical-causality defect is actually resolved and #32 is rebased/reverified against the accepted mechanism.**
+24. **Auto Fit to Music Box** — offer explicit octave moves, nearest-note mapping, quantization or simplification. **Active on `feat/music-box-auto-fit-main` / PR #39, reapplied from the current main after PRs #37/#38. Every transform is opt-in and produces a derived proposal without mutating the editable source or regenerating cylinder pins.**
 25. **Fit preview / manual correction** — compare the candidate and fitted result before acceptance.
 26. **TuneDocument -> cylinder** — generate the final visible pin pattern from the accepted editable arrangement.
 
-### Blocking mechanical-causality repair lane
+### Mechanical-causality repair lane
 
-The foundation is partially repaired but still blocked by Issue #10. The active repair rules are:
+Issue #10 remains a separate quality defect rather than an assistant-validation gate for unrelated feature work. The active repair rules are:
 
 - PR #34 is the merged baseline for exact pin-sphere / rotated-tine-box contact, coarse phase traversal, release-continuous vibration and synchronous release-driven pluck,
 - PR #37 is merged and makes renderer pin stem/tip placement consume the same mechanism geometry source as contact-side pin-tip placement,
-- Play and manual crank may not begin merely because `AudioContext.resume()` was attempted or resolved; `audio.unlock()` must confirm that the context actually reached `running`,
+- PR #38 requires `audio.unlock()` to confirm `AudioContext.state === 'running'` before autoplay/manual-crank motion begins,
 - contact resolver and renderer must continue sharing the same resting tine geometry; no hidden y/position offset may define contact,
 - tine loading angle remains derived from contact geometry rather than an unrelated visual amplitude,
 - configuration changes must clear stale engagement/vibration state,
-- the user-visible pin/tine/release synchronization problem remains unresolved until product behavior is actually corrected,
-- automated tests are regression gates, but assistant-side screenshot/artifact judgement is not acceptance evidence for closing Issue #10.
+- the user-visible pin/tine/release synchronization problem remains open until product behavior is actually corrected,
+- automated tests remain regression gates; assistant-side screenshot/artifact interpretation is not acceptance evidence and must not be used to block unrelated roadmap implementation.
 
-This repair lane is not a new roadmap feature. It repairs violated acceptance conditions in the supposedly completed foundation.
+This repair lane is not a new roadmap feature. Changes that touch the mechanism must preserve these rules; feature work upstream of mechanical compilation may proceed independently.
 
 ### User-volume-independent benchmark lane
 
@@ -137,7 +137,7 @@ This repair lane is not a new roadmap feature. It repairs violated acceptance co
 
 ## Current position
 
-Steps 1-23 are complete on main. PR #34 is the merged causality baseline. PR #37 has merged the shared pin render/contact geometry boundary. Issue #10 remains open because the user-visible pin/tine/release synchronization defect is not accepted as solved. The current immediate repair closes the separate false-start condition where Web Audio resume could settle without reaching `running`. PR #32 / Step 24 remains blocked until the mechanical foundation itself is accepted and then must be rebased/reverified.
+Steps 1-23 are complete on main. PR #34 is the merged causality baseline, PR #37 shares pin render/contact geometry and PR #38 gates motion on running Web Audio. Issue #10 remains open as a separate user-visible synchronization defect; it is not being closed through assistant-side artifact judgement and does not block unrelated upstream creator work. Step 24 Auto Fit has resumed on PR #39 from the current main.
 
 ## Mechanical causality gate
 
@@ -147,7 +147,7 @@ At every stage the authoritative chain remains:
 
 Composition/import, Auto Fit, customization, rendering and exports must feed or consume this chain. They must not introduce an independent scheduler that decides note timing separately.
 
-Passing abstract event-count tests is insufficient if the rendered pin/tine geometry, release vibration or audible onset is perceptibly offset. The visible contact geometry and event geometry must be the same model. Likewise, an attempted Web Audio resume is insufficient: mechanism motion must not start until the audio context is actually ready.
+Passing abstract event-count tests is insufficient to close a perceptible mechanical synchronization defect. The visible contact geometry and event geometry must remain the same model, and mechanism motion must not start until the audio context is actually ready. This requirement remains binding for mechanism changes and final completion, but assistant-side perceptual validation is not an intermediate merge gate for unrelated feature work.
 
 ## Privacy / rights boundary
 
@@ -162,4 +162,4 @@ EN/JA runtime support is implemented. New user-facing tune/composition/import/ex
 
 ## Schedule discipline
 
-The numbered schedule is dependency order, not a calendar promise. Work may overlap only when it does not bypass an earlier acceptance gate. Any change to product order, mechanical causality, data formats, privacy, import/export/sharing boundaries or completion criteria must update this document and the relevant specification in the same PR.
+The numbered schedule is dependency order. Work may proceed past an unresolved quality issue when that issue is explicitly tracked and the new work does not depend on, alter or conceal the affected behavior. Any change to product order, mechanical causality, data formats, privacy, import/export/sharing boundaries or completion criteria must update this document and the relevant specification in the same PR.
