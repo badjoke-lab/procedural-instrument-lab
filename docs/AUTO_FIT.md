@@ -65,7 +65,7 @@ Step 24 remains upstream of mechanical compilation:
 
 `tune/candidate -> fit proposal -> later explicit acceptance -> pin geometry -> mechanical runtime`
 
-No Auto Fit option plays audio, schedules notes independently, or writes cylinder pins directly.
+No Auto Fit option plays audio, schedules notes independently, writes cylinder pins directly or modifies the mechanism. Issue #10 therefore remains a separate mechanical-quality defect rather than an assistant-validation prerequisite for Step 24.
 
 ## Verification
 
@@ -78,4 +78,6 @@ Unit fixtures cover:
 - combined transforms with source immutability,
 - invalid quantization input.
 
-Browser coverage proves that a conflicting imported tune can produce a proposal with fewer blocking conflicts while the original editable tune and its compatibility report remain unchanged. It also verifies stale-proposal invalidation and EN/JA controls on desktop/mobile Chromium.
+Browser coverage verifies that a conflicting imported tune can produce a proposal with fewer blocking compatibility conflicts while the original editable tune and compatibility report remain unchanged. It also verifies stale-proposal invalidation and EN/JA controls on desktop/mobile Chromium.
+
+These checks are regression/feature gates for Auto Fit itself. They do not claim to visually or audibly close Issue #10.
