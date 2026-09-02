@@ -20,8 +20,8 @@ describe('Music Box Project file sharing', () => {
   })
 
   it('uses Web Share only when the browser confirms file sharing support', async () => {
-    const share = vi.fn(async () => undefined)
-    const canShare = vi.fn(() => true)
+    const share = vi.fn(async (_payload: ShareData) => undefined)
+    const canShare = vi.fn((_payload: ShareData) => true)
     const result = await shareMusicBoxProjectFile(project(), { share, canShare } as never)
 
     expect(result).toBe('shared')
