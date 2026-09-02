@@ -20,6 +20,7 @@ export class MusicBoxAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private resonator: BiquadFilterNode | null = null
+  private captureDestination: MediaStreamAudioDestinationNode | null = null
 
   private ensureContext() {
     if (!this.ctx) {
@@ -36,17 +37,32 @@ export class MusicBoxAudio {
     return this.ctx
   }
 
-  /** Prepare audio from a user gesture before any mechanism movement is allowed to release a tine. */
   async unlock() {
     const ctx = this.ensureContext()
     if (ctx.state === 'suspended') await ctx.resume()
     return ctx.state === 'running'
   }
 
-  /**
-   * Release-time audio is deliberately synchronous with the mechanical event.
-   * Never resume/create audio here: doing so can turn one release into a visibly late sound.
-   */
+  captureStream() {
+    const ctx = this.ctx
+    const master = this.master
+    if (!ctx || ctx.state !== 'running' || !master) {
+      throw new Error('Music Box audio must be unlocked before capture')
+    }
+    if (!this.captureDestination) {
+      this.captureDestination = ctx.createMediaStreamDestination()
+      master.connect(this.captureDestination)
+    }
+    return this.captureDestination.stream
+  }
+
+  stopCapture() {
+    if (!this.captureDestination || !this.master) return
+    this.master.disconnect(this.captureDestination)
+    this.captureDestination.stream.getTracks().forEach((track) => track.stop())
+    this.captureDestination = null
+  }
+
   pluck(note: number) {
     const ctx = this.ctx
     if (!ctx || ctx.state !== 'running' || !this.resonator) return false
@@ -60,11 +76,9 @@ export class MusicBoxAudio {
       oscillator.type = 'sine'
       oscillator.frequency.value = frequency * partial.ratio
       oscillator.detune.value = partial.detune ?? 0
-
       gain.gain.setValueAtTime(0.0001, now)
       gain.gain.exponentialRampToValueAtTime(partial.gain, now + 0.003)
       gain.gain.exponentialRampToValueAtTime(0.0001, now + partial.decay)
-
       oscillator.connect(gain).connect(this.resonator)
       oscillator.start(now)
       oscillator.stop(now + partial.decay + 0.04)
@@ -77,20 +91,16 @@ export class MusicBoxAudio {
   private contactClick(now: number) {
     const ctx = this.ctx
     if (!ctx || !this.resonator) return
-
     const oscillator = ctx.createOscillator()
     const gain = ctx.createGain()
     const highpass = ctx.createBiquadFilter()
-
     oscillator.type = 'triangle'
     oscillator.frequency.setValueAtTime(2600, now)
     oscillator.frequency.exponentialRampToValueAtTime(1050, now + 0.028)
     highpass.type = 'highpass'
     highpass.frequency.value = 850
-
     gain.gain.setValueAtTime(0.022, now)
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.032)
-
     oscillator.connect(highpass).connect(gain).connect(this.resonator)
     oscillator.start(now)
     oscillator.stop(now + 0.04)
