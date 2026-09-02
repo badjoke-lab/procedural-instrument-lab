@@ -72,7 +72,9 @@ export function createMusicBoxWavExport(
 
 export function downloadMusicBoxWav(document: TuneDocument, config: MusicBoxConfig, sampleRate = 44_100): void {
   const exported = createMusicBoxWavExport(document, config, sampleRate)
-  const blob = new Blob([exported.bytes], { type: 'audio/wav' })
+  const buffer = new ArrayBuffer(exported.bytes.byteLength)
+  new Uint8Array(buffer).set(exported.bytes)
+  const blob = new Blob([buffer], { type: 'audio/wav' })
   const url = URL.createObjectURL(blob)
   const anchor = documentElement('a')
   anchor.href = url
