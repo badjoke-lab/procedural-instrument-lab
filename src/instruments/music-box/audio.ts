@@ -20,6 +20,7 @@ export class MusicBoxAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private resonator: BiquadFilterNode | null = null
+  private captureDestination: MediaStreamAudioDestinationNode | null = null
 
   private ensureContext() {
     if (!this.ctx) {
@@ -41,6 +42,30 @@ export class MusicBoxAudio {
     const ctx = this.ensureContext()
     if (ctx.state === 'suspended') await ctx.resume()
     return ctx.state === 'running'
+  }
+
+  /**
+   * Route the existing live mechanical audio output into a MediaStream for video capture.
+   * This never creates or resumes Web Audio; capture must begin only after unlock() succeeded.
+   */
+  captureStream() {
+    const ctx = this.ctx
+    const master = this.master
+    if (!ctx || ctx.state !== 'running' || !master) {
+      throw new Error('Music Box audio must be unlocked before capture')
+    }
+    if (!this.captureDestination) {
+      this.captureDestination = ctx.createMediaStreamDestination()
+      master.connect(this.captureDestination)
+    }
+    return this.captureDestination.stream
+  }
+
+  stopCapture() {
+    if (!this.captureDestination || !this.master) return
+    this.master.disconnect(this.captureDestination)
+    this.captureDestination.stream.getTracks().forEach((track) => track.stop())
+    this.captureDestination = null
   }
 
   /**
