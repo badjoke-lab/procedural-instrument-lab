@@ -1,7 +1,7 @@
 import type { Locale } from '../../i18n/messages'
 import { musicBoxCompatibilityCopy } from '../../i18n/music-box-compatibility'
 import { analyzeMusicBoxCompatibility, type CompatibilityIssueKind } from './compatibility'
-import { DEFAULT_MUSIC_BOX_CONFIG } from './mechanism'
+import type { MusicBoxConfig } from './mechanism'
 import type { TuneDocument } from './tune-document'
 import './compatibility.css'
 
@@ -11,9 +11,9 @@ function uniquePitches(values: number[]) {
   return [...new Set(values)].sort((a, b) => a - b)
 }
 
-export function CompatibilityPanel({ document, locale }: { document: TuneDocument; locale: Locale }) {
+export function CompatibilityPanel({ document, locale, config }: { document: TuneDocument; locale: Locale; config: MusicBoxConfig }) {
   const copy = musicBoxCompatibilityCopy[locale]
-  const report = analyzeMusicBoxCompatibility(document, DEFAULT_MUSIC_BOX_CONFIG)
+  const report = analyzeMusicBoxCompatibility(document, config)
   const blocking = report.issues.filter((issue) => issue.severity === 'blocking').length
   const review = report.issues.filter((issue) => issue.severity === 'review').length
 
