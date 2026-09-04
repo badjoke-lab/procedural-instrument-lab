@@ -7,6 +7,11 @@ import './styles.css'
 import { defaultLocale, messages, type Locale } from './i18n/messages'
 import { MusicBoxAudio } from './instruments/music-box/audio'
 import {
+  applyMusicBoxCombVariant,
+  identifyMusicBoxCombVariant,
+  type MusicBoxCombVariantId,
+} from './instruments/music-box/comb-variants'
+import {
   DEFAULT_MUSIC_BOX_CONFIG,
   PIN_TIP_RADIUS_SCALE,
   TINE_THICKNESS,
@@ -325,7 +330,10 @@ function Mechanism({
         {config.notes.map((note, index) => {
           const anchor = tineAnchorPoint(index, config)
           const length = tineLength(index, config)
-          const tineWidth = 0.16 - index * 0.005
+          const baselineIndex = config.notes.length <= 1
+            ? 0
+            : index * ((DEFAULT_MUSIC_BOX_CONFIG.notes.length - 1) / (config.notes.length - 1))
+          const tineWidth = 0.16 - baselineIndex * 0.005
           return (
             <group key={note}>
               <group ref={(group) => { tineRefs.current[index] = group }} position={[anchor.x, anchor.y, anchor.z]}>
@@ -475,6 +483,7 @@ function App() {
   const t = messages[locale]
   const pageParam = new URLSearchParams(window.location.search).get('page')
   const page = pageParam === 'how-to-use' || pageParam === 'about' ? pageParam : null
+  const activeCombVariantId = identifyMusicBoxCombVariant(config) ?? 'prototype-8'
 
   useEffect(() => {
     document.documentElement.lang = locale
@@ -488,6 +497,21 @@ function App() {
   const updateConfig = (patch: Partial<MusicBoxConfig>) => {
     setConfig((current) => {
       const next = { ...current, ...patch }
+      const issues = validateMusicBoxConfig(next)
+      if (issues.length > 0) {
+        setConfigError(true)
+        return current
+      }
+      setConfigError(false)
+      return next
+    })
+  }
+
+  const selectCombVariant = (id: MusicBoxCombVariantId) => {
+    cancelPendingPlay()
+    setRunning(false)
+    setConfig((current) => {
+      const next = applyMusicBoxCombVariant(current, id)
       const issues = validateMusicBoxConfig(next)
       if (issues.length > 0) {
         setConfigError(true)
@@ -574,6 +598,7 @@ function App() {
         <PianoRollEditor
           document={editableDocument}
           onChange={editTune}
+          config={config}
           copy={{
             title: t.compose,
             intro: t.composeIntro,
@@ -590,6 +615,13 @@ function App() {
       <section className="workspace">
         <aside id="customize" className="builder-panel" aria-label={t.customize}>
           <div className="customize-heading"><strong>{t.customize}</strong><span>{t.customizeIntro}</span></div>
+          <label htmlFor="comb-variant">
+            {t.combVariant}
+            <select id="comb-variant" value={activeCombVariantId} onChange={(event) => selectCombVariant(event.target.value as MusicBoxCombVariantId)}>
+              <option value="prototype-8">{t.combPrototype8}</option>
+              <option value="sankyo-18-sim">{t.combSankyo18}</option>
+            </select>
+          </label>
           <label htmlFor="cylinder-length">
             {t.cylinderLength}
             <input id="cylinder-length" type="range" min="2.8" max="4.4" step="0.1" value={config.cylinderLength} onChange={(event) => updateConfig({ cylinderLength: Number(event.target.value) })} />
@@ -597,8 +629,8 @@ function App() {
           </label>
           <label htmlFor="tine-spacing">
             {t.tineSpacing}
-            <input id="tine-spacing" type="range" min="0.26" max="0.46" step="0.01" value={config.tineSpacing} onChange={(event) => updateConfig({ tineSpacing: Number(event.target.value) })} />
-            <output htmlFor="tine-spacing">{config.tineSpacing.toFixed(2)}</output>
+            <input id="tine-spacing" type="range" min="0.12" max="0.46" step="0.005" value={config.tineSpacing} onChange={(event) => updateConfig({ tineSpacing: Number(event.target.value) })} />
+            <output htmlFor="tine-spacing">{config.tineSpacing.toFixed(3)}</output>
           </label>
           <label htmlFor="driver-teeth">
             {t.driverTeeth}
