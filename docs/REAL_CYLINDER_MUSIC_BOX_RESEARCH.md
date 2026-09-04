@@ -12,8 +12,18 @@ This document is the evidence base for Roadmap Step 44. It records real cylinder
 6. **Bedplate/base construction matters.** Documented mechanisms use forged or brass bases/bedplates; current 72-note Swiss movement listings also specify a solid brass bedplate. Comb bases can be brass and are machined to establish the comb height/angle relative to the cylinder.
 7. **Case material is not a single cosmetic preset.** Current Reuge examples use walnut or stained oak, while historic boxes commonly use wooden cabinets. Case/body choices should remain distinct from mechanism metal choices.
 8. **Interchangeable cylinders require a safe non-playing gap.** A documented Jaccard interchangeable-cylinder box aligns the comb with a break in cylinder pinning at tune end so the cylinder can be removed without damaging pins.
+9. **A smaller evidence-backed step exists before 72/92 notes.** The Japan Society of Mechanical Engineers documents an early Sankyo Seiki 18-note movement, giving Step 47 a real note-count target that can be explored without pretending the unresolved geometry of larger luxury movements is known.
 
 ## Evidence
+
+### Historical 18-note Sankyo movement
+
+The Japan Society of Mechanical Engineers' 2026 Mechanical Engineering Heritage No. 135 documents an early Sankyo Seiki Manufacturing Co., Ltd. movement, estimated to date from 1951, with **18 notes**. Sankyo Seiki, now Nidec Instruments Corporation, had succeeded in domestic production of music-box movements in 1948.
+
+This source establishes the historical 18-note count. It does **not** publish the movement's complete pitch set, tine spacing, pin dimensions or contact geometry. Procedural Instrument Lab therefore uses the real **18-note count** as evidence for a selectable comb size while treating its current MIDI 60-77 chromatic pitch layout and reduced tine spacing as explicit project simulation choices, not historical reconstruction.
+
+Source:
+- https://www.jsme.or.jp/kikaiisan/heritage_135_en.html
 
 ### Current 72-note Swiss cylinder movement
 
@@ -91,9 +101,17 @@ Source:
 
 ## Implementation implications
 
-The next customization work should not expose arbitrary sliders first. Step 45 should compare the existing benchmark requirement report against evidence-backed mechanism families. Candidate parameters to evaluate are:
+Advanced customization should not expose arbitrary sliders first. Benchmark reports and evidence-backed mechanism families determine which parameters become live.
 
-- comb note count / playable pitch set,
+Step 47 starts with two bounded comb variants:
+
+- the existing eight-note prototype baseline,
+- an 18-note option whose **note count** is evidence-backed by the historical Sankyo movement, while its MIDI 60-77 chromatic layout and spacing remain clearly labeled simulation choices.
+
+Larger Reuge/Jaccard-class 72/92-note counts remain research references rather than live presets until their required pitch-set, cylinder, lane-spacing, pin/contact and rendering consequences are modeled without inventing missing evidence.
+
+Candidate later parameters remain:
+
 - cylinder length and radius,
 - pin count/density budget and safe change gap,
 - tine length/thickness/mass or tuning weight,
@@ -102,4 +120,4 @@ The next customization work should not expose arbitrary sliders first. Step 45 s
 - comb-base/bedplate material and geometry,
 - case material/resonance boundary.
 
-The current eight-note hand-crank mechanism remains the v1 baseline until benchmark analysis shows which real mechanism variants materially improve playable coverage without breaking mechanical causality.
+The current eight-note hand-crank mechanism remains the default v1 baseline; the 18-note variant is an explicit simulation choice that still uses the same mechanical causality path.
