@@ -3,18 +3,21 @@ import type { Locale } from '../../i18n/messages'
 import { musicBoxAutoFitCopy } from '../../i18n/music-box-auto-fit'
 import { analyzeMusicBoxCompatibility } from './compatibility'
 import { autoFitMusicBoxTune, type AutoFitResult } from './auto-fit'
+import type { MusicBoxConfig } from './mechanism'
 import type { TuneDocument } from './tune-document'
 import './auto-fit.css'
 
 export function AutoFitPanel({
   document,
   locale,
+  config,
   proposal,
   onProposal,
   onAcceptProposal,
 }: {
   document: TuneDocument
   locale: Locale
+  config: MusicBoxConfig
   proposal: AutoFitResult | null
   onProposal: (proposal: AutoFitResult | null) => void
   onAcceptProposal: () => void
@@ -25,7 +28,7 @@ export function AutoFitPanel({
   const [quantizeStep, setQuantizeStep] = useState<number | null>(null)
   const [simplifyDenseRepeats, setSimplifyDenseRepeats] = useState(false)
   const enabled = octaveMoves || nearestNoteMapping || quantizeStep !== null || simplifyDenseRepeats
-  const before = analyzeMusicBoxCompatibility(document)
+  const before = analyzeMusicBoxCompatibility(document, config)
   const beforeBlocking = before.issues.filter((issue) => issue.severity === 'blocking').length
 
   const changeOption = (update: () => void) => {
@@ -39,7 +42,7 @@ export function AutoFitPanel({
       nearestNoteMapping,
       quantizeStep,
       simplifyDenseRepeats,
-    }))
+    }, config))
   }
 
   const counts = proposal ? {
