@@ -8,6 +8,7 @@ import { analyzeMusicBoxCompatibility } from './compatibility'
 import { CompatibilityPanel } from './CompatibilityPanel'
 import { MicMelodyExtractor } from './MicMelodyExtractor'
 import { MicrophoneRecorder } from './MicrophoneRecorder'
+import type { MusicBoxConfig } from './mechanism'
 import { MidiExport } from './MidiExport'
 import { MidiImport } from './MidiImport'
 import { ScreenKeyboard } from './ScreenKeyboard'
@@ -18,11 +19,14 @@ import {
   type PianoRollDraft,
 } from './piano-roll-model'
 
-const PITCHES = [72, 71, 69, 67, 65, 64, 62, 60]
-const PITCH_NAMES: Record<number, string> = {
-  60: 'C4', 62: 'D4', 64: 'E4', 65: 'F4', 67: 'G4', 69: 'A4', 71: 'B4', 72: 'C5',
-}
+const PITCH_CLASS_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
 const keyboardPreviewAudio = new MusicBoxAudio()
+
+function pitchName(pitch: number) {
+  const pitchClass = ((pitch % 12) + 12) % 12
+  const octave = Math.floor(pitch / 12) - 1
+  return `${PITCH_CLASS_NAMES[pitchClass]}${octave}`
+}
 
 export type PianoRollCopy = {
   title: string
@@ -35,7 +39,17 @@ export type PianoRollCopy = {
   empty: string
 }
 
-export function PianoRollEditor({ document, onChange, copy }: { document: PianoRollDraft; onChange: (next: PianoRollDraft) => void; copy: PianoRollCopy }) {
+export function PianoRollEditor({
+  document,
+  onChange,
+  copy,
+  config,
+}: {
+  document: PianoRollDraft
+  onChange: (next: PianoRollDraft) => void
+  copy: PianoRollCopy
+  config: MusicBoxConfig
+}) {
   const [selectedNoteId, setSelectedNoteId] = useState(document.notes[0]?.id ?? '')
   const [microphoneClip, setMicrophoneClip] = useState<Blob | null>(null)
   const [audioFile, setAudioFile] = useState<File | null>(null)
@@ -44,6 +58,10 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
   const fitSourceDocument = recognitionCandidate ?? document
   const workingDocument = fitProposal?.document ?? fitSourceDocument
   const selected = workingDocument.notes.find((note) => note.id === selectedNoteId) ?? workingDocument.notes[0]
+  const pitches = useMemo(
+    () => [...new Set([...config.notes, ...workingDocument.notes.map((note) => note.pitch)])].sort((a, b) => b - a),
+    [config.notes, workingDocument.notes],
+  )
   const columns = Math.max(1, Math.ceil(workingDocument.lengthBeats))
   const gridStyle = useMemo(() => ({ '--piano-roll-columns': columns } as CSSProperties), [columns])
   const japanese = copy.title === '作曲'
@@ -65,9 +83,13 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
     setSelectedNoteId(document.notes[0]?.id ?? '')
   }, [document.id])
 
+  useEffect(() => {
+    setFitProposal(null)
+  }, [config])
+
   const updateWorkingDocument = (next: PianoRollDraft) => {
     if (fitProposal) {
-      setFitProposal({ ...fitProposal, document: next, compatibility: analyzeMusicBoxCompatibility(next) })
+      setFitProposal({ ...fitProposal, document: next, compatibility: analyzeMusicBoxCompatibility(next, config) })
       return
     }
     if (recognitionCandidate) setRecognitionCandidate(next)
@@ -78,7 +100,7 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
     const durationBeats = Math.min(0.5, workingDocument.lengthBeats)
     const maxStart = Math.max(0, workingDocument.lengthBeats - durationBeats)
     const nextStart = Math.min(maxStart, selected ? selected.startBeat + 1 : 0)
-    const next = addPianoRollNote(workingDocument, { pitch: selected?.pitch ?? 60, startBeat: nextStart, durationBeats })
+    const next = addPianoRollNote(workingDocument, { pitch: selected?.pitch ?? config.notes[0] ?? 60, startBeat: nextStart, durationBeats })
     const existing = new Set(workingDocument.notes.map((note) => note.id))
     const added = next.notes.find((note) => !existing.has(note.id))
     updateWorkingDocument(next)
@@ -145,9 +167,9 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       </div>
 
       <MidiImport onImport={importMidi} copy={japanese ? {
-        title: 'MIDIを読み込む', intro: '.mid / .midi を編集可能な曲データとして読み込みます。音域外の音はここでは勝手に変換しません。', choose: 'MIDIファイルを選ぶ', imported: 'MIDIを読み込みました。', failed: 'MIDIを読み込めませんでした。', outOfRange: '現在のC4〜C5機構ではまだ鳴らせない音を保持しています。',
+        title: 'MIDIを読み込む', intro: '.mid / .midi を編集可能な曲データとして読み込みます。現在の櫛歯にない音も勝手に変換しません。', choose: 'MIDIファイルを選ぶ', imported: 'MIDIを読み込みました。', failed: 'MIDIを読み込めませんでした。', outOfRange: '現在選択中の櫛歯ではまだ鳴らせない音を保持しています。',
       } : {
-        title: 'Import MIDI', intro: 'Load .mid / .midi as editable tune data. Out-of-range notes are preserved for later fitting.', choose: 'Choose MIDI file', imported: 'MIDI imported.', failed: 'Could not import MIDI.', outOfRange: 'Notes outside the current C4-C5 mechanism were preserved but are not previewed yet.',
+        title: 'Import MIDI', intro: 'Load .mid / .midi as editable tune data. Notes outside the selected comb are preserved for later fitting.', choose: 'Choose MIDI file', imported: 'MIDI imported.', failed: 'Could not import MIDI.', outOfRange: 'Notes outside the selected comb were preserved and remain editable.',
       }} />
 
       <MidiExport document={document} copy={japanese ? {
@@ -185,8 +207,8 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
         <div className="piano-roll-actions"><button type="button" onClick={acceptRecognition}>{japanese ? '認識結果を確定' : 'Accept recognized melody'}</button><button type="button" onClick={discardRecognition}>{japanese ? '候補を破棄' : 'Discard candidate'}</button></div>
       </div>}
 
-      <CompatibilityPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} />
-      <AutoFitPanel document={fitSourceDocument} locale={japanese ? 'ja' : 'en'} proposal={fitProposal} onProposal={setFitProposal} onAcceptProposal={acceptFitProposal} />
+      <CompatibilityPanel document={workingDocument} locale={japanese ? 'ja' : 'en'} config={config} />
+      <AutoFitPanel document={fitSourceDocument} locale={japanese ? 'ja' : 'en'} config={config} proposal={fitProposal} onProposal={setFitProposal} onAcceptProposal={acceptFitProposal} />
 
       <ScreenKeyboard document={workingDocument} onChange={updateWorkingDocument} onPreview={(pitch) => { void keyboardPreviewAudio.pluck(pitch) }} copy={japanese ? {
         title: '画面鍵盤', intro: '鍵盤を弾けます。録音すると演奏が下の編集データに追加されます。', record: '録音', stopRecording: '録音停止', recording: '録音中', computerKeyboardHint: 'PCでは A S D F G H J K キーでも C4〜C5 を演奏・録音できます。',
@@ -195,11 +217,11 @@ export function PianoRollEditor({ document, onChange, copy }: { document: PianoR
       }} />
 
       <div className="piano-roll-scroll"><div className="piano-roll-grid" style={gridStyle}>
-        {PITCHES.map((pitch) => <div className="piano-roll-row" key={pitch}><span className="piano-roll-key">{PITCH_NAMES[pitch]}</span><div className="piano-roll-lane">{workingDocument.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${PITCH_NAMES[pitch]} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / workingDocument.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / workingDocument.lengthBeats) * 100)}%` }} />)}</div></div>)}
+        {pitches.map((pitch) => <div className="piano-roll-row" key={pitch}><span className="piano-roll-key">{pitchName(pitch)}</span><div className="piano-roll-lane">{workingDocument.notes.filter((note) => note.pitch === pitch).map((note) => <button type="button" key={note.id} className="piano-roll-note" aria-pressed={selected?.id === note.id} title={`${pitchName(pitch)} · ${note.startBeat}`} onClick={() => setSelectedNoteId(note.id)} style={{ left: `${(note.startBeat / workingDocument.lengthBeats) * 100}%`, width: `${Math.max(1.5, (note.durationBeats / workingDocument.lengthBeats) * 100)}%` }} />)}</div></div>)}
       </div></div>
 
       {selected ? <div className="piano-roll-inspector">
-        <label>{copy.pitch}<select value={selected.pitch} onChange={(event) => updateSelected({ pitch: Number(event.target.value) })}>{[...PITCHES].reverse().map((pitch) => <option key={pitch} value={pitch}>{PITCH_NAMES[pitch]}</option>)}</select></label>
+        <label>{copy.pitch}<select value={selected.pitch} onChange={(event) => updateSelected({ pitch: Number(event.target.value) })}>{[...pitches].reverse().map((pitch) => <option key={pitch} value={pitch}>{pitchName(pitch)}</option>)}</select></label>
         <label>{copy.start}<input type="number" min="0" max={workingDocument.lengthBeats - 0.25} step="0.25" value={selected.startBeat} onChange={(event) => updateSelected({ startBeat: Number(event.target.value) })} /></label>
         <label>{copy.duration}<input type="number" min="0.25" max={workingDocument.lengthBeats - selected.startBeat} step="0.25" value={selected.durationBeats} onChange={(event) => updateSelected({ durationBeats: Number(event.target.value) })} /></label>
       </div> : <p className="piano-roll-empty">{copy.empty}</p>}
